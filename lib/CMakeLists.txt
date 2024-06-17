@@ -1,0 +1,7 @@
+add_subdirectory(engine)
+add_subdirectory(math)
+add_subdirectory(shader)
+add_subdirectory(util)
+add_subdirectory(mesh)
+add_subdirectory(frame_buffer)
+add_subdirectory(camera)
