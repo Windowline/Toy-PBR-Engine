@@ -15,6 +15,12 @@
 #include "SSAOShader.hpp"
 #include "SSAOBlurShader.hpp"
 #include "AlbedoColorShader.hpp"
+#include "TestShader.hpp"
+
+#include "TestShaderTmp.hpp"
+#include "ShadowDepthShaderTmp.hpp"
+#include "Triangle.hpp"
+#include "Cube2.hpp"
 
 #include <random>
 
@@ -102,9 +108,35 @@ void Scene::setScreenSize(int w, int h) {
     buildSSAOInfo();
 }
 
-//장면내 오브젝트 및 효과들을 렌더링합니다.
 void Scene::render() {
+    //test
+    {
+        static TestShaderTmp* shader = nullptr;
+        static Triangle* tri = nullptr;
+        if (shader == nullptr) {
+//            shader = new ShadowDepthShaderTmp();
+            shader = new TestShaderTmp();
+            tri = new Triangle();
+        }
 
+        glBindFramebuffer(GL_FRAMEBUFFER, _defaultFBO);
+        glClearColor(0.f, 0.f, 0.f, 1.f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+//        //matrix
+//        mat4 shadowMVP;
+//        static_cast<ShadowDepthShaderTmp*>(shader)->shadowMVPUniformMatrix4fv(shadowMVP.pointer());
+
+        shader->useProgram();
+        tri->render();
+    }
+}
+
+
+
+//장면내 오브젝트 및 효과들을 렌더링합니다.
+/*
+void Scene::render() {
     //0 월드 변환에 변경이 있다면 반영합니다.
     if (_rootTransformDirty) {
         visitNodes(_rootNode, [](std::shared_ptr<Node> node) {
@@ -113,102 +145,132 @@ void Scene::render() {
         _rootTransformDirty = false;
     }
 
+    //test
+    {
+        static Triangle* tri = nullptr;
+        static Cube2* cube = nullptr;
+        if (tri == nullptr) {
+            tri = new Triangle();
+            cube = new Cube2(100, vec3(1.0, 0.0, 0.0));
+        }
+
+        glBindFramebuffer(GL_FRAMEBUFFER, _defaultFBO);
+        glClearColor(0.f, 0.f, 0.f, 1.f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        shaderManager()->setActiveShader<AlbedoColorShader>(eShaderProgram_ALBEDO_COLOR);
+//        auto shader = shaderManager()->getActiveShader();
+//        auto mat = _camera->viewProjMat();
+//        static_cast<AlbedoColorShader*>(shader.get())->mvpUniformMatrix4fv(mat.pointer());
+
+        tri->render();
+//        cube->render();
+        return;
+    }
 
     //1 섀도우 뎁스맵을 그립니다.
-    _shadowDepthBuffer->bindWithViewport();
-    glClearColor(0.f, 0.f, 0.f, 1.f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    shaderManager()->setActiveShader<ShadowDepthShader>(eShaderProgram_ShadowDepth);
-    visitNodes(_rootNode, [](std::shared_ptr<Node> node) {
-        node->setShaderType(eShaderProgram_ShadowDepth);
-        node->render();
-    });
-
+    {
+        _shadowDepthBuffer->bindWithViewport();
+        glClearColor(0.f, 0.f, 0.f, 1.f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        shaderManager()->setActiveShader<ShadowDepthShader>(eShaderProgram_ShadowDepth);
+        visitNodes(_rootNode, [](std::shared_ptr<Node> node) {
+            node->setShaderType(eShaderProgram_ShadowDepth);
+            node->render();
+        });
+    }
 
     //2 GBuffer(position, normal, albedo)를 MRT방식으로 그립니다.
-    _gBuffer->bindWithViewport();
-    glClearColor(0.f, 0.f, 0.f, 1.f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    shaderManager()->setActiveShader<GBufferShader>(eShaderProgram_GBuffer);
-    visitNodes(_rootNode, [](std::shared_ptr<Node> node) {
-        node->setShaderType(eShaderProgram_GBuffer);
-        node->render();
-    });
-
+    {
+        _gBuffer->bindWithViewport();
+        glClearColor(0.f, 0.f, 0.f, 1.f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        shaderManager()->setActiveShader<GBufferShader>(eShaderProgram_GBuffer);
+        visitNodes(_rootNode, [](std::shared_ptr<Node> node) {
+            node->setShaderType(eShaderProgram_GBuffer);
+            node->render();
+        });
+    }
 
     //3 GBuffer를 입력으로 SSAO를 그립니다. (Full Quad)
-    glDisable(GL_CULL_FACE);
-    glDisable(GL_DEPTH_TEST);
-    _ssaoFBO->bindWithViewport();
-    glClearColor(0.f, 0.f, 0.f, 1.f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    auto ssaoShader = shaderManager()->setActiveShader<SSAOShader>(eShaderProgram_SSAO);
-    ssaoShader->positionAttribPointer(GLUtilGeometry::VERT_QUAD, 2);
-    ssaoShader->texCoordAttribPointer(GLUtilGeometry::TEXCOORD_QUAD, 2);
-    ssaoShader->viewMatUniformMatrix4fv(_camera->viewMat().pointer());
-    ssaoShader->projMatUniformMatrix4fv(_camera->projMat().pointer());
-    ssaoShader->samplesUniformVector(_ssaoKernel);
-    ssaoShader->screenSizeUniform2f(_camera->screenSize().x, _camera->screenSize().y);
+    {
+        glDisable(GL_CULL_FACE);
+        glDisable(GL_DEPTH_TEST);
+        _ssaoFBO->bindWithViewport();
+        glClearColor(0.f, 0.f, 0.f, 1.f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        auto ssaoShader = shaderManager()->setActiveShader<SSAOShader>(eShaderProgram_SSAO);
+        ssaoShader->positionAttribPointer(GLUtilGeometry::VERT_QUAD, 2);
+        ssaoShader->texCoordAttribPointer(GLUtilGeometry::TEXCOORD_QUAD, 2);
+        ssaoShader->viewMatUniformMatrix4fv(_camera->viewMat().pointer());
+        ssaoShader->projMatUniformMatrix4fv(_camera->projMat().pointer());
+        ssaoShader->samplesUniformVector(_ssaoKernel);
+        ssaoShader->screenSizeUniform2f(_camera->screenSize().x, _camera->screenSize().y);
 
-    const int COMPONENT_COUNT = 3;
-    std::array<GLuint, COMPONENT_COUNT> textures2 {_gBuffer->gPositionTexture(),
-                                                   _gBuffer->gNormalTexture(),
-                                                   _noiseTexture};
-    for (int i = 0; i < COMPONENT_COUNT; ++i) {
-        glActiveTexture(GL_TEXTURE0 + i);
-        glBindTexture(GL_TEXTURE_2D, textures2[i]);
+        const int COMPONENT_COUNT = 3;
+        std::array<GLuint, COMPONENT_COUNT> textures2 {_gBuffer->gPositionTexture(),
+                                                       _gBuffer->gNormalTexture(),
+                                                       _noiseTexture};
+        for (int i = 0; i < COMPONENT_COUNT; ++i) {
+            glActiveTexture(GL_TEXTURE0 + i);
+            glBindTexture(GL_TEXTURE_2D, textures2[i]);
+        }
+
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, (GLsizei)4);
     }
-
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, (GLsizei)4);
-
 
     //4 SSAO 위에 블러를 덫붙입니다. (Full Quad)
-    _ssaoBlurFBO->bindWithViewport();
-    glViewport(0, 0, _camera->screenSize().x, _camera->screenSize().y);
-    auto ssaoBlurShader = shaderManager()->setActiveShader<SSAOBlurShader>(eShaderProgram_SSAO_BLUR);
-    ssaoBlurShader->positionAttribPointer(GLUtilGeometry::VERT_QUAD, 2);
-    ssaoBlurShader->texCoordAttribPointer(GLUtilGeometry::TEXCOORD_QUAD, 2);
-    ssaoBlurShader->textureSizeUniform2f(_camera->screenSize().x, _camera->screenSize().y);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, _ssaoFBO->commonTexture());
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, (GLsizei)4);
-
-
-    //5 섀도우뎁스, GBuffer, BluredSSAO 를 입력으로 Deferred Rendering을 합니다. (Full Quad)
-    glBindFramebuffer(GL_FRAMEBUFFER, _defaultFBO);
-    glViewport(0, 0, _camera->screenSize().x, _camera->screenSize().y);
-    auto deferredShader = shaderManager()->setActiveShader<DeferredLightingShader>(eShaderProgram_DeferredLighting);
-    deferredShader->positionAttribPointer(GLUtilGeometry::VERT_QUAD, 2);
-    deferredShader->texCoordAttribPointer(GLUtilGeometry::TEXCOORD_QUAD, 2);
-    deferredShader->ambientColorUniform3f(ambientColor().x, ambientColor().y, ambientColor().z);
-    deferredShader->diffuseColorUniform3f(diffuseColor().x, diffuseColor().y, diffuseColor().z);
-    deferredShader->specularColorUniform3f(specularColor().x, specularColor().y, specularColor().z);
-    deferredShader->worldLightPosUniform3fVector(lightPositions());
-    deferredShader->worldEyePositionUniform3f(camera()->eye().x, camera()->eye().y, camera()->eye().z);
-    deferredShader->shadowViewProjectionMatUniformMatrix4fv(_shadowLightViewProjection.pointer());
-
-    const int GBUFFER_COMPONENT_COUNT = 5;
-    std::array<GLuint, GBUFFER_COMPONENT_COUNT> textures {_gBuffer->gPositionTexture(),
-                                                          _gBuffer->gNormalTexture(),
-                                                          _gBuffer->gAlbedoTexture(),
-                                                          _shadowDepthBuffer->commonTexture(),
-                                                          _ssaoBlurFBO->commonTexture()
-    };
-    for (int i = 0; i < GBUFFER_COMPONENT_COUNT; ++i) {
-        glActiveTexture(GL_TEXTURE0 + i);
-        glBindTexture(GL_TEXTURE_2D, textures[i]);
+    {
+        _ssaoBlurFBO->bindWithViewport();
+        glViewport(0, 0, _camera->screenSize().x, _camera->screenSize().y);
+        auto ssaoBlurShader = shaderManager()->setActiveShader<SSAOBlurShader>(eShaderProgram_SSAO_BLUR);
+        ssaoBlurShader->positionAttribPointer(GLUtilGeometry::VERT_QUAD, 2);
+        ssaoBlurShader->texCoordAttribPointer(GLUtilGeometry::TEXCOORD_QUAD, 2);
+        ssaoBlurShader->textureSizeUniform2f(_camera->screenSize().x, _camera->screenSize().y);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, _ssaoFBO->commonTexture());
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, (GLsizei)4);
     }
 
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, (GLsizei)4);
+    //5 섀도우뎁스, GBuffer, BluredSSAO 를 입력으로 Deferred Rendering을 합니다. (Full Quad)
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, _defaultFBO);
+        glViewport(0, 0, _camera->screenSize().x, _camera->screenSize().y);
+        auto deferredShader = shaderManager()->setActiveShader<DeferredLightingShader>(eShaderProgram_DeferredLighting);
+        deferredShader->positionAttribPointer(GLUtilGeometry::VERT_QUAD, 2);
+        deferredShader->texCoordAttribPointer(GLUtilGeometry::TEXCOORD_QUAD, 2);
+        deferredShader->ambientColorUniform3f(ambientColor().x, ambientColor().y, ambientColor().z);
+        deferredShader->diffuseColorUniform3f(diffuseColor().x, diffuseColor().y, diffuseColor().z);
+        deferredShader->specularColorUniform3f(specularColor().x, specularColor().y, specularColor().z);
+        deferredShader->worldLightPosUniform3fVector(lightPositions());
+        deferredShader->worldEyePositionUniform3f(camera()->eye().x, camera()->eye().y, camera()->eye().z);
+        deferredShader->shadowViewProjectionMatUniformMatrix4fv(_shadowLightViewProjection.pointer());
+
+        const int GBUFFER_COMPONENT_COUNT = 5;
+        std::array<GLuint, GBUFFER_COMPONENT_COUNT> textures {_gBuffer->gPositionTexture(),
+                                                              _gBuffer->gNormalTexture(),
+                                                              _gBuffer->gAlbedoTexture(),
+                                                              _shadowDepthBuffer->commonTexture(),
+                                                              _ssaoBlurFBO->commonTexture()
+        };
+        for (int i = 0; i < GBUFFER_COMPONENT_COUNT; ++i) {
+            glActiveTexture(GL_TEXTURE0 + i);
+            glBindTexture(GL_TEXTURE_2D, textures[i]);
+        }
+
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, (GLsizei)4);
 
 
-    //6 빛 구체 렌더링, 효과를 입히지 않고, 본연의 색만 입힙니다.
-    glEnable(GL_CULL_FACE);
-    glEnable(GL_DEPTH_TEST);
-    shaderManager()->setActiveShader<AlbedoColorShader>(eShaderProgram_ALBEDO_COLOR);
-    _lightSphere->setShaderType(eShaderProgram_ALBEDO_COLOR);
-    _lightSphere->render();
+        //6 빛 구체 렌더링, 효과를 입히지 않고, 본연의 색만 입힙니다.
+        glEnable(GL_CULL_FACE);
+        glEnable(GL_DEPTH_TEST);
+        shaderManager()->setActiveShader<AlbedoColorShader>(eShaderProgram_ALBEDO_COLOR);
+        _lightSphere->setShaderType(eShaderProgram_ALBEDO_COLOR);
+        _lightSphere->render();
+    }
 }
+*/
+
 
 void Scene::setTilt(float value) {
     if (!_camera)
@@ -227,7 +289,7 @@ void Scene::lightYDelta(float value) {
     _lightSphere->setLocalTransform(lightSphereLocalTransform);
 
     _shadowLightView = Camera::createViewMatrix(vec3(0, value, 0), _lightPositions.front(), vec3(0, 1, 0));
-    _shadowLightViewProjection = lightSphereLocalTransform * _shadowLightView * _shadowLightProj;////sadsa
+    _shadowLightViewProjection = lightSphereLocalTransform * _shadowLightView * _shadowLightProj;
 }
 
 //Screen Space Ambient Occlusion을 위한 정보를 빌드합니다.

@@ -1,6 +1,6 @@
 #include "FrameBufferObject.hpp"
 #include "GLUtilGeometry.hpp"
-
+#include <cassert>
 
 
 FrameBufferObject::FrameBufferObject(ivec2 size, GLuint defaultFbo, Type type) :
@@ -33,12 +33,12 @@ ivec2 FrameBufferObject::size() const {
 }
 
 void FrameBufferObject::bindWithViewport() {
+    assert(_fboId != 0);
     glBindFramebuffer(GL_FRAMEBUFFER, _fboId);
     glViewport(0, 0, _size.x, _size.y);
 }
 
 void FrameBufferObject::init() {
-    
     glGenFramebuffers(1, &_fboId);
     glBindFramebuffer(GL_FRAMEBUFFER, _fboId);
     

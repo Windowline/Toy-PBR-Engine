@@ -9,6 +9,7 @@
 #include "../include/SSAOShader.hpp"
 #include "../include/SSAOBlurShader.hpp"
 #include "../include/AlbedoColorShader.hpp"
+#include "TestShader.hpp"
 
 
 ShaderManager::ShaderManager()
@@ -50,14 +51,15 @@ void ShaderManager::loadAllPrograms() {
     
     if (_shaderMap.empty()) {
         _shaderMap = {
-            {eShaderProgram_Default,        std::make_shared<BasicLightingShader>()},
-            {eShaderProgram_GBuffer,        std::make_shared<GBufferShader>()},
-            {eShaderProgram_DeferredLighting, std::make_shared<DeferredLightingShader>()},
-            {eShaderProgram_TexturePass,    std::make_shared<TexturePassShader>() },
-            {eShaderProgram_ShadowDepth,    std::make_shared<ShadowDepthShader>()},
-            {eShaderProgram_SSAO,           std::make_shared<SSAOShader>()},
-            {eShaderProgram_SSAO_BLUR,      std::make_shared<SSAOBlurShader>()},
-            {eShaderProgram_ALBEDO_COLOR,   std::make_shared<AlbedoColorShader>()}
+            {eShaderProgram_Default,            std::make_shared<BasicLightingShader>()},
+            {eShaderProgram_GBuffer,            std::make_shared<GBufferShader>()},
+            {eShaderProgram_DeferredLighting,   std::make_shared<DeferredLightingShader>()},
+            {eShaderProgram_TexturePass,        std::make_shared<TexturePassShader>() },
+            {eShaderProgram_ShadowDepth,        std::make_shared<ShadowDepthShader>()},
+            {eShaderProgram_SSAO,               std::make_shared<SSAOShader>()},
+            {eShaderProgram_SSAO_BLUR,          std::make_shared<SSAOBlurShader>()},
+            {eShaderProgram_ALBEDO_COLOR,       std::make_shared<AlbedoColorShader>()},
+            {eShaderProgram_Test,               std::make_shared<TestShader>()}
         };
     }
     

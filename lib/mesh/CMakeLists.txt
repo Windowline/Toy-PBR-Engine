@@ -16,6 +16,11 @@ add_library(mesh STATIC
 
         include/Sphere.hpp
         src/Sphere.cpp
+
+        include/Triangle.hpp
+        src/Triangle.cpp
+        include/Cube2.hpp
+        src/Cube2.cpp
 )
 
 target_include_directories(mesh

@@ -1,11 +1,12 @@
 #ifndef ShaderBase_hpp
 #define ShaderBase_hpp
 #include <cassert>
-//#include <OpenGLES/ES3/gl.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <array>
 #include <string>
+
+//#include "GLUtilGeometry.hpp"
 
 #define INVALID_GL_ID 0
 #define INVALID_GL_LOCATION -1
@@ -191,8 +192,11 @@ class ShaderBase {
         if (!_enabledAttributes[_positionAttribLocation]) {
             _enabledAttributes[_positionAttribLocation] = true;
             glEnableVertexAttribArray(_positionAttribLocation);
+            checkGLError();
         }
+
         vertexAttribPointer(_positionAttribLocation, nChannels, GL_FLOAT, GL_FALSE, 0, ptr);
+        checkGLError();
     }
     
     
@@ -207,7 +211,9 @@ class ShaderBase {
             _enabledAttributes[_colorAttribLocation] = true;
             glEnableVertexAttribArray(_colorAttribLocation);
         }
-        vertexAttribPointer(_colorAttribLocation, nChannels, GL_FLOAT, GL_FALSE, 0, ptr);
+
+        if (_colorAttribLocation > -1)
+            vertexAttribPointer(_colorAttribLocation, nChannels, GL_FLOAT, GL_FALSE, 0, ptr);
     }
 
     
@@ -225,7 +231,9 @@ class ShaderBase {
             _enabledAttributes[_normalAttribLocation] = true;
             glEnableVertexAttribArray(_normalAttribLocation);
         }
-        vertexAttribPointer(_normalAttribLocation, nChannels, GL_FLOAT, GL_FALSE, 0, ptr);
+
+        if (_normalAttribLocation > 0)
+            vertexAttribPointer(_normalAttribLocation, nChannels, GL_FLOAT, GL_FALSE, 0, ptr);
     }
 
     

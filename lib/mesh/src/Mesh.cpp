@@ -115,6 +115,7 @@ void Mesh::bindBuffer(const std::shared_ptr<ShaderBase>& shader) const {
     if(_positionBuffer != 0) {
         glBindBuffer(GL_ARRAY_BUFFER, _positionBuffer);
         shader->positionAttribPointer(0, 3);
+        GLUtil::GL_ERROR_LOG();
     }
     
 //    if (_uvBuffer != 0) {
@@ -125,14 +126,17 @@ void Mesh::bindBuffer(const std::shared_ptr<ShaderBase>& shader) const {
     if (_normalBuffer != 0) {
         glBindBuffer(GL_ARRAY_BUFFER, _normalBuffer);
         shader->normalAttribPointer(0, 3);
+        GLUtil::GL_ERROR_LOG();
     }
     
     if (_colorBuffer != 0) {
         glBindBuffer(GL_ARRAY_BUFFER, _colorBuffer);
         shader->colorAttribPointer(0, 3);
+        GLUtil::GL_ERROR_LOG();
     }
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _indexBuffer);
+    GLUtil::GL_ERROR_LOG();
 }
 
 
@@ -151,7 +155,6 @@ void Mesh::render(std::shared_ptr<ShaderBase> const& shader) {
     glDrawElements(GL_TRIANGLES, (GLsizei)_indSize, GL_UNSIGNED_INT, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-        
 }
 
 bool Mesh::isRenderable() const {

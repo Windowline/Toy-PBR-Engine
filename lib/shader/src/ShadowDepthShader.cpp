@@ -2,7 +2,7 @@
 
 
 static GLbyte vShader[] =
-"#version 300 es                                                          \n"
+"#version 330 core                                                          \n"
 "precision highp float;                                                   \n"
 
 "uniform mat4 u_worldViewMat;                                              \n"
@@ -22,7 +22,7 @@ static GLbyte vShader[] =
 "}                                                                          \n";
 
 static GLbyte fShader[] =
-"#version 300 es                                                                \n"
+"#version 330 core                                                                \n"
 "precision highp float;                                                         \n"
 
 "in vec4 v_shadowClipPos;                                                           \n"

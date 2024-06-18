@@ -3,7 +3,7 @@
 
 
 static GLbyte vShader[] =
-"#version 300 es                                                            \n"
+"#version 330 core                                                            \n"
 "precision highp float;                                                     \n"
 
 "in vec2 a_position;                                                        \n"
@@ -17,7 +17,7 @@ static GLbyte vShader[] =
 "}                                                                          \n";
 
 static GLbyte fShader[] =
-"#version 300 es                                                            \n"
+"#version 330 core                                                            \n"
 "precision highp float;                                                     \n"
 
 "uniform sampler2D u_texture;                                               \n"

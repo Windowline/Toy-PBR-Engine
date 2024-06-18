@@ -4,6 +4,7 @@
 
 #include "Vector.hpp"
 #include <stdio.h>
+#include <glad/glad.h>
 
 #define INVALID_GL_ID 0
 
@@ -11,10 +12,10 @@ class GLUtil {
 
 public:
     static void GL_ERROR_LOG() {
-//        int error_code = glGetError();
-//        if(error_code!=GL_NO_ERROR) {
-//            //printf("CS== gl err: %d ==\n", error_code);
-//        }
+        int error_code = glGetError();
+        if(error_code!=GL_NO_ERROR) {
+            printf("CS== gl err: %d ==\n", error_code);
+        }
     }
 };
 

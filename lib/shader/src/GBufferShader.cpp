@@ -1,7 +1,7 @@
-#include "../include/GBufferShader.hpp"
+#include "GBufferShader.hpp"
 static GLbyte vShader[] =
 
-"#version 300 es                                                        \n"
+"#version 330 core                                                        \n"
 "precision highp float;                                                 \n"
 
 "uniform mat4 u_worldMat;                                               \n"
@@ -30,7 +30,7 @@ static GLbyte vShader[] =
 
 static GLbyte fShader[] =
 
-"#version 300 es                                                          \n"
+"#version 330 core                                                          \n"
 "precision highp float;                                                   \n"
 
 "in vec3 v_position;                                                                \n"

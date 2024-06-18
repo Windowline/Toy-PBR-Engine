@@ -27,6 +27,15 @@ add_library(shader STATIC
 
         include/ShaderManager.hpp
         src/ShaderManager.cpp
+
+        include/TestShader.hpp
+        src/TestShader.cpp
+
+        include/TestShaderTmp.hpp
+        src/TestShaderTmp.cpp
+
+        include/ShadowDepthShaderTmp.hpp
+        src/ShadowDepthShaderTmp.cpp
 )
 
 target_link_libraries(shader

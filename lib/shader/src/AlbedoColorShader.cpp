@@ -1,11 +1,10 @@
-#include "../include/AlbedoColorShader.hpp"
+#include "AlbedoColorShader.hpp"
 
 static GLbyte vShader[] =
-"#version 300 es                                                            \n"
-"precision highp float;                                                     \n"
-
-"in vec3 a_position;                                                        \n"
-"in vec3 a_color;                                                           \n"
+"#version 330 core                                                            \n"
+"layout (location = 0) in vec3 a_position;                                                          \n"
+"layout (location = 1) in vec3 a_color;                                                             \n"
+"layout (location = 2) in vec3 a_normal;                                                            \n"
 
 "uniform mat4 u_mvp;                                                        \n"
 
@@ -18,8 +17,7 @@ static GLbyte vShader[] =
 "}                                                                          \n";
 
 static GLbyte fShader[] =
-"#version 300 es                                                            \n"
-"precision highp float;                                                     \n"
+"#version 330 core                                                            \n"
 "in vec3 v_color;                                                           \n"
 "layout (location = 0) out vec4 fragColor;                                  \n"
                                                                 

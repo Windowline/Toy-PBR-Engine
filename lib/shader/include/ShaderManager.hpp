@@ -20,7 +20,8 @@ enum eShaderProgram : int
     eShaderProgram_SSAO = 7,
     eShaderProgram_SSAO_BLUR = 8,
     eShaderProgram_ALBEDO_COLOR = 9,
-    eShaderProgram_Last
+    eShaderProgram_Test = 10,
+    eShaderProgram_Last = 11
 };
 
 

@@ -1,8 +1,8 @@
 
-#include "../include/BasicLightingShader.hpp"
+#include "BasicLightingShader.hpp"
 
 static GLbyte vShader[] =
-"#version 300 es                                                            \n"
+"#version 330 core                                                            \n"
 "precision highp float;                                                   \n"
 
 "uniform mat4 u_worldMat;                                                   \n"
@@ -35,7 +35,7 @@ static GLbyte vShader[] =
 "}                                                                          \n";
 
 static GLbyte fShader[] =
-"#version 300 es                                                            \n"
+"#version 330 core                                                            \n"
 "precision highp float;                                                   \n"
 
 "uniform vec3 u_ambientColor;                                               \n"
