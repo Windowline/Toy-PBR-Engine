@@ -1,25 +1,28 @@
 #include "TestShaderTmp.hpp"
 
-const char *vertexShaderSource2 = "#version 330 core\n"
-                                 "layout (location = 0) in vec3 a_position;  \n"
-                                 "layout (location = 1) in vec3 a_color;     \n"
-                                 "layout (location = 2) in vec3 a_normal;    \n"
+const char *vertexShaderSource2 = R(
+        layout (location = 0) in vec3 a_position;
+        layout (location = 1) in vec3 a_color;
+        layout (location = 2) in vec3 a_normal;
+        uniform mat4 u_mvp;
+        out vec3 v_color;
+        out vec3 v_normal;
 
-                                 "uniform mat4 u_mvp;                        \n"
+        void main()
+        {
+            v_color = a_color;
+            gl_Position = u_mvp * vec4(a_position.x, a_position.y, a_position.z, 1.0);
+        }
+);
 
-                                 "out vec3 v_color;                         \n"
-                                 "void main()\n"
-                                 "{\n"
-                                 "   v_color = a_color;                     \n"
-                                 "   gl_Position = u_mvp * vec4(a_position.x, a_position.y, a_position.z, 1.0);\n"
-                                 "}\0";
-const char *fragmentShaderSource2 = "#version 330 core       \n"
-                                   "in vec3 v_color;        \n"
-                                   "out vec4 FragColor;     \n"
-                                   "void main()             \n"
-                                   "{                                           \n"
-                                   "   FragColor = vec4(v_color.x, v_color.y, v_color.z, 1.0f);\n"
-                                   "}\n\0";
+const char *fragmentShaderSource2 = R(
+        in vec3 v_color;
+        out vec4 FragColor;
+        void main()
+        {
+            FragColor = vec4(v_color.x, v_color.y, v_color.z, 1.0f);
+        }
+);
 
 
 TestShaderTmp::TestShaderTmp() {
@@ -29,8 +32,11 @@ TestShaderTmp::TestShaderTmp() {
 
 bool TestShaderTmp::load() {
 
-    _programID = loadProgram_tmp(reinterpret_cast<const char *>(vertexShaderSource2),
-                                 reinterpret_cast<const char *>(fragmentShaderSource2));
+    std::string vShader = std::string("#version 330 core \n") + std::string(vertexShaderSource2);
+    std::string fShader = std::string("#version 330 core \n") + std::string(fragmentShaderSource2);
+
+    _programID = loadProgram_tmp(reinterpret_cast<const char *>(vShader.c_str()),
+                                 reinterpret_cast<const char *>(fShader.c_str()));
 
     assert(_programID != 0);
 
