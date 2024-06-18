@@ -1,13 +1,17 @@
 #include "TestShaderTmp.hpp"
 
 const char *vertexShaderSource2 = "#version 330 core\n"
-                                 "layout (location = 0) in vec3 a_position; \n"
-                                 "layout (location = 1) in vec3 a_color;    \n"
+                                 "layout (location = 0) in vec3 a_position;  \n"
+                                 "layout (location = 1) in vec3 a_color;     \n"
+                                 "layout (location = 2) in vec3 a_normal;    \n"
+
+                                 "uniform mat4 u_mvp;                        \n"
+
                                  "out vec3 v_color;                         \n"
                                  "void main()\n"
                                  "{\n"
                                  "   v_color = a_color;                     \n"
-                                 "   gl_Position = vec4(a_position.x, a_position.y, a_position.z, 1.0);\n"
+                                 "   gl_Position = u_mvp * vec4(a_position.x, a_position.y, a_position.z, 1.0);\n"
                                  "}\0";
 const char *fragmentShaderSource2 = "#version 330 core       \n"
                                    "in vec3 v_color;        \n"
@@ -20,6 +24,7 @@ const char *fragmentShaderSource2 = "#version 330 core       \n"
 
 TestShaderTmp::TestShaderTmp() {
     this->load();
+    mvpUniformLocation();
 }
 
 bool TestShaderTmp::load() {
@@ -29,7 +34,6 @@ bool TestShaderTmp::load() {
 
     assert(_programID != 0);
 
-//    positionAttribLocation();
     return true;
 }
 

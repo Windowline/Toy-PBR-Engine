@@ -16,11 +16,20 @@ public:
     virtual bool load();
     void useProgram();
 
+    void mvpUniformLocation() {
+        _mvpUniformLocation =  glGetUniformLocation(_programID, "u_mvp");
+    }
+
+    void mvpUniformMatrix4fv(const GLfloat *value) {
+        glUniformMatrix4fv(_mvpUniformLocation, 1, GL_FALSE, value);
+    }
+
 protected:
     GLuint loadShader_tmp(GLenum type, const char *shaderSrc);
     GLuint loadProgram_tmp(const char *vertShaderSrc, const char *fragShaderSrc);
 
     GLuint _programID;
+    GLint _mvpUniformLocation;
 };
 
 #endif //TOYRENDERER_TESTSHADER_TMP_H

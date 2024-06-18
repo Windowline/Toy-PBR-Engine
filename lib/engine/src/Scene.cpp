@@ -111,24 +111,32 @@ void Scene::setScreenSize(int w, int h) {
 void Scene::render() {
     //test
     {
-        static TestShaderTmp* shader = nullptr;
+        static TestShaderTmp* test_shader = nullptr;
+        static AlbedoColorShader* albedo_shader = nullptr;
         static Triangle* tri = nullptr;
-        if (shader == nullptr) {
-//            shader = new ShadowDepthShaderTmp();
-            shader = new TestShaderTmp();
+        static Cube2* cube2 = nullptr;
+
+        if (test_shader == nullptr) {
+            test_shader = new TestShaderTmp();
+            albedo_shader = new AlbedoColorShader();
             tri = new Triangle();
+            cube2 = new Cube2(20, vec3(1.0, 0.0, 0.0));
         }
 
         glBindFramebuffer(GL_FRAMEBUFFER, _defaultFBO);
         glClearColor(0.f, 0.f, 0.f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-//        //matrix
-//        mat4 shadowMVP;
-//        static_cast<ShadowDepthShaderTmp*>(shader)->shadowMVPUniformMatrix4fv(shadowMVP.pointer());
+        test_shader->useProgram();
 
-        shader->useProgram();
-        tri->render();
+//        mat4 m;
+//        test_shader->mvpUniformMatrix4fv(m.pointer());
+//        tri->render();
+
+        mat4 worldTransform = mat4::RotateY(45.f) * mat4::Translate(25, -40, -20);
+        mat4 m = worldTransform * camera()->viewMat() * camera()->projMat();
+        test_shader->mvpUniformMatrix4fv(m.pointer());
+        cube2->render();
     }
 }
 

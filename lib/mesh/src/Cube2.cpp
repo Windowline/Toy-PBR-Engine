@@ -71,7 +71,7 @@ Cube2::Cube2(int size, vec3 color) : _VAO(-1), _VBO(-1), _EBO(-1), _size(size), 
         normals.emplace_back(vec3(-1, 0, 0));
 
 
-    std::vector <unsigned int> indices = {
+    std::vector<unsigned int> indices = {
       0,  1,  2,      0,  2,  3,    // front
       4,  5,  6,      4,  6,  7,    // back
       8,  9,  10,     8,  10, 11,   // top
@@ -84,7 +84,6 @@ Cube2::Cube2(int size, vec3 color) : _VAO(-1), _VBO(-1), _EBO(-1), _size(size), 
 
     //create vao
     std::vector<float> vertices;
-    vertices.reserve(positions.size() + colors.size() + normals.size());
 
     for (int i = 0; i < positions.size(); ++i) {
         auto position = positions[i];
@@ -111,10 +110,10 @@ Cube2::Cube2(int size, vec3 color) : _VAO(-1), _VBO(-1), _EBO(-1), _size(size), 
     glBindVertexArray(_VAO);
 
     glBindBuffer(GL_ARRAY_BUFFER, _VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
 
     //pos
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)0);
