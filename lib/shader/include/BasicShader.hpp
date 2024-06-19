@@ -17,6 +17,23 @@ public:
     virtual bool load();
     virtual void useProgram();
 
+    bool isLoaded() const {
+        return _programID != 0;
+    }
+
+    bool unload() {
+        if (_programID) {
+            glDeleteProgram (_programID);
+        }
+
+        _programID = 0;
+        return true;
+    }
+
+    int getProgramID() const {
+        return _programID;
+    }
+
     void worldMatUniformMatrix4fv(const GLfloat *value) {
         assert(_worldMatLoc != -1);
         glUniformMatrix4fv(_worldMatLoc, 1, GL_FALSE, value);

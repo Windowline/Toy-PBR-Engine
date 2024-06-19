@@ -1,22 +1,21 @@
 
-#include "../include/ShaderManager.hpp"
-#include "../include/ShaderBase.hpp"
-#include "../include/BasicLightingShader.hpp"
-#include "../include/GBufferShader.hpp"
-#include "../include/TexturePassShader.hpp"
-#include "../include/DeferredLightingShader.hpp"
-#include "../include/ShadowDepthShader.hpp"
-#include "../include/SSAOShader.hpp"
-#include "../include/SSAOBlurShader.hpp"
-#include "../include/AlbedoColorShader.hpp"
+#include "ShaderManager.hpp"
 #include "BasicShader.hpp"
+#include "GBufferShaderTmp.hpp"
+#include "TexturePassShaderTmp.hpp"
+#include "DeferredLightingShaderTmp.hpp"
+#include "ShadowDepthShaderTmp.hpp"
+#include "SSAOShaderTmp.hpp"
+#include "SSAOBlurShaderTmp.hpp"
+#include "AlbedoColorShaderTmp.hpp"
 
+using namespace std;
 
 ShaderManager::ShaderManager()
     : _activeShader(nullptr) {
 }
 
-void ShaderManager::addShader(int shaderId, std::shared_ptr<ShaderBase> const & shaderProgram ) {
+void ShaderManager::addShader(int shaderId, shared_ptr<BasicShader> const & shaderProgram ) {
     auto it = _shaderMap.find(shaderId);
 
     if(it == _shaderMap.end()) {
@@ -28,7 +27,7 @@ void ShaderManager::removeShader(int shaderId ) {
     _shaderMap.erase(shaderId);
 }
 
-std::shared_ptr<ShaderBase> ShaderManager::findShader(int shaderId) const {
+shared_ptr<BasicShader> ShaderManager::findShader(int shaderId) const {
     auto it = _shaderMap.find(shaderId);
 
     if (it != _shaderMap.end()) {
@@ -51,14 +50,14 @@ void ShaderManager::loadAllPrograms() {
     
     if (_shaderMap.empty()) {
         _shaderMap = {
-            {eShaderProgram_Default,            std::make_shared<BasicLightingShader>()},
-            {eShaderProgram_GBuffer,            std::make_shared<GBufferShader>()},
-            {eShaderProgram_DeferredLighting,   std::make_shared<DeferredLightingShader>()},
-            {eShaderProgram_TexturePass,        std::make_shared<TexturePassShader>() },
-            {eShaderProgram_ShadowDepth,        std::make_shared<ShadowDepthShader>()},
-            {eShaderProgram_SSAO,               std::make_shared<SSAOShader>()},
-            {eShaderProgram_SSAO_BLUR,          std::make_shared<SSAOBlurShader>()},
-            {eShaderProgram_ALBEDO_COLOR,       std::make_shared<AlbedoColorShader>()},
+            {eShaderProgram_Default,            make_shared<BasicShader>()},
+            {eShaderProgram_GBuffer,            make_shared<GBufferShaderTmp>()},
+            {eShaderProgram_DeferredLighting,   make_shared<DeferredLightingShaderTmp>()},
+            {eShaderProgram_TexturePass,        make_shared<TexturePassShaderTmp>() },
+            {eShaderProgram_ShadowDepth,        make_shared<ShadowDepthShaderTmp>()},
+            {eShaderProgram_SSAO,               make_shared<SSAOShaderTmp>()},
+            {eShaderProgram_SSAO_BLUR,          make_shared<SSAOBlurShaderTmp>()},
+            {eShaderProgram_ALBEDO_COLOR,       make_shared<AlbedoColorShaderTmp>()},
         };
     }
     
@@ -78,12 +77,12 @@ void ShaderManager::unloadAllPrograms() {
     }
 }
 
-std::shared_ptr<ShaderBase> const & ShaderManager::getActiveShader() const {
+std::shared_ptr<BasicShader> ShaderManager::getActiveShader() const {
     return _activeShader;
 }
 
 
-void ShaderManager::setActiveShader(std::shared_ptr<ShaderBase> const & shader) {
+void ShaderManager::setActiveShader(std::shared_ptr<BasicShader> const & shader) {
     if( _activeShader == shader || shader == nullptr )
         return;
     
@@ -93,13 +92,12 @@ void ShaderManager::setActiveShader(std::shared_ptr<ShaderBase> const & shader) 
     _activeShader = shader;
     _activeShader->useProgram();
 
-    auto & attributes = _activeShader->getEnabledAttributes();
-    for( int i = 0 ; i < VertexAttribute_MAX ; ++i) {
-        if(attributes[i])
-            glEnableVertexAttribArray(i);
-        else
-            glDisableVertexAttribArray(i);
-    }
-
-    return;
+//    auto & attributes = _activeShader->getEnabledAttributes();
+//    for( int i = 0 ; i < VertexAttribute_MAX ; ++i) {
+//        if(attributes[i])
+//            glEnableVertexAttribArray(i);
+//        else
+//            glDisableVertexAttribArray(i);
+//    }
+//    return;
 }

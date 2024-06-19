@@ -1,24 +1,11 @@
 #include "Scene.hpp"
 #include "Engine.hpp"
 #include "ShaderManager.hpp"
-//#include "Node.hpp"
 #include "Node2.hpp"
-//#include "Room.hpp"
-//#include "Sphere.hpp"
-//#include "Cube.hpp"
 #include "Camera.hpp"
 #include "FrameBufferObject.hpp"
-#include "TexturePassShader.hpp"
 #include "GLUtilGeometry.hpp"
-#include "DeferredLightingShader.hpp"
-#include "GBufferShader.hpp"
-#include "ShadowDepthShader.hpp"
-#include "SSAOShader.hpp"
-#include "SSAOBlurShader.hpp"
-#include "AlbedoColorShader.hpp"
 
-
-//new
 #include "BasicShader.hpp"
 #include "ShadowDepthShaderTmp.hpp"
 #include "GBufferShaderTmp.hpp"
@@ -26,8 +13,8 @@
 #include "SSAOShaderTmp.hpp"
 #include "SSAOBlurShaderTmp.hpp"
 #include "DeferredLightingShaderTmp.hpp"
+#include "AlbedoColorShaderTmp.hpp"
 
-#include "Triangle.hpp"
 #include "Cube2.hpp"
 #include "Sphere2.hpp"
 #include "Room2.hpp"
@@ -123,151 +110,7 @@ void Scene::setScreenSize(int w, int h) {
     buildSSAOInfo();
 }
 
-//void Scene::render() {
-//    static BasicShader* test_shader = nullptr;
-//    static ShadowDepthShaderTmp* shadow_depth_shader = nullptr;
-//    static GBufferShaderTmp* gbuffer_shader = nullptr;
-//    static SSAOShaderTmp* ssao_shader = nullptr;
-//    static SSAOBlurShaderTmp* ssa_blur_shader = nullptr;
-//    static DeferredLightingShaderTmp* deferred_shader = nullptr;
-//
-//    static Triangle* tri = nullptr;
-//    static Cube2* cube2 = nullptr;
-//    static Sphere2* sphere2 = nullptr;
-//    static FullQuad* fullQuad = nullptr;
-//
-//    if (test_shader == nullptr) {
-//        test_shader = new BasicShader();
-//        shadow_depth_shader = new ShadowDepthShaderTmp();
-//        gbuffer_shader = new GBufferShaderTmp();
-//        ssao_shader = new SSAOShaderTmp();
-//        ssa_blur_shader = new SSAOBlurShaderTmp();
-//        deferred_shader = new DeferredLightingShaderTmp();
-//
-//        tri = new Triangle();
-//        cube2 = new Cube2(20, vec3(1.0, 0.0, 0.0));
-//        sphere2 = new Sphere2(16, vec3(0, 0, 1));
-//        fullQuad = new FullQuad();
-//    }
-//
-//    mat4 cubeWorld = mat4::RotateY(45.f) * mat4::Translate(25, -40, -20);
-//    mat4 sphereWorld = mat4::Translate(-20, -25, 20);
-//    mat4 view = camera()->viewMat();
-//    mat4 proj = camera()->projMat();
-//
-//    // depth
-//    {
-//        _shadowDepthBuffer->bindWithViewport();
-//        glClearColor(0.f, 1.f, 1.f, 1.f);
-//        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-//
-//        shadow_depth_shader->useProgram();
-//
-//        mat4 shadowMVP = cubeWorld * shadowLightViewProjection();
-//        shadow_depth_shader->shadowMVPUniformMatrix4fv(shadowMVP.pointer());
-//        cube2->render();
-//        //renderQuad(_shadowDepthBuffer->commonTexture(), _camera->screenSize());
-//    }
-//
-//    // gbuffer
-//    {
-//        _gBuffer->bindWithViewport();
-//        glClearColor(0.f, 0.f, 0.f, 1.f);
-//        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-//
-//        gbuffer_shader->useProgram();
-//        gbuffer_shader->projMatUniformMatrix4fv(proj.pointer());
-//        gbuffer_shader->worldMatUniformMatrix4fv(cubeWorld.pointer());
-//        gbuffer_shader->viewMatUniformMatrix4fv(view.pointer());
-//        gbuffer_shader->worldNormalMatUniformMatrix4fv(cubeWorld.invert().transposed().pointer());
-//        cube2->render();
-//        //renderQuad(_gBuffer->gNormalTexture(), _camera->screenSize());
-//    }
-//
-//
-//    // SSAO
-//    {
-//        glDisable(GL_CULL_FACE);
-//        glDisable(GL_DEPTH_TEST);
-//        _ssaoFBO->bindWithViewport();
-//
-//        glClearColor(0.f, 0.f, 0.f, 1.f);
-//        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-//        ssao_shader->useProgram();
-//        ssao_shader->viewMatUniformMatrix4fv(_camera->viewMat().pointer());
-//        ssao_shader->projMatUniformMatrix4fv(_camera->projMat().pointer());
-//        ssao_shader->samplesUniformVector(_ssaoKernel);
-//        ssao_shader->screenSizeUniform2f(_camera->screenSize().x, _camera->screenSize().y);
-//
-//        const int COMPONENT_COUNT = 3;
-//        std::array<GLuint, COMPONENT_COUNT> ssaoInputTextures { _gBuffer->gPositionTexture(),
-//                                                                _gBuffer->gNormalTexture(),
-//                                                                _noiseTexture };
-//        for (int i = 0; i < COMPONENT_COUNT; ++i) {
-//            glActiveTexture(GL_TEXTURE0 + i);
-//            glBindTexture(GL_TEXTURE_2D, ssaoInputTextures[i]);
-//        }
-//
-//        fullQuad->render();
-//        //renderQuad(_ssaoFBO->commonTexture(), _camera->screenSize());
-//    }
-//
-//    //SSAO Blur
-//    {
-//        _ssaoBlurFBO->bindWithViewport();
-//        glViewport(0, 0, _camera->screenSize().x, _camera->screenSize().y);
-//        ssa_blur_shader->useProgram();
-//        ssa_blur_shader->textureSizeUniform2f(_camera->screenSize().x, _camera->screenSize().y);
-//        glActiveTexture(GL_TEXTURE0);
-//        glBindTexture(GL_TEXTURE_2D, _ssaoFBO->commonTexture());
-//        fullQuad->render();
-//        //renderQuad(_ssaoBlurFBO->commonTexture(), _camera->screenSize());
-//    }
-//
-//    //Deferred
-//    {
-//        glBindFramebuffer(GL_FRAMEBUFFER, _defaultFBO);
-//        glViewport(0, 0, _camera->screenSize().x, _camera->screenSize().y);
-//        deferred_shader->useProgram();
-//        deferred_shader->ambientColorUniform3f(ambientColor().x, ambientColor().y, ambientColor().z);
-//        deferred_shader->diffuseColorUniform3f(diffuseColor().x, diffuseColor().y, diffuseColor().z);
-//        deferred_shader->specularColorUniform3f(specularColor().x, specularColor().y, specularColor().z);
-//        deferred_shader->worldLightPosUniform3fVector(lightPositions());
-//        deferred_shader->worldEyePositionUniform3f(camera()->eye().x, camera()->eye().y, camera()->eye().z);
-//        deferred_shader->shadowViewProjectionMatUniformMatrix4fv(_shadowLightViewProjection.pointer());
-//
-//        const int GBUFFER_COMPONENT_COUNT = 5;
-//        std::array<GLuint, GBUFFER_COMPONENT_COUNT> textures {_gBuffer->gPositionTexture(),
-//                                                              _gBuffer->gNormalTexture(),
-//                                                              _gBuffer->gAlbedoTexture(),
-//                                                              _shadowDepthBuffer->commonTexture(),
-//                                                              _ssaoBlurFBO->commonTexture()
-//        };
-//        for (int i = 0; i < GBUFFER_COMPONENT_COUNT; ++i) {
-//            glActiveTexture(GL_TEXTURE0 + i);
-//            glBindTexture(GL_TEXTURE_2D, textures[i]);
-//        }
-//
-//        fullQuad->render();
-////        glDrawArrays(GL_TRIANGLE_STRIP, 0, (GLsizei)4);
-//    }
-//}
-
 void Scene::render() {
-    static ShadowDepthShaderTmp* shadow_depth_shader = nullptr;
-    static GBufferShaderTmp* gbuffer_shader = nullptr;
-    static SSAOShaderTmp* ssao_shader = nullptr;
-    static SSAOBlurShaderTmp* ssa_blur_shader = nullptr;
-    static DeferredLightingShaderTmp* deferred_shader = nullptr;
-
-    if (shadow_depth_shader == nullptr) {
-        shadow_depth_shader = new ShadowDepthShaderTmp();
-        gbuffer_shader = new GBufferShaderTmp();
-        ssao_shader = new SSAOShaderTmp();
-        ssa_blur_shader = new SSAOBlurShaderTmp();
-        deferred_shader = new DeferredLightingShaderTmp();
-    }
-
     if (_rootTransformDirty) {
         visitNodes(_rootNode, [](const std::shared_ptr<Node2>& node) {
             node->transformUpdate();
@@ -284,14 +127,15 @@ void Scene::render() {
         glClearColor(0.f, 1.f, 1.f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        shadow_depth_shader->useProgram();
+        auto wShader = weak_ptr<ShadowDepthShaderTmp>(shaderManager()->setActiveShader<ShadowDepthShaderTmp>(eShaderProgram_ShadowDepth));
 
-        visitNodes(_rootNode, [this](const std::shared_ptr<Node2>& node) {
-            mat4 shadowMVP = node->worldTransform() * this->shadowLightViewProjection();
-            shadow_depth_shader->shadowMVPUniformMatrix4fv(shadowMVP.pointer());
-            node->render();
+        visitNodes(_rootNode, [this, wShader](const shared_ptr<Node2>& node) {
+            if (auto shader = wShader.lock()) {
+                mat4 shadowMVP = node->worldTransform() * this->shadowLightViewProjection();
+                shader->shadowMVPUniformMatrix4fv(shadowMVP.pointer());
+                node->render();
+            }
         });
-//        renderQuad(_shadowDepthBuffer->commonTexture(), _camera->screenSize());
     }
 
     // gbuffer
@@ -300,16 +144,17 @@ void Scene::render() {
         glClearColor(0.f, 0.f, 0.f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        gbuffer_shader->useProgram();
+        auto wShader = weak_ptr<GBufferShaderTmp>(shaderManager()->setActiveShader<GBufferShaderTmp>(eShaderProgram_GBuffer));
 
-        visitNodes(_rootNode, [this, proj, view](const std::shared_ptr<Node2>& node) {
-            gbuffer_shader->projMatUniformMatrix4fv(proj.pointer());
-            gbuffer_shader->viewMatUniformMatrix4fv(view.pointer());
-            gbuffer_shader->worldMatUniformMatrix4fv(node->worldTransform().pointer());
-            gbuffer_shader->worldNormalMatUniformMatrix4fv(node->worldTransform().invert().transposed().pointer());
-            node->render();
+        visitNodes(_rootNode, [this, proj, view, wShader](const shared_ptr<Node2>& node) {
+            if (auto shader = wShader.lock()) {
+                shader->projMatUniformMatrix4fv(proj.pointer());
+                shader->viewMatUniformMatrix4fv(view.pointer());
+                shader->worldMatUniformMatrix4fv(node->worldTransform().pointer());
+                shader->worldNormalMatUniformMatrix4fv(node->worldTransform().invert().transposed().pointer());
+                node->render();
+            }
         });
-//        renderQuad(_gBuffer->gNormalTexture(), _camera->screenSize());
     }
 
     // SSAO
@@ -320,11 +165,12 @@ void Scene::render() {
 
         glClearColor(0.f, 0.f, 0.f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        ssao_shader->useProgram();
-        ssao_shader->viewMatUniformMatrix4fv(_camera->viewMat().pointer());
-        ssao_shader->projMatUniformMatrix4fv(_camera->projMat().pointer());
-        ssao_shader->samplesUniformVector(_ssaoKernel);
-        ssao_shader->screenSizeUniform2f(_camera->screenSize().x, _camera->screenSize().y);
+
+        auto shader = shaderManager()->setActiveShader<SSAOShaderTmp>(eShaderProgram_SSAO);
+        shader->viewMatUniformMatrix4fv(_camera->viewMat().pointer());
+        shader->projMatUniformMatrix4fv(_camera->projMat().pointer());
+        shader->samplesUniformVector(_ssaoKernel);
+        shader->screenSizeUniform2f(_camera->screenSize().x, _camera->screenSize().y);
 
         const int COMPONENT_COUNT = 3;
         std::array<GLuint, COMPONENT_COUNT> ssaoInputTextures { _gBuffer->gPositionTexture(),
@@ -336,32 +182,29 @@ void Scene::render() {
         }
 
         _fullQuad->render();
-        renderQuad(_ssaoFBO->commonTexture(), _camera->screenSize());
     }
 
     //SSAO Blur
     {
         _ssaoBlurFBO->bindWithViewport();
-        glViewport(0, 0, _camera->screenSize().x, _camera->screenSize().y);
-        ssa_blur_shader->useProgram();
-        ssa_blur_shader->textureSizeUniform2f(_camera->screenSize().x, _camera->screenSize().y);
+        auto shader = shaderManager()->setActiveShader<SSAOBlurShaderTmp>(eShaderProgram_SSAO_BLUR);
+        shader->textureSizeUniform2f(_camera->screenSize().x, _camera->screenSize().y);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, _ssaoFBO->commonTexture());
         _fullQuad->render();
-        //renderQuad(_ssaoBlurFBO->commonTexture(), _camera->screenSize());
     }
 
     //Deferred
     {
         glBindFramebuffer(GL_FRAMEBUFFER, _defaultFBO);
         glViewport(0, 0, _camera->screenSize().x, _camera->screenSize().y);
-        deferred_shader->useProgram();
-        deferred_shader->ambientColorUniform3f(ambientColor().x, ambientColor().y, ambientColor().z);
-        deferred_shader->diffuseColorUniform3f(diffuseColor().x, diffuseColor().y, diffuseColor().z);
-        deferred_shader->specularColorUniform3f(specularColor().x, specularColor().y, specularColor().z);
-        deferred_shader->worldLightPosUniform3fVector(lightPositions());
-        deferred_shader->worldEyePositionUniform3f(camera()->eye().x, camera()->eye().y, camera()->eye().z);
-        deferred_shader->shadowViewProjectionMatUniformMatrix4fv(_shadowLightViewProjection.pointer());
+        auto shader = shaderManager()->setActiveShader<DeferredLightingShaderTmp>(eShaderProgram_DeferredLighting);
+        shader->ambientColorUniform3f(ambientColor().x, ambientColor().y, ambientColor().z);
+        shader->diffuseColorUniform3f(diffuseColor().x, diffuseColor().y, diffuseColor().z);
+        shader->specularColorUniform3f(specularColor().x, specularColor().y, specularColor().z);
+        shader->worldLightPosUniform3fVector(lightPositions());
+        shader->worldEyePositionUniform3f(camera()->eye().x, camera()->eye().y, camera()->eye().z);
+        shader->shadowViewProjectionMatUniformMatrix4fv(_shadowLightViewProjection.pointer());
 
         const int GBUFFER_COMPONENT_COUNT = 5;
         std::array<GLuint, GBUFFER_COMPONENT_COUNT> textures {_gBuffer->gPositionTexture(),
@@ -370,12 +213,23 @@ void Scene::render() {
                                                               _shadowDepthBuffer->commonTexture(),
                                                               _ssaoBlurFBO->commonTexture()
         };
+
         for (int i = 0; i < GBUFFER_COMPONENT_COUNT; ++i) {
             glActiveTexture(GL_TEXTURE0 + i);
             glBindTexture(GL_TEXTURE_2D, textures[i]);
         }
 
         _fullQuad->render();
+
+        //light sphere
+        //6 빛 구체 렌더링, 효과를 입히지 않고, 본연의 색만 입힙니다.
+        glEnable(GL_CULL_FACE);
+        glEnable(GL_DEPTH_TEST);
+        auto shaderLight = shaderManager()->setActiveShader<AlbedoColorShaderTmp>(eShaderProgram_ALBEDO_COLOR);
+        shaderLight->projMatUniformMatrix4fv(proj.pointer());
+        shaderLight->viewMatUniformMatrix4fv(view.pointer());
+        shaderLight->worldMatUniformMatrix4fv(_lightSphere->worldTransform().pointer());
+        _lightSphere->render();
     }
 }
 
@@ -396,123 +250,6 @@ void Scene::renderQuad(unsigned int texture, ivec2 screenSize) { //for debug
     _textureShader->useProgram();
     _fullQuad->render();
 }
-
-
-
-
-//장면내 오브젝트 및 효과들을 렌더링합니다.
-/*
-void Scene::render() {
-    //0 월드 변환에 변경이 있다면 반영합니다.
-    if (_rootTransformDirty) {
-        visitNodes(_rootNode, [](std::shared_ptr<Node> node) {
-            node->transformUpdate();
-        });
-        _rootTransformDirty = false;
-    }
-
-    //1 섀도우 뎁스맵을 그립니다.
-    {
-        _shadowDepthBuffer->bindWithViewport();
-        glClearColor(0.f, 0.f, 0.f, 1.f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        shaderManager()->setActiveShader<ShadowDepthShader>(eShaderProgram_ShadowDepth);
-        visitNodes(_rootNode, [](std::shared_ptr<Node> node) {
-            node->setShaderType(eShaderProgram_ShadowDepth);
-            node->render();
-        });
-    }
-
-    //2 GBuffer(position, normal, albedo)를 MRT방식으로 그립니다.
-    {
-        _gBuffer->bindWithViewport();
-        glClearColor(0.f, 0.f, 0.f, 1.f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        shaderManager()->setActiveShader<GBufferShader>(eShaderProgram_GBuffer);
-        visitNodes(_rootNode, [](std::shared_ptr<Node> node) {
-            node->setShaderType(eShaderProgram_GBuffer);
-            node->render();
-        });
-    }
-
-    //3 GBuffer를 입력으로 SSAO를 그립니다. (Full Quad)
-    {
-        glDisable(GL_CULL_FACE);
-        glDisable(GL_DEPTH_TEST);
-        _ssaoFBO->bindWithViewport();
-        glClearColor(0.f, 0.f, 0.f, 1.f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        auto ssaoShader = shaderManager()->setActiveShader<SSAOShader>(eShaderProgram_SSAO);
-        ssaoShader->positionAttribPointer(GLUtilGeometry::VERT_QUAD, 2);
-        ssaoShader->texCoordAttribPointer(GLUtilGeometry::TEXCOORD_QUAD, 2);
-        ssaoShader->viewMatUniformMatrix4fv(_camera->viewMat().pointer());
-        ssaoShader->projMatUniformMatrix4fv(_camera->projMat().pointer());
-        ssaoShader->samplesUniformVector(_ssaoKernel);
-        ssaoShader->screenSizeUniform2f(_camera->screenSize().x, _camera->screenSize().y);
-
-        const int COMPONENT_COUNT = 3;
-        std::array<GLuint, COMPONENT_COUNT> textures2 {_gBuffer->gPositionTexture(),
-                                                       _gBuffer->gNormalTexture(),
-                                                       _noiseTexture};
-        for (int i = 0; i < COMPONENT_COUNT; ++i) {
-            glActiveTexture(GL_TEXTURE0 + i);
-            glBindTexture(GL_TEXTURE_2D, textures2[i]);
-        }
-
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, (GLsizei)4);
-    }
-
-    //4 SSAO 위에 블러를 덫붙입니다. (Full Quad)
-    {
-        _ssaoBlurFBO->bindWithViewport();
-        glViewport(0, 0, _camera->screenSize().x, _camera->screenSize().y);
-        auto ssaoBlurShader = shaderManager()->setActiveShader<SSAOBlurShader>(eShaderProgram_SSAO_BLUR);
-        ssaoBlurShader->positionAttribPointer(GLUtilGeometry::VERT_QUAD, 2);
-        ssaoBlurShader->texCoordAttribPointer(GLUtilGeometry::TEXCOORD_QUAD, 2);
-        ssaoBlurShader->textureSizeUniform2f(_camera->screenSize().x, _camera->screenSize().y);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, _ssaoFBO->commonTexture());
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, (GLsizei)4);
-    }
-
-    //5 섀도우뎁스, GBuffer, BluredSSAO 를 입력으로 Deferred Rendering을 합니다. (Full Quad)
-    {
-        glBindFramebuffer(GL_FRAMEBUFFER, _defaultFBO);
-        glViewport(0, 0, _camera->screenSize().x, _camera->screenSize().y);
-        auto deferredShader = shaderManager()->setActiveShader<DeferredLightingShader>(eShaderProgram_DeferredLighting);
-        deferredShader->positionAttribPointer(GLUtilGeometry::VERT_QUAD, 2);
-        deferredShader->texCoordAttribPointer(GLUtilGeometry::TEXCOORD_QUAD, 2);
-        deferredShader->ambientColorUniform3f(ambientColor().x, ambientColor().y, ambientColor().z);
-        deferredShader->diffuseColorUniform3f(diffuseColor().x, diffuseColor().y, diffuseColor().z);
-        deferredShader->specularColorUniform3f(specularColor().x, specularColor().y, specularColor().z);
-        deferredShader->worldLightPosUniform3fVector(lightPositions());
-        deferredShader->worldEyePositionUniform3f(camera()->eye().x, camera()->eye().y, camera()->eye().z);
-        deferredShader->shadowViewProjectionMatUniformMatrix4fv(_shadowLightViewProjection.pointer());
-
-        const int GBUFFER_COMPONENT_COUNT = 5;
-        std::array<GLuint, GBUFFER_COMPONENT_COUNT> textures {_gBuffer->gPositionTexture(),
-                                                              _gBuffer->gNormalTexture(),
-                                                              _gBuffer->gAlbedoTexture(),
-                                                              _shadowDepthBuffer->commonTexture(),
-                                                              _ssaoBlurFBO->commonTexture()
-        };
-        for (int i = 0; i < GBUFFER_COMPONENT_COUNT; ++i) {
-            glActiveTexture(GL_TEXTURE0 + i);
-            glBindTexture(GL_TEXTURE_2D, textures[i]);
-        }
-
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, (GLsizei)4);
-
-
-        //6 빛 구체 렌더링, 효과를 입히지 않고, 본연의 색만 입힙니다.
-        glEnable(GL_CULL_FACE);
-        glEnable(GL_DEPTH_TEST);
-        shaderManager()->setActiveShader<AlbedoColorShader>(eShaderProgram_ALBEDO_COLOR);
-        _lightSphere->setShaderType(eShaderProgram_ALBEDO_COLOR);
-        _lightSphere->render();
-    }
-}
-*/
 
 
 void Scene::setTilt(float value) {

@@ -7,7 +7,7 @@
 #include <vector>
 #include <unordered_map>
 
-class ShaderBase;
+class BasicShader;
 
 enum eShaderProgram : int
 {
@@ -34,7 +34,7 @@ public:
     ShaderManager();
     ~ShaderManager();
 
-    void addShader(int shaderId, std::shared_ptr<ShaderBase> const& shaderProgram);
+    void addShader(int shaderId, std::shared_ptr<BasicShader> const& shaderProgram);
     void removeShader(int shaderId);
     
     template<typename T>
@@ -42,11 +42,11 @@ public:
         return std::static_pointer_cast<T>(findShader(shaderId));
     }
     
-    std::shared_ptr<ShaderBase> findShader(int shaderId) const;
+    std::shared_ptr<BasicShader> findShader(int shaderId) const;
 
-    std::shared_ptr<ShaderBase> const & getActiveShader() const;
+    std::shared_ptr<BasicShader> getActiveShader() const;
     
-    void setActiveShader(std::shared_ptr<ShaderBase> const & shader);
+    void setActiveShader(std::shared_ptr<BasicShader> const & shader);
         
     template<typename T>
     std::shared_ptr<T> setActiveShader(int shaderId) {
@@ -59,8 +59,8 @@ public:
 
     void checkGLError();
 private:
-    std::unordered_map<int, std::shared_ptr<ShaderBase>> _shaderMap;
-    std::shared_ptr<ShaderBase> _activeShader;
+    std::unordered_map<int, std::shared_ptr<BasicShader>> _shaderMap;
+    std::shared_ptr<BasicShader> _activeShader;
 };
 
 
