@@ -11,7 +11,7 @@ class Node2 {
 public:
     Node2(Scene *scene, std::shared_ptr<BasicMeshInterface> mesh, mat4 localTransform);
 
-    virtual ~Node2();
+    virtual ~Node2() {}
 
     void addChild(std::shared_ptr<Node2> node);
 
@@ -21,7 +21,7 @@ public:
 
     void render();
 
-    const mat4 worldTransform() const {
+    const mat4& worldTransform() const {
         return _worldTransform;
     }
 

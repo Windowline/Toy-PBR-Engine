@@ -6,8 +6,8 @@
 using namespace std;
 
 Sphere2::Sphere2(float radius, vec3 color) : _radius(radius), _color(std::move(color)) {
-    constexpr int SECTOR_COUNT = 50;
-    constexpr int STACK_COUNT = 50;
+    constexpr int SECTOR_COUNT = 400;
+    constexpr int STACK_COUNT = 400;
     constexpr double PI = 3.14159265358979323846264338327950288;
 
     float lengthInv = 1.0f / _radius;
@@ -57,6 +57,8 @@ Sphere2::Sphere2(float radius, vec3 color) : _radius(radius), _color(std::move(c
             }
         }
     }
+
+    _indSize = indices.size();
 
     vector<float> vertices;
 
@@ -113,4 +115,6 @@ void Sphere2::render() const {
     glEnableVertexAttribArray(2);
 
     glDrawElements(GL_TRIANGLES, _indSize, GL_UNSIGNED_INT, 0);
+
+    glBindVertexArray(0);
 }

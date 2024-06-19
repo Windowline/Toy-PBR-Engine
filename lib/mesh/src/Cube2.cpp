@@ -136,4 +136,6 @@ void Cube2::render() const {
     glEnableVertexAttribArray(2);
 
     glDrawElements(GL_TRIANGLES, _indSize, GL_UNSIGNED_INT, 0);
+
+    glBindVertexArray(0);
 }

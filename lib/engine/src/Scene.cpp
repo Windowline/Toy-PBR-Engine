@@ -1,10 +1,11 @@
 #include "Scene.hpp"
 #include "Engine.hpp"
 #include "ShaderManager.hpp"
-#include "Node.hpp"
-#include "Room.hpp"
-#include "Sphere.hpp"
-#include "Cube.hpp"
+//#include "Node.hpp"
+#include "Node2.hpp"
+//#include "Room.hpp"
+//#include "Sphere.hpp"
+//#include "Cube.hpp"
 #include "Camera.hpp"
 #include "FrameBufferObject.hpp"
 #include "TexturePassShader.hpp"
@@ -29,6 +30,7 @@
 #include "Triangle.hpp"
 #include "Cube2.hpp"
 #include "Sphere2.hpp"
+#include "Room2.hpp"
 #include "FullQuad.hpp"
 
 #include <random>
@@ -37,6 +39,8 @@ using namespace std;
 
 Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaultFBO(defaultFBO)
 {
+    _fullQuad = make_unique<FullQuad>();
+    _textureShader = make_unique<TexturePassShaderTmp>();
 
     _camera = std::make_shared<Camera>();
 
@@ -53,36 +57,36 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
 
 
     //방 메시를 생성합니다. 각면의 색상을 달리 받습니다.
-    auto roomMesh = std::make_shared<Room>(100, vec3(0, 1, 0), vec3(0, 0, 0), vec3(1, 0, 0),
+    auto roomMesh = std::make_shared<Room2>(100, vec3(0, 1, 0), vec3(0, 0, 0), vec3(1, 0, 0),
                                                 vec3(0, 0, 1), vec3(0.5, 0.5, 0.5));
 
     //파란색 구체 메시를 생성합니다.
-    auto sphereMesh = std::make_shared<Sphere>(16, vec3(0, 0, 1));
+    auto sphereMesh = std::make_shared<Sphere2>(16, vec3(0, 0, 1));
 
     //흰색 정육면체 메시를 생성합니다.
-    auto cubeMesh = std::make_shared<Cube>(20, vec3(1, 1, 1));
+    auto cubeMesh = std::make_shared<Cube2>(20, vec3(1, 1, 1));
 
     //방 천장에 위치할 빛 구체를 생성합니다. 라이팅, 그림자 등의 연산에선 제외됩니다.
-    auto lightSphereMesh = std::make_shared<Sphere>(4, vec3(1, 1, 1));
+    auto lightSphereMesh = std::make_shared<Sphere2>(4, vec3(1, 1, 1));
 
 
     mat4 roomLocalTransform;
-    _room = std::make_shared<Node>(this, roomMesh, roomLocalTransform);
+    _room = std::make_shared<Node2>(this, roomMesh, roomLocalTransform);
 
 
     mat4 sphereLocalTransform = mat4::Translate(-20, -25, 20);
-    _sphere = std::make_shared<Node>(this, sphereMesh, sphereLocalTransform);
+    _sphere = std::make_shared<Node2>(this, sphereMesh, sphereLocalTransform);
 
 
     mat4 cubeLocalTransform = mat4::RotateY(45.f) * mat4::Translate(25, -40, -20);
-    _cube = std::make_shared<Node>(this, cubeMesh, cubeLocalTransform);
+    _cube = std::make_shared<Node2>(this, cubeMesh, cubeLocalTransform);
 
 
     mat4 lightSphereLocalTransform = mat4::Translate(_lightPositions.front().x,
                                                      _lightPositions.front().y + _lightYDelta,
                                                      _lightPositions.front().z);
 
-    _lightSphere = std::make_shared<Node>(this, lightSphereMesh, lightSphereLocalTransform);
+    _lightSphere = std::make_shared<Node2>(this, lightSphereMesh, lightSphereLocalTransform);
     _lightSphere->transformUpdate();
 
 
@@ -119,37 +123,160 @@ void Scene::setScreenSize(int w, int h) {
     buildSSAOInfo();
 }
 
+//void Scene::render() {
+//    static BasicShader* test_shader = nullptr;
+//    static ShadowDepthShaderTmp* shadow_depth_shader = nullptr;
+//    static GBufferShaderTmp* gbuffer_shader = nullptr;
+//    static SSAOShaderTmp* ssao_shader = nullptr;
+//    static SSAOBlurShaderTmp* ssa_blur_shader = nullptr;
+//    static DeferredLightingShaderTmp* deferred_shader = nullptr;
+//
+//    static Triangle* tri = nullptr;
+//    static Cube2* cube2 = nullptr;
+//    static Sphere2* sphere2 = nullptr;
+//    static FullQuad* fullQuad = nullptr;
+//
+//    if (test_shader == nullptr) {
+//        test_shader = new BasicShader();
+//        shadow_depth_shader = new ShadowDepthShaderTmp();
+//        gbuffer_shader = new GBufferShaderTmp();
+//        ssao_shader = new SSAOShaderTmp();
+//        ssa_blur_shader = new SSAOBlurShaderTmp();
+//        deferred_shader = new DeferredLightingShaderTmp();
+//
+//        tri = new Triangle();
+//        cube2 = new Cube2(20, vec3(1.0, 0.0, 0.0));
+//        sphere2 = new Sphere2(16, vec3(0, 0, 1));
+//        fullQuad = new FullQuad();
+//    }
+//
+//    mat4 cubeWorld = mat4::RotateY(45.f) * mat4::Translate(25, -40, -20);
+//    mat4 sphereWorld = mat4::Translate(-20, -25, 20);
+//    mat4 view = camera()->viewMat();
+//    mat4 proj = camera()->projMat();
+//
+//    // depth
+//    {
+//        _shadowDepthBuffer->bindWithViewport();
+//        glClearColor(0.f, 1.f, 1.f, 1.f);
+//        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+//
+//        shadow_depth_shader->useProgram();
+//
+//        mat4 shadowMVP = cubeWorld * shadowLightViewProjection();
+//        shadow_depth_shader->shadowMVPUniformMatrix4fv(shadowMVP.pointer());
+//        cube2->render();
+//        //renderQuad(_shadowDepthBuffer->commonTexture(), _camera->screenSize());
+//    }
+//
+//    // gbuffer
+//    {
+//        _gBuffer->bindWithViewport();
+//        glClearColor(0.f, 0.f, 0.f, 1.f);
+//        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+//
+//        gbuffer_shader->useProgram();
+//        gbuffer_shader->projMatUniformMatrix4fv(proj.pointer());
+//        gbuffer_shader->worldMatUniformMatrix4fv(cubeWorld.pointer());
+//        gbuffer_shader->viewMatUniformMatrix4fv(view.pointer());
+//        gbuffer_shader->worldNormalMatUniformMatrix4fv(cubeWorld.invert().transposed().pointer());
+//        cube2->render();
+//        //renderQuad(_gBuffer->gNormalTexture(), _camera->screenSize());
+//    }
+//
+//
+//    // SSAO
+//    {
+//        glDisable(GL_CULL_FACE);
+//        glDisable(GL_DEPTH_TEST);
+//        _ssaoFBO->bindWithViewport();
+//
+//        glClearColor(0.f, 0.f, 0.f, 1.f);
+//        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+//        ssao_shader->useProgram();
+//        ssao_shader->viewMatUniformMatrix4fv(_camera->viewMat().pointer());
+//        ssao_shader->projMatUniformMatrix4fv(_camera->projMat().pointer());
+//        ssao_shader->samplesUniformVector(_ssaoKernel);
+//        ssao_shader->screenSizeUniform2f(_camera->screenSize().x, _camera->screenSize().y);
+//
+//        const int COMPONENT_COUNT = 3;
+//        std::array<GLuint, COMPONENT_COUNT> ssaoInputTextures { _gBuffer->gPositionTexture(),
+//                                                                _gBuffer->gNormalTexture(),
+//                                                                _noiseTexture };
+//        for (int i = 0; i < COMPONENT_COUNT; ++i) {
+//            glActiveTexture(GL_TEXTURE0 + i);
+//            glBindTexture(GL_TEXTURE_2D, ssaoInputTextures[i]);
+//        }
+//
+//        fullQuad->render();
+//        //renderQuad(_ssaoFBO->commonTexture(), _camera->screenSize());
+//    }
+//
+//    //SSAO Blur
+//    {
+//        _ssaoBlurFBO->bindWithViewport();
+//        glViewport(0, 0, _camera->screenSize().x, _camera->screenSize().y);
+//        ssa_blur_shader->useProgram();
+//        ssa_blur_shader->textureSizeUniform2f(_camera->screenSize().x, _camera->screenSize().y);
+//        glActiveTexture(GL_TEXTURE0);
+//        glBindTexture(GL_TEXTURE_2D, _ssaoFBO->commonTexture());
+//        fullQuad->render();
+//        //renderQuad(_ssaoBlurFBO->commonTexture(), _camera->screenSize());
+//    }
+//
+//    //Deferred
+//    {
+//        glBindFramebuffer(GL_FRAMEBUFFER, _defaultFBO);
+//        glViewport(0, 0, _camera->screenSize().x, _camera->screenSize().y);
+//        deferred_shader->useProgram();
+//        deferred_shader->ambientColorUniform3f(ambientColor().x, ambientColor().y, ambientColor().z);
+//        deferred_shader->diffuseColorUniform3f(diffuseColor().x, diffuseColor().y, diffuseColor().z);
+//        deferred_shader->specularColorUniform3f(specularColor().x, specularColor().y, specularColor().z);
+//        deferred_shader->worldLightPosUniform3fVector(lightPositions());
+//        deferred_shader->worldEyePositionUniform3f(camera()->eye().x, camera()->eye().y, camera()->eye().z);
+//        deferred_shader->shadowViewProjectionMatUniformMatrix4fv(_shadowLightViewProjection.pointer());
+//
+//        const int GBUFFER_COMPONENT_COUNT = 5;
+//        std::array<GLuint, GBUFFER_COMPONENT_COUNT> textures {_gBuffer->gPositionTexture(),
+//                                                              _gBuffer->gNormalTexture(),
+//                                                              _gBuffer->gAlbedoTexture(),
+//                                                              _shadowDepthBuffer->commonTexture(),
+//                                                              _ssaoBlurFBO->commonTexture()
+//        };
+//        for (int i = 0; i < GBUFFER_COMPONENT_COUNT; ++i) {
+//            glActiveTexture(GL_TEXTURE0 + i);
+//            glBindTexture(GL_TEXTURE_2D, textures[i]);
+//        }
+//
+//        fullQuad->render();
+////        glDrawArrays(GL_TRIANGLE_STRIP, 0, (GLsizei)4);
+//    }
+//}
+
 void Scene::render() {
-    static BasicShader* test_shader = nullptr;
     static ShadowDepthShaderTmp* shadow_depth_shader = nullptr;
     static GBufferShaderTmp* gbuffer_shader = nullptr;
     static SSAOShaderTmp* ssao_shader = nullptr;
     static SSAOBlurShaderTmp* ssa_blur_shader = nullptr;
     static DeferredLightingShaderTmp* deferred_shader = nullptr;
 
-    static Triangle* tri = nullptr;
-    static Cube2* cube2 = nullptr;
-    static Sphere2* sphere2 = nullptr;
-    static FullQuad* fullQuad = nullptr;
-
-    if (test_shader == nullptr) {
-        test_shader = new BasicShader();
+    if (shadow_depth_shader == nullptr) {
         shadow_depth_shader = new ShadowDepthShaderTmp();
         gbuffer_shader = new GBufferShaderTmp();
         ssao_shader = new SSAOShaderTmp();
         ssa_blur_shader = new SSAOBlurShaderTmp();
         deferred_shader = new DeferredLightingShaderTmp();
-
-        tri = new Triangle();
-        cube2 = new Cube2(20, vec3(1.0, 0.0, 0.0));
-        sphere2 = new Sphere2(16, vec3(0, 0, 1));
-        fullQuad = new FullQuad();
     }
 
-    mat4 cubeWorld = mat4::RotateY(45.f) * mat4::Translate(25, -40, -20);
-    mat4 sphereWorld = mat4::Translate(-20, -25, 20);
-    mat4 view = camera()->viewMat();
-    mat4 proj = camera()->projMat();
+    if (_rootTransformDirty) {
+        visitNodes(_rootNode, [](const std::shared_ptr<Node2>& node) {
+            node->transformUpdate();
+        });
+        _rootTransformDirty = false;
+    }
+
+    const mat4& proj = _camera->projMat();
+    const mat4& view = _camera->viewMat();
 
     // depth
     {
@@ -159,10 +286,12 @@ void Scene::render() {
 
         shadow_depth_shader->useProgram();
 
-        mat4 shadowMVP = cubeWorld * shadowLightViewProjection();
-        shadow_depth_shader->shadowMVPUniformMatrix4fv(shadowMVP.pointer());
-        cube2->render();
-        //renderQuad(_shadowDepthBuffer->commonTexture(), _camera->screenSize());
+        visitNodes(_rootNode, [this](const std::shared_ptr<Node2>& node) {
+            mat4 shadowMVP = node->worldTransform() * this->shadowLightViewProjection();
+            shadow_depth_shader->shadowMVPUniformMatrix4fv(shadowMVP.pointer());
+            node->render();
+        });
+//        renderQuad(_shadowDepthBuffer->commonTexture(), _camera->screenSize());
     }
 
     // gbuffer
@@ -172,14 +301,16 @@ void Scene::render() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         gbuffer_shader->useProgram();
-        gbuffer_shader->projMatUniformMatrix4fv(proj.pointer());
-        gbuffer_shader->worldMatUniformMatrix4fv(cubeWorld.pointer());
-        gbuffer_shader->viewMatUniformMatrix4fv(view.pointer());
-        gbuffer_shader->worldNormalMatUniformMatrix4fv(cubeWorld.invert().transposed().pointer());
-        cube2->render();
-        //renderQuad(_gBuffer->gNormalTexture(), _camera->screenSize());
-    }
 
+        visitNodes(_rootNode, [this, proj, view](const std::shared_ptr<Node2>& node) {
+            gbuffer_shader->projMatUniformMatrix4fv(proj.pointer());
+            gbuffer_shader->viewMatUniformMatrix4fv(view.pointer());
+            gbuffer_shader->worldMatUniformMatrix4fv(node->worldTransform().pointer());
+            gbuffer_shader->worldNormalMatUniformMatrix4fv(node->worldTransform().invert().transposed().pointer());
+            node->render();
+        });
+//        renderQuad(_gBuffer->gNormalTexture(), _camera->screenSize());
+    }
 
     // SSAO
     {
@@ -204,8 +335,8 @@ void Scene::render() {
             glBindTexture(GL_TEXTURE_2D, ssaoInputTextures[i]);
         }
 
-        fullQuad->render();
-        //renderQuad(_ssaoFBO->commonTexture(), _camera->screenSize());
+        _fullQuad->render();
+        renderQuad(_ssaoFBO->commonTexture(), _camera->screenSize());
     }
 
     //SSAO Blur
@@ -216,7 +347,7 @@ void Scene::render() {
         ssa_blur_shader->textureSizeUniform2f(_camera->screenSize().x, _camera->screenSize().y);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, _ssaoFBO->commonTexture());
-        fullQuad->render();
+        _fullQuad->render();
         //renderQuad(_ssaoBlurFBO->commonTexture(), _camera->screenSize());
     }
 
@@ -244,21 +375,13 @@ void Scene::render() {
             glBindTexture(GL_TEXTURE_2D, textures[i]);
         }
 
-        fullQuad->render();
-//        glDrawArrays(GL_TRIANGLE_STRIP, 0, (GLsizei)4);
+        _fullQuad->render();
     }
-
 }
 
+
+
 void Scene::renderQuad(unsigned int texture, ivec2 screenSize) { //for debug
-    static unique_ptr<TexturePassShaderTmp> textureShader;
-    static unique_ptr<FullQuad> fullQuad;
-
-    if (textureShader == nullptr) {
-        textureShader = make_unique<TexturePassShaderTmp>();
-        fullQuad = make_unique<FullQuad>();
-    }
-
     glDisable(GL_CULL_FACE);
     //glDisable(GL_DEPTH_TEST);
 
@@ -270,8 +393,8 @@ void Scene::renderQuad(unsigned int texture, ivec2 screenSize) { //for debug
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture);
 
-    textureShader->useProgram();
-    fullQuad->render();
+    _textureShader->useProgram();
+    _fullQuad->render();
 }
 
 
@@ -464,7 +587,7 @@ void Scene::buildSSAOInfo() {
 
 
 
-void Scene::visitNodes(std::shared_ptr<Node> node, std::function<void(std::shared_ptr<Node>)> func) {
+void Scene::visitNodes(std::shared_ptr<Node2> node, std::function<void(std::shared_ptr<Node2>)> func) {
     func(node);
     for (auto child : node->children()) {
         visitNodes(child, func);

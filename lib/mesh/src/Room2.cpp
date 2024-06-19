@@ -64,6 +64,7 @@ Room2::Room2(float size, vec3 backColor, vec3 topColor, vec3 leftColor,
             22, 21, 20,     23, 22, 20,   // left
     };
 
+    _indSize = indices.size();
 
     std::vector<vec3> colors;
     colors.reserve(positions.size());
@@ -160,4 +161,6 @@ void Room2::render() const {
     glEnableVertexAttribArray(2);
 
     glDrawElements(GL_TRIANGLES, _indSize, GL_UNSIGNED_INT, 0);
+
+    glBindVertexArray(0);
 }
