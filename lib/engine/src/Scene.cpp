@@ -15,12 +15,16 @@
 #include "SSAOShader.hpp"
 #include "SSAOBlurShader.hpp"
 #include "AlbedoColorShader.hpp"
-#include "TestShader.hpp"
 
-#include "TestShaderTmp.hpp"
+
+//new
+#include "BasicShader.hpp"
 #include "ShadowDepthShaderTmp.hpp"
+#include "GBufferShaderTmp.hpp"
+#include "TexturePassShaderTmp.hpp"
 #include "Triangle.hpp"
 #include "Cube2.hpp"
+#include "FullQuad.hpp"
 
 #include <random>
 
@@ -111,32 +115,68 @@ void Scene::setScreenSize(int w, int h) {
 void Scene::render() {
     //test
     {
-        static TestShaderTmp* test_shader = nullptr;
-        static AlbedoColorShader* albedo_shader = nullptr;
+        static BasicShader* test_shader = nullptr;
+        static ShadowDepthShaderTmp* shadow_depth_shader = nullptr;
+        static TexturePassShaderTmp* texture_shader = nullptr;
+
         static Triangle* tri = nullptr;
         static Cube2* cube2 = nullptr;
+        static FullQuad* fullQuad = nullptr;
 
         if (test_shader == nullptr) {
-            test_shader = new TestShaderTmp();
-            albedo_shader = new AlbedoColorShader();
+            test_shader = new BasicShader();
+            shadow_depth_shader = new ShadowDepthShaderTmp();
+            texture_shader = new TexturePassShaderTmp();
+
             tri = new Triangle();
             cube2 = new Cube2(20, vec3(1.0, 0.0, 0.0));
+            fullQuad = new FullQuad();
         }
 
-        glBindFramebuffer(GL_FRAMEBUFFER, _defaultFBO);
-        glClearColor(0.f, 0.f, 0.f, 1.f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        mat4 world = mat4::RotateY(45.f) * mat4::Translate(25, -40, -20);
+        mat4 view = camera()->viewMat();
+        mat4 proj = camera()->projMat();
 
-        test_shader->useProgram();
+        //1 test solid
+//        glBindFramebuffer(GL_FRAMEBUFFER, _defaultFBO);
+//        glClearColor(0.f, 0.f, 0.f, 1.f);
+//        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+//        test_shader->useProgram();
+//        test_shader->worldMatUniformMatrix4fv(world.pointer());
+//        test_shader->viewMatUniformMatrix4fv(view.pointer());
+//        test_shader->projMatUniformMatrix4fv(proj.pointer());
+//        cube2->render();
 
-//        mat4 m;
-//        test_shader->mvpUniformMatrix4fv(m.pointer());
-//        tri->render();
 
-        mat4 worldTransform = mat4::RotateY(45.f) * mat4::Translate(25, -40, -20);
-        mat4 m = worldTransform * camera()->viewMat() * camera()->projMat();
-        test_shader->mvpUniformMatrix4fv(m.pointer());
-        cube2->render();
+        //re
+        {
+            _shadowDepthBuffer->bindWithViewport();
+            glClearColor(0.f, 1.f, 1.f, 1.f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            mat4 shadowMVP = world * shadowLightViewProjection();
+            shadow_depth_shader->useProgram();
+            shadow_depth_shader->shadowMVPUniformMatrix4fv(shadowMVP.pointer());
+            cube2->render();
+        }
+
+        {
+            glDisable(GL_CULL_FACE);
+//            glDisable(GL_DEPTH_TEST);
+
+            glBindFramebuffer(GL_FRAMEBUFFER, _defaultFBO);
+            glViewport(0, 0, _camera->screenSize().x, _camera->screenSize().y);
+            glClearColor(0.f, 0.f, 0.f, 1.f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, _shadowDepthBuffer->commonTexture());
+
+            texture_shader->useProgram();
+            fullQuad->render();
+        }
+
+
     }
 }
 
@@ -151,29 +191,6 @@ void Scene::render() {
             node->transformUpdate();
         });
         _rootTransformDirty = false;
-    }
-
-    //test
-    {
-        static Triangle* tri = nullptr;
-        static Cube2* cube = nullptr;
-        if (tri == nullptr) {
-            tri = new Triangle();
-            cube = new Cube2(100, vec3(1.0, 0.0, 0.0));
-        }
-
-        glBindFramebuffer(GL_FRAMEBUFFER, _defaultFBO);
-        glClearColor(0.f, 0.f, 0.f, 1.f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        shaderManager()->setActiveShader<AlbedoColorShader>(eShaderProgram_ALBEDO_COLOR);
-//        auto shader = shaderManager()->getActiveShader();
-//        auto mat = _camera->viewProjMat();
-//        static_cast<AlbedoColorShader*>(shader.get())->mvpUniformMatrix4fv(mat.pointer());
-
-        tri->render();
-//        cube->render();
-        return;
     }
 
     //1 섀도우 뎁스맵을 그립니다.

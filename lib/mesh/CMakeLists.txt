@@ -21,6 +21,8 @@ add_library(mesh STATIC
         src/Triangle.cpp
         include/Cube2.hpp
         src/Cube2.cpp
+        include/FullQuad.hpp
+        src/FullQuad.cpp
 )
 
 target_include_directories(mesh

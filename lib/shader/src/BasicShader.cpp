@@ -1,39 +1,43 @@
-#include "TestShaderTmp.hpp"
+#include "BasicShader.hpp"
 
-const char *vertexShaderSource2 = R(
+const char* vertexBasicShader = R(
         layout (location = 0) in vec3 a_position;
         layout (location = 1) in vec3 a_color;
         layout (location = 2) in vec3 a_normal;
-        uniform mat4 u_mvp;
+
+        uniform mat4 u_worldMat;
+        uniform mat4 u_viewMat;
+        uniform mat4 u_projMat;
+        uniform mat4 u_worldNormalMat;
+
         out vec3 v_color;
-        out vec3 v_normal;
 
         void main()
         {
             v_color = a_color;
-            gl_Position = u_mvp * vec4(a_position.x, a_position.y, a_position.z, 1.0);
+            gl_Position = u_projMat * u_viewMat * u_worldMat * vec4(a_position.xyz, 1.0);
         }
 );
 
-const char *fragmentShaderSource2 = R(
+const char* fragmentBasicShader = R(
         in vec3 v_color;
         out vec4 FragColor;
+
         void main()
         {
-            FragColor = vec4(v_color.x, v_color.y, v_color.z, 1.0f);
+            FragColor = vec4(v_color.rgb, 1.0f);
         }
 );
 
 
-TestShaderTmp::TestShaderTmp() {
+BasicShader::BasicShader() {
     this->load();
-    mvpUniformLocation();
+    basicUniformLoc();
 }
 
-bool TestShaderTmp::load() {
-
-    std::string vShader = std::string("#version 330 core \n") + std::string(vertexShaderSource2);
-    std::string fShader = std::string("#version 330 core \n") + std::string(fragmentShaderSource2);
+bool BasicShader::load() {
+    string vShader = string("#version 330 core \n") + string(vertexBasicShader);
+    string fShader = string("#version 330 core \n") + string(fragmentBasicShader);
 
     _programID = loadProgram_tmp(reinterpret_cast<const char *>(vShader.c_str()),
                                  reinterpret_cast<const char *>(fShader.c_str()));
@@ -43,11 +47,11 @@ bool TestShaderTmp::load() {
     return true;
 }
 
-void TestShaderTmp::useProgram() {
+void BasicShader::useProgram() {
     glUseProgram(_programID);
 }
 
-GLuint TestShaderTmp::loadShader_tmp(GLenum type, const char *shaderSrc) {
+GLuint BasicShader::loadShader_tmp(GLenum type, const char *shaderSrc) {
 
     GLuint shader;
     GLint compiled;
@@ -75,8 +79,7 @@ GLuint TestShaderTmp::loadShader_tmp(GLenum type, const char *shaderSrc) {
         char* infoLog = (char*)malloc(sizeof(char) * infoLen );
 
         glGetShaderInfoLog ( shader, infoLen, NULL, infoLog );
-        printf( "compiling log shader");
-//        printf( "compiling log shader[%s:%d]:\n%s\n", _name.c_str(), type, infoLog );
+        printf( "compiling log shader[%s:%d]:\n%s\n", shaderSrc, type, infoLog );
 
         free(infoLog);
     }
@@ -88,7 +91,7 @@ GLuint TestShaderTmp::loadShader_tmp(GLenum type, const char *shaderSrc) {
     return shader;
 }
 
-GLuint TestShaderTmp::loadProgram_tmp(const char *vertShaderSrc, const char *fragShaderSrc) {
+GLuint BasicShader::loadProgram_tmp(const char *vertShaderSrc, const char *fragShaderSrc) {
     GLuint vertexShader;
     GLuint fragmentShader;
     GLuint programObject;

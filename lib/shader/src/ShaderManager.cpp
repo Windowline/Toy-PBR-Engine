@@ -9,7 +9,7 @@
 #include "../include/SSAOShader.hpp"
 #include "../include/SSAOBlurShader.hpp"
 #include "../include/AlbedoColorShader.hpp"
-#include "TestShader.hpp"
+#include "BasicShader.hpp"
 
 
 ShaderManager::ShaderManager()
@@ -59,7 +59,6 @@ void ShaderManager::loadAllPrograms() {
             {eShaderProgram_SSAO,               std::make_shared<SSAOShader>()},
             {eShaderProgram_SSAO_BLUR,          std::make_shared<SSAOBlurShader>()},
             {eShaderProgram_ALBEDO_COLOR,       std::make_shared<AlbedoColorShader>()},
-            {eShaderProgram_Test,               std::make_shared<TestShader>()}
         };
     }
     

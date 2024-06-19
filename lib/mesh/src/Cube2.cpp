@@ -131,5 +131,9 @@ Cube2::Cube2(int size, vec3 color) : _VAO(-1), _VBO(-1), _EBO(-1), _size(size), 
 
 void Cube2::render() const {
     glBindVertexArray(_VAO);
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+    glEnableVertexAttribArray(2);
+
     glDrawElements(GL_TRIANGLES, _indSize, GL_UNSIGNED_INT, 0);
 }

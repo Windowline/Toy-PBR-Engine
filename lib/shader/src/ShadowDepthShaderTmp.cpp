@@ -1,33 +1,31 @@
 #include "ShadowDepthShaderTmp.hpp"
 
-static const char* vShadowDepthShader =
-        "#version 330 core                                                          \n"
-        "layout (location = 0) in vec3 a_position;                                  \n"
-        "layout (location = 1) in vec3 a_color;                                     \n"
+const char* vertexShadowDepthShaderTmp = R(
+        layout (location = 0) in vec3 a_position;
+        layout (location = 1) in vec3 a_color;
+        layout (location = 2) in vec3 a_normal;
 
-        "out vec4 v_shadowClipPos;                                                  \n"
-        "out vec3 v_color;                                                          \n"
-        "uniform mat4 u_shadowMVP;                                                  \n"
+        uniform mat4 u_shadowMVP;
 
-        "void main()                                                                \n"
-        "{                                                                          \n"
-        "   v_shadowClipPos = u_shadowMVP * vec4(a_position, 1.0);                  \n"
-        "   v_color = a_color;                                                      \n"
-        "   gl_Position = u_shadowMVP * vec4(a_position, 1.0);                      \n"
-        "}                                                                          \n";
+        out vec4 v_shadowClipPos;
+        out vec3 v_color;
 
-static const char* fShadowDepthShader =
-        "#version 330 core                                                                \n"
-        "in vec4 v_shadowClipPos;                                                           \n"
-        "in vec3 v_color;                                                               \n"
-        "layout (location = 0) out vec4 shadowDepth;                                                          \n"
-        "void main()                                                                    \n"
-        "{                                                                                  \n"
-//        "    shadowDepth = vec4(vec3((1.0 - v_shadowClipPos.z) / v_shadowClipPos.w), 1.0);          \n"
-        "    shadowDepth = vec4(1.0, 0.0, 0.0, 1.0);          \n"
+        void main() {
+            v_shadowClipPos = u_shadowMVP * vec4(a_position, 1.0);
+            v_color = a_color;
+            gl_Position = u_shadowMVP * vec4(a_position, 1.0);
+        }
+);
 
-        "}                                                                                  \n";
-
+const char* fragmentSwhadowDepthShaderTmp = R(
+        in vec4 v_shadowClipPos;
+        in vec3 v_color;
+        layout (location = 0) out vec4 shadowDepth;
+        void main()
+        {
+            shadowDepth = vec4(vec3(v_shadowClipPos.z / v_shadowClipPos.w), 1.0);
+        }
+);
 
 
 ShadowDepthShaderTmp::ShadowDepthShaderTmp() {
@@ -36,8 +34,11 @@ ShadowDepthShaderTmp::ShadowDepthShaderTmp() {
 }
 
 bool ShadowDepthShaderTmp::load() {
-    _programID = loadProgram_tmp(reinterpret_cast<const char *>(vShadowDepthShader),
-                                 reinterpret_cast<const char *>(fShadowDepthShader));
+    string vShader = string("#version 330 core \n") + string(vertexShadowDepthShaderTmp);
+    string fShader = string("#version 330 core \n") + string(fragmentSwhadowDepthShaderTmp);
+
+    _programID = loadProgram_tmp(reinterpret_cast<const char *>(vShader.c_str()),
+                                 reinterpret_cast<const char *>(fShader.c_str()));
 
     assert(_programID != 0);
     return true;
