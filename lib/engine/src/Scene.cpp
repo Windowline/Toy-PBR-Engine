@@ -24,6 +24,7 @@
 #include "TexturePassShaderTmp.hpp"
 #include "SSAOShaderTmp.hpp"
 #include "SSAOBlurShaderTmp.hpp"
+#include "DeferredLightingShaderTmp.hpp"
 
 #include "Triangle.hpp"
 #include "Cube2.hpp"
@@ -123,6 +124,7 @@ void Scene::render() {
     static GBufferShaderTmp* gbuffer_shader = nullptr;
     static SSAOShaderTmp* ssao_shader = nullptr;
     static SSAOBlurShaderTmp* ssa_blur_shader = nullptr;
+    static DeferredLightingShaderTmp* deferred_shader = nullptr;
 
     static Triangle* tri = nullptr;
     static Cube2* cube2 = nullptr;
@@ -134,6 +136,7 @@ void Scene::render() {
         gbuffer_shader = new GBufferShaderTmp();
         ssao_shader = new SSAOShaderTmp();
         ssa_blur_shader = new SSAOBlurShaderTmp();
+        deferred_shader = new DeferredLightingShaderTmp();
 
         tri = new Triangle();
         cube2 = new Cube2(20, vec3(1.0, 0.0, 0.0));
@@ -224,7 +227,35 @@ void Scene::render() {
         glBindTexture(GL_TEXTURE_2D, _ssaoFBO->commonTexture());
         fullQuad->render();
 
-        renderQuad(_ssaoBlurFBO->commonTexture(), _camera->screenSize());
+        //renderQuad(_ssaoBlurFBO->commonTexture(), _camera->screenSize());
+    }
+
+    //Deferred
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, _defaultFBO);
+        glViewport(0, 0, _camera->screenSize().x, _camera->screenSize().y);
+        deferred_shader->useProgram();
+        deferred_shader->ambientColorUniform3f(ambientColor().x, ambientColor().y, ambientColor().z);
+        deferred_shader->diffuseColorUniform3f(diffuseColor().x, diffuseColor().y, diffuseColor().z);
+        deferred_shader->specularColorUniform3f(specularColor().x, specularColor().y, specularColor().z);
+        deferred_shader->worldLightPosUniform3fVector(lightPositions());
+        deferred_shader->worldEyePositionUniform3f(camera()->eye().x, camera()->eye().y, camera()->eye().z);
+        deferred_shader->shadowViewProjectionMatUniformMatrix4fv(_shadowLightViewProjection.pointer());
+
+        const int GBUFFER_COMPONENT_COUNT = 5;
+        std::array<GLuint, GBUFFER_COMPONENT_COUNT> textures {_gBuffer->gPositionTexture(),
+                                                              _gBuffer->gNormalTexture(),
+                                                              _gBuffer->gAlbedoTexture(),
+                                                              _shadowDepthBuffer->commonTexture(),
+                                                              _ssaoBlurFBO->commonTexture()
+        };
+        for (int i = 0; i < GBUFFER_COMPONENT_COUNT; ++i) {
+            glActiveTexture(GL_TEXTURE0 + i);
+            glBindTexture(GL_TEXTURE_2D, textures[i]);
+        }
+
+        fullQuad->render();
+//        glDrawArrays(GL_TRIANGLE_STRIP, 0, (GLsizei)4);
     }
 
 
