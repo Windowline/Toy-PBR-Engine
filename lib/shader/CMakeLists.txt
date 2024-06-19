@@ -37,6 +37,11 @@ add_library(shader STATIC
         src/GBufferShaderTmp.cpp
         include/TexturePassShaderTmp.hpp
         src/TexturePassShaderTmp.cpp
+        include/DepthDebugShaderTmp.hpp
+        src/DepthDebugShaderTmp.cpp
+        include/SSAOShaderTmp.hpp
+        src/SSAOShaderTmp.cpp
+        include/SSAOBlurShaderTmp.hpp
 )
 
 target_link_libraries(shader

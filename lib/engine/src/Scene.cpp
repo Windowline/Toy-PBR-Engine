@@ -22,6 +22,9 @@
 #include "ShadowDepthShaderTmp.hpp"
 #include "GBufferShaderTmp.hpp"
 #include "TexturePassShaderTmp.hpp"
+#include "SSAOShaderTmp.hpp"
+#include "SSAOBlurShaderTmp.hpp"
+
 #include "Triangle.hpp"
 #include "Cube2.hpp"
 #include "FullQuad.hpp"
@@ -115,27 +118,33 @@ void Scene::setScreenSize(int w, int h) {
 }
 
 void Scene::render() {
-    //test
-    {
-        static BasicShader* test_shader = nullptr;
-        static ShadowDepthShaderTmp* shadow_depth_shader = nullptr;
+    static BasicShader* test_shader = nullptr;
+    static ShadowDepthShaderTmp* shadow_depth_shader = nullptr;
+    static GBufferShaderTmp* gbuffer_shader = nullptr;
+    static SSAOShaderTmp* ssao_shader = nullptr;
+    static SSAOBlurShaderTmp* ssa_blur_shader = nullptr;
 
-        static Triangle* tri = nullptr;
-        static Cube2* cube2 = nullptr;
+    static Triangle* tri = nullptr;
+    static Cube2* cube2 = nullptr;
+    static FullQuad* fullQuad = nullptr;
 
-        if (test_shader == nullptr) {
-            test_shader = new BasicShader();
-            shadow_depth_shader = new ShadowDepthShaderTmp();
+    if (test_shader == nullptr) {
+        test_shader = new BasicShader();
+        shadow_depth_shader = new ShadowDepthShaderTmp();
+        gbuffer_shader = new GBufferShaderTmp();
+        ssao_shader = new SSAOShaderTmp();
+        ssa_blur_shader = new SSAOBlurShaderTmp();
 
-            tri = new Triangle();
-            cube2 = new Cube2(20, vec3(1.0, 0.0, 0.0));
-        }
+        tri = new Triangle();
+        cube2 = new Cube2(20, vec3(1.0, 0.0, 0.0));
+        fullQuad = new FullQuad();
+    }
 
-        mat4 world = mat4::RotateY(45.f) * mat4::Translate(25, -40, -20);
-        mat4 view = camera()->viewMat();
-        mat4 proj = camera()->projMat();
+    mat4 world = mat4::RotateY(45.f) * mat4::Translate(25, -40, -20);
+    mat4 view = camera()->viewMat();
+    mat4 proj = camera()->projMat();
 
-        //1 test solid
+    //1 test solid
 //        glBindFramebuffer(GL_FRAMEBUFFER, _defaultFBO);
 //        glClearColor(0.f, 0.f, 0.f, 1.f);
 //        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -146,24 +155,79 @@ void Scene::render() {
 //        cube2->render();
 
 
-        //re
-        {
-            _shadowDepthBuffer->bindWithViewport();
-            glClearColor(0.f, 1.f, 1.f, 1.f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // depth
+    {
+        _shadowDepthBuffer->bindWithViewport();
+        glClearColor(0.f, 1.f, 1.f, 1.f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            mat4 shadowMVP = world * shadowLightViewProjection();
-            shadow_depth_shader->useProgram();
-            shadow_depth_shader->shadowMVPUniformMatrix4fv(shadowMVP.pointer());
-            cube2->render();
-        }
+        mat4 shadowMVP = world * shadowLightViewProjection();
+        shadow_depth_shader->useProgram();
+        shadow_depth_shader->shadowMVPUniformMatrix4fv(shadowMVP.pointer());
+        cube2->render();
 
-        {
-            renderQuad(_shadowDepthBuffer->commonTexture(), _camera->screenSize());
-        }
-
-
+        //renderQuad(_shadowDepthBuffer->commonTexture(), _camera->screenSize());
     }
+
+    // gbuffer
+    {
+        _gBuffer->bindWithViewport();
+        glClearColor(0.f, 0.f, 0.f, 1.f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        gbuffer_shader->useProgram();
+        gbuffer_shader->projMatUniformMatrix4fv(proj.pointer());
+        gbuffer_shader->worldMatUniformMatrix4fv(world.pointer());
+        gbuffer_shader->viewMatUniformMatrix4fv(view.pointer());
+        gbuffer_shader->worldNormalMatUniformMatrix4fv(world.invert().transposed().pointer());
+        cube2->render();
+
+        //renderQuad(_gBuffer->gNormalTexture(), _camera->screenSize());
+    }
+
+
+    // SSAO
+    {
+        glDisable(GL_CULL_FACE);
+        glDisable(GL_DEPTH_TEST);
+        _ssaoFBO->bindWithViewport();
+
+        glClearColor(0.f, 0.f, 0.f, 1.f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        ssao_shader->useProgram();
+        ssao_shader->viewMatUniformMatrix4fv(_camera->viewMat().pointer());
+        ssao_shader->projMatUniformMatrix4fv(_camera->projMat().pointer());
+        ssao_shader->samplesUniformVector(_ssaoKernel);
+        ssao_shader->screenSizeUniform2f(_camera->screenSize().x, _camera->screenSize().y);
+
+        const int COMPONENT_COUNT = 3;
+        std::array<GLuint, COMPONENT_COUNT> ssaoInputTextures { _gBuffer->gPositionTexture(),
+                                                                _gBuffer->gNormalTexture(),
+                                                                _noiseTexture };
+        for (int i = 0; i < COMPONENT_COUNT; ++i) {
+            glActiveTexture(GL_TEXTURE0 + i);
+            glBindTexture(GL_TEXTURE_2D, ssaoInputTextures[i]);
+        }
+
+        fullQuad->render();
+
+        //renderQuad(_ssaoFBO->commonTexture(), _camera->screenSize());
+    }
+
+    //SSAO Blur
+    {
+        _ssaoBlurFBO->bindWithViewport();
+        glViewport(0, 0, _camera->screenSize().x, _camera->screenSize().y);
+        ssa_blur_shader->useProgram();
+        ssa_blur_shader->textureSizeUniform2f(_camera->screenSize().x, _camera->screenSize().y);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, _ssaoFBO->commonTexture());
+        fullQuad->render();
+
+        renderQuad(_ssaoBlurFBO->commonTexture(), _camera->screenSize());
+    }
+
+
 }
 
 void Scene::renderQuad(unsigned int texture, ivec2 screenSize) { //for debug
