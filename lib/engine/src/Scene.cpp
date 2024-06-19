@@ -28,6 +28,8 @@
 
 #include <random>
 
+using namespace std;
+
 Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaultFBO(defaultFBO)
 {
 
@@ -117,20 +119,16 @@ void Scene::render() {
     {
         static BasicShader* test_shader = nullptr;
         static ShadowDepthShaderTmp* shadow_depth_shader = nullptr;
-        static TexturePassShaderTmp* texture_shader = nullptr;
 
         static Triangle* tri = nullptr;
         static Cube2* cube2 = nullptr;
-        static FullQuad* fullQuad = nullptr;
 
         if (test_shader == nullptr) {
             test_shader = new BasicShader();
             shadow_depth_shader = new ShadowDepthShaderTmp();
-            texture_shader = new TexturePassShaderTmp();
 
             tri = new Triangle();
             cube2 = new Cube2(20, vec3(1.0, 0.0, 0.0));
-            fullQuad = new FullQuad();
         }
 
         mat4 world = mat4::RotateY(45.f) * mat4::Translate(25, -40, -20);
@@ -161,24 +159,37 @@ void Scene::render() {
         }
 
         {
-            glDisable(GL_CULL_FACE);
-//            glDisable(GL_DEPTH_TEST);
-
-            glBindFramebuffer(GL_FRAMEBUFFER, _defaultFBO);
-            glViewport(0, 0, _camera->screenSize().x, _camera->screenSize().y);
-            glClearColor(0.f, 0.f, 0.f, 1.f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, _shadowDepthBuffer->commonTexture());
-
-            texture_shader->useProgram();
-            fullQuad->render();
+            renderQuad(_shadowDepthBuffer->commonTexture(), _camera->screenSize());
         }
 
 
     }
 }
+
+void Scene::renderQuad(unsigned int texture, ivec2 screenSize) { //for debug
+    static unique_ptr<TexturePassShaderTmp> textureShader;
+    static unique_ptr<FullQuad> fullQuad;
+
+    if (textureShader == nullptr) {
+        textureShader = make_unique<TexturePassShaderTmp>();
+        fullQuad = make_unique<FullQuad>();
+    }
+
+    glDisable(GL_CULL_FACE);
+    //glDisable(GL_DEPTH_TEST);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, _defaultFBO);
+    glViewport(0, 0, _camera->screenSize().x, _camera->screenSize().y);
+    glClearColor(0.f, 0.f, 0.f, 1.f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    textureShader->useProgram();
+    fullQuad->render();
+}
+
 
 
 
@@ -383,25 +394,4 @@ std::shared_ptr<ShaderManager> Scene::shaderManager() {
 
 std::shared_ptr<Camera> Scene::camera() {
     return _camera;
-}
-
-
-void Scene::renderQuad(unsigned int texture, ivec2 screenSize) { //for debug
-    glDisable(GL_CULL_FACE);
-   // glDisable(GL_DEPTH_TEST);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, _defaultFBO);
-    glViewport(0, 0, screenSize.x, screenSize.y);
-    glClearColor(0.f, 0.f, 0.f, 1.f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    auto texPassShader = shaderManager()->getShader<TexturePassShader>(eShaderProgram_TexturePass);
-    shaderManager()->setActiveShader(texPassShader);
-
-    texPassShader->positionAttribPointer(GLUtilGeometry::VERT_QUAD, 2);
-    texPassShader->texCoordAttribPointer(GLUtilGeometry::TEXCOORD_QUAD, 2);
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, (GLsizei)4);
 }

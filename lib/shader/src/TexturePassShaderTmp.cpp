@@ -21,7 +21,6 @@ const char* fragmentTexturePassShaderTmp = R(
         void main()
         {
             fragColor = vec4(texture(u_texture, v_texCoord).rgb, 1.0);
-//            fragColor = vec4(vec3(1.0), 1.0);
         }
 );
 
