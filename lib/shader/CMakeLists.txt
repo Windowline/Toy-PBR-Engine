@@ -1,29 +1,4 @@
 add_library(shader STATIC
-        include/ShaderBase.hpp
-
-        include/AlbedoColorShader.hpp
-        src/AlbedoColorShader.cpp
-
-        include/BasicLightingShader.hpp
-        src/BasicLightingShader.cpp
-
-        include/DeferredLightingShader.hpp
-        src/DeferredLightingShader.cpp
-
-        include/GBufferShader.hpp
-        src/GBufferShader.cpp
-
-        include/ShadowDepthShader.hpp
-        src/ShadowDepthShader.cpp
-
-        include/SSAOBlurShader.hpp
-        src/SSAOBlurShader.cpp
-
-        include/SSAOShader.hpp
-        src/SSAOShader.cpp
-
-        include/TexturePassShader.hpp
-        src/TexturePassShader.cpp
 
         include/ShaderManager.hpp
         src/ShaderManager.cpp

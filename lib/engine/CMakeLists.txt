@@ -3,9 +3,6 @@ add_library(engine STATIC
         include/Engine.hpp
         src/Engine.cpp
 
-        include/Node.hpp
-        src/Node.cpp
-
         include/Scene.hpp
         src/Scene.cpp
         include/Node2.hpp

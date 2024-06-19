@@ -1,21 +1,4 @@
 add_library(mesh STATIC
-        include/Cube.hpp
-        src/Cube.cpp
-
-        include/LongCube.hpp
-        src/LongCube.cpp
-
-        include/Mesh.hpp
-        src/Mesh.cpp
-
-        include/Plane.hpp
-        src/Plane.cpp
-
-        include/Room.hpp
-        src/Room.cpp
-
-        include/Sphere.hpp
-        src/Sphere.cpp
 
         include/Triangle.hpp
         src/Triangle.cpp
@@ -23,7 +6,7 @@ add_library(mesh STATIC
         src/Cube2.cpp
         include/FullQuad.hpp
         src/FullQuad.cpp
-        src/SSAOBlurShaderTmp.cpp
+        ../shader/src/SSAOBlurShaderTmp.cpp
         include/Sphere2.hpp
         src/Sphere2.cpp
         include/BasicMeshInterface.h
