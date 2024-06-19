@@ -8,6 +8,7 @@
 class RenderEngine;
 class Camera;
 class Node;
+class Node2;
 class ShaderManager;
 class Sphere;
 class Room;

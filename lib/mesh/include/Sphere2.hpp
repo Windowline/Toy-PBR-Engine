@@ -1,12 +1,13 @@
 #ifndef TOYRENDERER_SPHERE2_HPP
 #define TOYRENDERER_SPHERE2_HPP
 
+#include "BasicMeshInterface.h"
 #include "Vector.hpp"
 
-class Sphere2 {
+class Sphere2 : public BasicMeshInterface {
 public:
     Sphere2(float radius, vec3 color);
-    void render() const;
+    void render() const override;
 
 private:
     unsigned int _VAO;

@@ -26,6 +26,9 @@ add_library(mesh STATIC
         src/SSAOBlurShaderTmp.cpp
         include/Sphere2.hpp
         src/Sphere2.cpp
+        include/BasicMeshInterface.h
+        include/Room2.hpp
+        src/Room2.cpp
 )
 
 target_include_directories(mesh
