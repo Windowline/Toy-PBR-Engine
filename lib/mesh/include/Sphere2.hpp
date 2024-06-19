@@ -1,12 +1,11 @@
-
-#ifndef TOYRENDERER_CUBE2_HPP
-#define TOYRENDERER_CUBE2_HPP
+#ifndef TOYRENDERER_SPHERE2_HPP
+#define TOYRENDERER_SPHERE2_HPP
 
 #include "Vector.hpp"
 
-class Cube2 {
+class Sphere2 {
 public:
-    Cube2(int size, vec3 color);
+    Sphere2(float radius, vec3 color);
     void render() const;
 
 private:
@@ -14,10 +13,11 @@ private:
     unsigned int _VBO;
     unsigned int _EBO;
 
-    int _size;
+    float _radius;
     vec3 _color;
     int _indSize;
+
 };
 
 
-#endif //TOYRENDERER_CUBE2_HPP
+#endif //TOYRENDERER_SPHERE2_HPP

@@ -24,6 +24,8 @@ add_library(mesh STATIC
         include/FullQuad.hpp
         src/FullQuad.cpp
         src/SSAOBlurShaderTmp.cpp
+        include/Sphere2.hpp
+        src/Sphere2.cpp
 )
 
 target_include_directories(mesh

@@ -13,6 +13,7 @@ public:
 protected:
     void buildMesh() override;
     //void buildMeshTest();
+
 private:
     float _radius;
     vec3 _color;

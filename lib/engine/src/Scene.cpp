@@ -28,6 +28,7 @@
 
 #include "Triangle.hpp"
 #include "Cube2.hpp"
+#include "Sphere2.hpp"
 #include "FullQuad.hpp"
 
 #include <random>
@@ -128,6 +129,7 @@ void Scene::render() {
 
     static Triangle* tri = nullptr;
     static Cube2* cube2 = nullptr;
+    static Sphere2* sphere2 = nullptr;
     static FullQuad* fullQuad = nullptr;
 
     if (test_shader == nullptr) {
@@ -140,23 +142,14 @@ void Scene::render() {
 
         tri = new Triangle();
         cube2 = new Cube2(20, vec3(1.0, 0.0, 0.0));
+        sphere2 = new Sphere2(16, vec3(0, 0, 1));
         fullQuad = new FullQuad();
     }
 
-    mat4 world = mat4::RotateY(45.f) * mat4::Translate(25, -40, -20);
+    mat4 cubeWorld = mat4::RotateY(45.f) * mat4::Translate(25, -40, -20);
+    mat4 sphereWorld = mat4::Translate(-20, -25, 20);
     mat4 view = camera()->viewMat();
     mat4 proj = camera()->projMat();
-
-    //1 test solid
-//        glBindFramebuffer(GL_FRAMEBUFFER, _defaultFBO);
-//        glClearColor(0.f, 0.f, 0.f, 1.f);
-//        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-//        test_shader->useProgram();
-//        test_shader->worldMatUniformMatrix4fv(world.pointer());
-//        test_shader->viewMatUniformMatrix4fv(view.pointer());
-//        test_shader->projMatUniformMatrix4fv(proj.pointer());
-//        cube2->render();
-
 
     // depth
     {
@@ -164,11 +157,11 @@ void Scene::render() {
         glClearColor(0.f, 1.f, 1.f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        mat4 shadowMVP = world * shadowLightViewProjection();
         shadow_depth_shader->useProgram();
+
+        mat4 shadowMVP = cubeWorld * shadowLightViewProjection();
         shadow_depth_shader->shadowMVPUniformMatrix4fv(shadowMVP.pointer());
         cube2->render();
-
         //renderQuad(_shadowDepthBuffer->commonTexture(), _camera->screenSize());
     }
 
@@ -180,11 +173,10 @@ void Scene::render() {
 
         gbuffer_shader->useProgram();
         gbuffer_shader->projMatUniformMatrix4fv(proj.pointer());
-        gbuffer_shader->worldMatUniformMatrix4fv(world.pointer());
+        gbuffer_shader->worldMatUniformMatrix4fv(cubeWorld.pointer());
         gbuffer_shader->viewMatUniformMatrix4fv(view.pointer());
-        gbuffer_shader->worldNormalMatUniformMatrix4fv(world.invert().transposed().pointer());
+        gbuffer_shader->worldNormalMatUniformMatrix4fv(cubeWorld.invert().transposed().pointer());
         cube2->render();
-
         //renderQuad(_gBuffer->gNormalTexture(), _camera->screenSize());
     }
 
@@ -213,7 +205,6 @@ void Scene::render() {
         }
 
         fullQuad->render();
-
         //renderQuad(_ssaoFBO->commonTexture(), _camera->screenSize());
     }
 
@@ -226,7 +217,6 @@ void Scene::render() {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, _ssaoFBO->commonTexture());
         fullQuad->render();
-
         //renderQuad(_ssaoBlurFBO->commonTexture(), _camera->screenSize());
     }
 
@@ -257,7 +247,6 @@ void Scene::render() {
         fullQuad->render();
 //        glDrawArrays(GL_TRIANGLE_STRIP, 0, (GLsizei)4);
     }
-
 
 }
 
