@@ -7,16 +7,11 @@
 
 class RenderEngine;
 class Camera;
-//class Node;
 class Node;
 class ShaderManager;
-//class Sphere;
-//class Room;
-//class Cube;
 class FrameBufferObject;
 class FullQuad;
 class TexturePassShader;
-
 
 /**
  * 장면에 필요한 렌더링 오브젝트, 빛, 그림자 정보 등을 관리하고,
@@ -34,10 +29,6 @@ public:
     void visitNodes(std::shared_ptr<Node> node, std::function<void(std::shared_ptr<Node>)> func);
 
     void render();
-
-    void setTilt(float value);
-
-    void lightYDelta(float value);
 
     std::shared_ptr<ShaderManager> shaderManager();
 

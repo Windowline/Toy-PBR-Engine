@@ -28,7 +28,7 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
     _fullQuad = make_unique<FullQuad>();
     _textureShader = make_unique<TexturePassShader>();
 
-    _camera = std::make_shared<Camera>();
+    _camera = make_shared<Camera>();
 
     _lightPositions = {
         vec3(0.f, 44.f, 20.f)
@@ -40,36 +40,36 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
 
 
     //방 메시를 생성합니다. 각면의 색상을 달리 받습니다.
-    auto roomMesh = std::make_shared<Room>(100, vec3(0, 1, 0), vec3(0, 0, 0), vec3(1, 0, 0),
+    auto roomMesh = make_shared<Room>(100, vec3(0, 1, 0), vec3(0, 0, 0), vec3(1, 0, 0),
                                            vec3(0, 0, 1), vec3(0.5, 0.5, 0.5));
 
     //파란색 구체 메시를 생성합니다.
-    auto sphereMesh = std::make_shared<Sphere>(16, vec3(0, 0, 1));
+    auto sphereMesh = make_shared<Sphere>(16, vec3(0, 0, 1));
 
     //흰색 정육면체 메시를 생성합니다.
-    auto cubeMesh = std::make_shared<Cube>(20, vec3(1, 1, 1));
+    auto cubeMesh = make_shared<Cube>(20, vec3(1, 1, 1));
 
     //방 천장에 위치할 빛 구체를 생성합니다. 라이팅, 그림자 등의 연산에선 제외됩니다.
-    auto lightSphereMesh = std::make_shared<Sphere>(4, vec3(1, 1, 1));
+    auto lightSphereMesh = make_shared<Sphere>(4, vec3(1, 1, 1));
 
 
     mat4 roomLocalTransform;
-    _room = std::make_shared<Node>(this, roomMesh, roomLocalTransform);
+    _room = make_shared<Node>(this, roomMesh, roomLocalTransform);
 
 
     mat4 sphereLocalTransform = mat4::Translate(-20, -25, 20);
-    _sphere = std::make_shared<Node>(this, sphereMesh, sphereLocalTransform);
+    _sphere = make_shared<Node>(this, sphereMesh, sphereLocalTransform);
 
 
     mat4 cubeLocalTransform = mat4::RotateY(45.f) * mat4::Translate(25, -40, -20);
-    _cube = std::make_shared<Node>(this, cubeMesh, cubeLocalTransform);
+    _cube = make_shared<Node>(this, cubeMesh, cubeLocalTransform);
 
 
     mat4 lightSphereLocalTransform = mat4::Translate(_lightPositions.front().x,
                                                      _lightPositions.front().y + _lightYDelta,
                                                      _lightPositions.front().z);
 
-    _lightSphere = std::make_shared<Node>(this, lightSphereMesh, lightSphereLocalTransform);
+    _lightSphere = make_shared<Node>(this, lightSphereMesh, lightSphereLocalTransform);
     _lightSphere->transformUpdate();
 
 
@@ -82,6 +82,8 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
 }
 
 Scene::~Scene() {
+    if (_noiseTexture != 0)
+        glDeleteTextures(1, &_noiseTexture);
 }
 
 //스크린 사이즈 변경에 의해 다시 만들어져야 할 것들을 업데이트합니다.
@@ -98,16 +100,16 @@ void Scene::setScreenSize(int w, int h) {
     _shadowLightProj = mat4::Ortho(-200, 300, -300, 300, -100, 1000);
     _shadowLightViewProjection = _shadowLightView * _shadowLightProj;
 
-    _gBuffer = std::make_shared<FrameBufferObject>(_camera->screenSize(), _defaultFBO, FrameBufferObject::Type::GBuffer);
+    _gBuffer = make_shared<FrameBufferObject>(_camera->screenSize(), _defaultFBO, FrameBufferObject::Type::GBuffer);
 
-    _shadowDepthBuffer = std::make_shared<FrameBufferObject>(ivec2(2048, 2048), _defaultFBO, FrameBufferObject::Type::Common);
+    _shadowDepthBuffer = make_shared<FrameBufferObject>(ivec2(2048, 2048), _defaultFBO, FrameBufferObject::Type::Common);
 
     buildSSAOInfo();
 }
 
 void Scene::render() {
     if (_rootTransformDirty) {
-        visitNodes(_rootNode, [](const std::shared_ptr<Node>& node) {
+        visitNodes(_rootNode, [](const shared_ptr<Node>& node) {
             node->transformUpdate();
         });
         _rootTransformDirty = false;
@@ -168,7 +170,7 @@ void Scene::render() {
         shader->screenSizeUniform2f(_camera->screenSize().x, _camera->screenSize().y);
 
         const int COMPONENT_COUNT = 3;
-        std::array<GLuint, COMPONENT_COUNT> ssaoInputTextures { _gBuffer->gPositionTexture(),
+        array<GLuint, COMPONENT_COUNT> ssaoInputTextures { _gBuffer->gPositionTexture(),
                                                                 _gBuffer->gNormalTexture(),
                                                                 _noiseTexture };
         for (int i = 0; i < COMPONENT_COUNT; ++i) {
@@ -202,7 +204,7 @@ void Scene::render() {
         shader->shadowViewProjectionMatUniformMatrix4fv(_shadowLightViewProjection.pointer());
 
         const int GBUFFER_COMPONENT_COUNT = 5;
-        std::array<GLuint, GBUFFER_COMPONENT_COUNT> textures {_gBuffer->gPositionTexture(),
+        array<GLuint, GBUFFER_COMPONENT_COUNT> textures {_gBuffer->gPositionTexture(),
                                                               _gBuffer->gNormalTexture(),
                                                               _gBuffer->gAlbedoTexture(),
                                                               _shadowDepthBuffer->commonTexture(),
@@ -245,27 +247,6 @@ void Scene::renderQuad(unsigned int texture, ivec2 screenSize) { //for debug
     glBindTexture(GL_TEXTURE_2D, texture);
 
     _fullQuad->render();
-}
-
-
-void Scene::setTilt(float value) {
-    if (!_camera)
-        return;
-
-    _camera->setEyeYOffset(value);
-}
-
-void Scene::lightYDelta(float value) {
-    _lightYDelta = value;
-
-    mat4 lightSphereLocalTransform = mat4::Translate(_lightPositions.front().x,
-                                                     _lightPositions.front().y + _lightYDelta,
-                                                     _lightPositions.front().z);
-
-    _lightSphere->setLocalTransform(lightSphereLocalTransform);
-
-    _shadowLightView = Camera::createViewMatrix(vec3(0, value, 0), _lightPositions.front(), vec3(0, 1, 0));
-    _shadowLightViewProjection = lightSphereLocalTransform * _shadowLightView * _shadowLightProj;
 }
 
 //Screen Space Ambient Occlusion을 위한 정보를 빌드합니다.
@@ -315,13 +296,13 @@ void Scene::buildSSAOInfo() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-    _ssaoFBO = std::make_shared<FrameBufferObject>(_camera->screenSize(), _defaultFBO, FrameBufferObject::Type::Common);
-    _ssaoBlurFBO = std::make_shared<FrameBufferObject>(_camera->screenSize(), _defaultFBO, FrameBufferObject::Type::Common);
+    _ssaoFBO = make_shared<FrameBufferObject>(_camera->screenSize(), _defaultFBO, FrameBufferObject::Type::Common);
+    _ssaoBlurFBO = make_shared<FrameBufferObject>(_camera->screenSize(), _defaultFBO, FrameBufferObject::Type::Common);
 }
 
 
 
-void Scene::visitNodes(std::shared_ptr<Node> node, std::function<void(std::shared_ptr<Node>)> func) {
+void Scene::visitNodes(shared_ptr<Node> node, function<void(shared_ptr<Node>)> func) {
     func(node);
     for (auto child : node->children()) {
         visitNodes(child, func);
@@ -329,10 +310,10 @@ void Scene::visitNodes(std::shared_ptr<Node> node, std::function<void(std::share
 }
 
 
-std::shared_ptr<ShaderManager> Scene::shaderManager() {
+shared_ptr<ShaderManager> Scene::shaderManager() {
     return _engine->_shaderManager;
 }
 
-std::shared_ptr<Camera> Scene::camera() {
+shared_ptr<Camera> Scene::camera() {
     return _camera;
 }

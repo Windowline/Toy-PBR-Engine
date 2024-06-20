@@ -1,10 +1,8 @@
 #include "Engine.hpp"
 #include "ShaderManager.hpp"
 #include "Scene.hpp"
-#include "GLUtilGeometry.hpp"
 
 #include <glad/glad.h>
-#include <GLFW/glfw3.h>
 
 RenderEngine::RenderEngine() {
     _shaderManager = std::make_shared<ShaderManager>();
@@ -19,28 +17,6 @@ void RenderEngine::setScreenSize(int w, int h) {
     if (_scene)
         _scene->setScreenSize(_screenSize.x, _screenSize.y);
 }
-
-void RenderEngine::setTilt(float value) {
-
-    if (!_scene)
-        return;
-
-    std::lock_guard<std::mutex> lock(_sceneMutex);
-    {
-        _scene->setTilt(value);
-    }
-}
-
-void RenderEngine::setLightYDelta(float value) {
-    if (!_scene)
-        return;
-
-    std::lock_guard<std::mutex> lock(_sceneMutex);
-    {
-        _scene->lightYDelta(value);
-    }
-}
-
 
 void RenderEngine::render() {
 

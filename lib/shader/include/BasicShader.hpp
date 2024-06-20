@@ -45,6 +45,9 @@ public:
     }
 
     void projMatUniformMatrix4fv(const GLfloat *value) {
+        if (_projMatLoc == -1) {
+            int ad = 10;
+        }
         assert(_projMatLoc != -1);
         glUniformMatrix4fv(_projMatLoc, 1, GL_FALSE, value);
     }

@@ -62,8 +62,6 @@ int main() {
     engine = new RenderEngine();
     engine->prepare();
     engine->setScreenSize(viewport[2], viewport[3]);
-    engine->setTilt(0.f);
-    engine->setLightYDelta(0.f);
 
     //render loop
     while (!glfwWindowShouldClose(window))

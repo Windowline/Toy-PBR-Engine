@@ -2,13 +2,13 @@
 #define RenderEngine_hpp
 
 #include <memory>
-//#include <OpenGLES/ES3/gl.h>
 #include "Vector.hpp"
 #include "Matrix.hpp"
 #include <mutex>
 
 class Scene;
 class ShaderManager;
+
 class RenderEngine {
 
     friend class Scene;
@@ -24,12 +24,7 @@ public:
 
     void setScreenSize(int w, int h);
 
-    void setTilt(float value);
-
-    void setLightYDelta(float value);
-
 private:
-
     uint _defaultFBO;
 
     bool _init = false;
