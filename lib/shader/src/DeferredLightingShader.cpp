@@ -64,6 +64,8 @@ const char* fragmentDeferred = R(
 
 DeferredLightingShader::DeferredLightingShader() {
     this->load();
+    basicUniformLoc();
+
     //uniform
     posTextureUniformLocation();
     normalTextureUniformLocation();
@@ -109,9 +111,6 @@ void DeferredLightingShader::useProgram() {
 
     for (int i = 0; i < MAX_TEXTURE; ++i) {
         assert(uniformLocs[i] != -1);
-
-        glActiveTexture(GL_TEXTURE0 + i);
-        GLUtil::GL_ERROR_LOG();
         glUniform1i(uniformLocs[i], i);
         GLUtil::GL_ERROR_LOG();
     }

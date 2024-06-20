@@ -19,8 +19,6 @@ add_library(shader STATIC
         include/SSAOBlurShader.hpp
         include/DeferredLightingShader.hpp
         src/DeferredLightingShader.cpp
-        include/AlbedoColorShader.hpp
-        src/AlbedoColorShader.cpp
 )
 
 target_link_libraries(shader

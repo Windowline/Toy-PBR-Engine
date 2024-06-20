@@ -30,6 +30,7 @@ const char* fragmentSwhadowDepthShaderTmp = R(
 
 ShadowDepthShader::ShadowDepthShader() {
     this->load();
+    basicUniformLoc();
     this->shadowMVPUniformLocation();
 }
 

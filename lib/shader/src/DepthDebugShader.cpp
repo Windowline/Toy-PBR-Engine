@@ -36,6 +36,7 @@ const char* fragmentDepthDebugTmp = R(
 
 DepthDebugShader::DepthDebugShader() {
     this->load();
+    basicUniformLoc();
     textureUniformLocation();
 }
 
@@ -55,6 +56,5 @@ void DepthDebugShader::useProgram() {
     glUseProgram(_programID);
 
     assert(_textureUiformLoc != -1);
-    glActiveTexture(GL_TEXTURE0);
     glUniform1i(_textureUiformLoc, 0);
 }

@@ -13,7 +13,6 @@
 #include "SSAOShader.hpp"
 #include "SSAOBlurShader.hpp"
 #include "DeferredLightingShader.hpp"
-#include "AlbedoColorShader.hpp"
 
 #include "Cube.hpp"
 #include "Sphere.hpp"
@@ -35,9 +34,6 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
         vec3(0.f, 44.f, 20.f)
     };
 
-    //    _ambientColor = vec3(0.05f, 0.05f, 0.05f);
-    //    _specularColor = vec3(0.9f, 0.9f, 0.9f);
-    //    _diffuseColor = vec3(0.7f, 0.7f, 0.7f);
     _ambientColor = vec3(0.4f, 0.4f, 0.4f);
     _specularColor = vec3(0.9f, 0.9f, 0.9f);
     _diffuseColor = vec3(0.5f, 0.5f, 0.5f);
@@ -106,7 +102,6 @@ void Scene::setScreenSize(int w, int h) {
 
     _shadowDepthBuffer = std::make_shared<FrameBufferObject>(ivec2(2048, 2048), _defaultFBO, FrameBufferObject::Type::Common);
 
-
     buildSSAOInfo();
 }
 
@@ -159,16 +154,16 @@ void Scene::render() {
 
     // SSAO
     {
+        _ssaoFBO->bindWithViewport();
         glDisable(GL_CULL_FACE);
         glDisable(GL_DEPTH_TEST);
-        _ssaoFBO->bindWithViewport();
 
         glClearColor(0.f, 0.f, 0.f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         auto shader = shaderManager()->setActiveShader<SSAOShader>(eShaderProgram_SSAO);
-        shader->viewMatUniformMatrix4fv(_camera->viewMat().pointer());
-        shader->projMatUniformMatrix4fv(_camera->projMat().pointer());
+        shader->viewMatUniformMatrix4fv(view.pointer());
+        shader->projMatUniformMatrix4fv(proj.pointer());
         shader->samplesUniformVector(_ssaoKernel);
         shader->screenSizeUniform2f(_camera->screenSize().x, _camera->screenSize().y);
 
@@ -225,7 +220,7 @@ void Scene::render() {
         //6 빛 구체 렌더링, 효과를 입히지 않고, 본연의 색만 입힙니다.
         glEnable(GL_CULL_FACE);
         glEnable(GL_DEPTH_TEST);
-        auto shaderLight = shaderManager()->setActiveShader<AlbedoColorShader>(eShaderProgram_ALBEDO_COLOR);
+        auto shaderLight = shaderManager()->setActiveShader<BasicShader>(eShaderProgram_Default);
         shaderLight->projMatUniformMatrix4fv(proj.pointer());
         shaderLight->viewMatUniformMatrix4fv(view.pointer());
         shaderLight->worldMatUniformMatrix4fv(_lightSphere->worldTransform().pointer());
@@ -244,10 +239,11 @@ void Scene::renderQuad(unsigned int texture, ivec2 screenSize) { //for debug
     glClearColor(0.f, 0.f, 0.f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    _textureShader->useProgram();
+
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture);
 
-    _textureShader->useProgram();
     _fullQuad->render();
 }
 
@@ -312,7 +308,8 @@ void Scene::buildSSAOInfo() {
     //임의 벡터는 4x4 텍스처로 repeat하여 반복적으로 사용합니다. (메모리 효율)
     glGenTextures(1, &_noiseTexture);
     glBindTexture(GL_TEXTURE_2D, _noiseTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, 4, 4, 0, GL_RGB, GL_FLOAT, &_ssaoNoise[0]);
+//    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, 4, 4, 0, GL_RGB, GL_FLOAT, &_ssaoNoise[0]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 4, 4, 0, GL_RGB, GL_FLOAT, &_ssaoNoise[0]);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);

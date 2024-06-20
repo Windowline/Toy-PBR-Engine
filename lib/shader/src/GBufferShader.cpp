@@ -44,7 +44,7 @@ const char* fragmentGBufferShaderTmp = R(
 
 GBufferShader::GBufferShader() {
     this->load();
-    BasicShader::basicUniformLoc();
+    basicUniformLoc();
 }
 
 bool GBufferShader::load() {

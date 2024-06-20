@@ -2,8 +2,8 @@
 #include "GLUtilGeometry.hpp"
 
 const char* vertexSSAOTmp = R(
-        in vec2 a_position;
-        in vec2 a_texCoord;
+        layout (location = 0) in vec2 a_position;
+        layout (location = 1) in vec2 a_texCoord;
         out vec2 v_texCoord;
 
         void main()
@@ -14,6 +14,9 @@ const char* vertexSSAOTmp = R(
 );
 
 const char* fragmentSSAOTmp = R(
+        layout (location = 0) out vec4 fragColor; //todo: float
+        in vec2 v_texCoord;
+
         uniform sampler2D u_posTexture;
         uniform sampler2D u_normalTexture;
         uniform sampler2D u_noiseTexture;  // 접선공간상의 임의 회전
@@ -22,8 +25,6 @@ const char* fragmentSSAOTmp = R(
         uniform mat4 u_viewMat;
         uniform mat4 u_projMat;
 
-        in vec2 v_texCoord;
-        layout (location = 0) out vec4 fragColor; //todo: float
 
         void main()
         {
@@ -62,12 +63,19 @@ const char* fragmentSSAOTmp = R(
 
 SSAOShader::SSAOShader() {
     this->load();
+    basicUniformLoc();
 
     _posTextureUniformLocation = glGetUniformLocation(_programID, "u_posTexture");
     _normalTextureUniformLocation = glGetUniformLocation(_programID, "u_normalTexture");
     _noiseTextureUniformLocation = glGetUniformLocation(_programID, "u_noiseTexture");
     _samplesUniformLocation = glGetUniformLocation(_programID, "u_samples");
     _screenSizeUniformLocation = glGetUniformLocation(_programID, "u_screenSize");
+
+    assert(_posTextureUniformLocation != -1);
+    assert(_normalTextureUniformLocation != -1);
+    assert(_noiseTextureUniformLocation != -1);
+    assert(_samplesUniformLocation != -1);
+    assert(_screenSizeUniformLocation != -1);
 }
 
 bool SSAOShader::load() {
@@ -85,16 +93,12 @@ bool SSAOShader::load() {
 void SSAOShader::useProgram() {
     glUseProgram(_programID);
 
+    glUniform1i(_posTextureUniformLocation, 0);
+    GLUtil::GL_ERROR_LOG();
 
-    const int MAX_TEXTURE = 3;
-    std::array<GLint, MAX_TEXTURE> uniformLocs {
-            _posTextureUniformLocation, _normalTextureUniformLocation, _noiseTextureUniformLocation
-    };
+    glUniform1i(_normalTextureUniformLocation, 1);
+    GLUtil::GL_ERROR_LOG();
 
-    for (int i = 0; i < MAX_TEXTURE; ++i) {
-        glActiveTexture(GL_TEXTURE0 + i);
-        GLUtil::GL_ERROR_LOG();
-        glUniform1i(uniformLocs[i], i);
-        GLUtil::GL_ERROR_LOG();
-    }
+    glUniform1i(_noiseTextureUniformLocation, 2);
+    GLUtil::GL_ERROR_LOG();
 }

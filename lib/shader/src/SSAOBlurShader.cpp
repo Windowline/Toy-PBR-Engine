@@ -35,6 +35,7 @@ const char* fragmentSSAOBlur = R(
 
 SSAOBlurShader::SSAOBlurShader() {
     this->load();
+    basicUniformLoc();
     _ssaoTextureUniformLocation = glGetUniformLocation(_programID, "u_ssaoTexture");
     _textureSizeUniformLocation = glGetUniformLocation(_programID, "u_textureSize");
 }
@@ -54,6 +55,6 @@ bool SSAOBlurShader::load() {
 void SSAOBlurShader::useProgram() {
     glUseProgram(_programID);
 
-    glActiveTexture(GL_TEXTURE0);
+    assert(_ssaoTextureUniformLocation != -1);
     glUniform1i(_ssaoTextureUniformLocation, 0);
 }

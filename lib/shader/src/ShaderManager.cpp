@@ -7,7 +7,6 @@
 #include "ShadowDepthShader.hpp"
 #include "SSAOShader.hpp"
 #include "SSAOBlurShader.hpp"
-#include "AlbedoColorShader.hpp"
 
 using namespace std;
 
@@ -57,7 +56,6 @@ void ShaderManager::loadAllPrograms() {
             {eShaderProgram_ShadowDepth,        make_shared<ShadowDepthShader>()},
             {eShaderProgram_SSAO,               make_shared<SSAOShader>()},
             {eShaderProgram_SSAO_BLUR,          make_shared<SSAOBlurShader>()},
-            {eShaderProgram_ALBEDO_COLOR,       make_shared<AlbedoColorShader>()},
         };
     }
     

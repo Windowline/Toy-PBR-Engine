@@ -26,6 +26,7 @@ const char* fragmentTexturePassShaderTmp = R(
 
 TexturePassShader::TexturePassShader() {
     this->load();
+    basicUniformLoc();
     textureUniformLocation();
 }
 
@@ -45,6 +46,5 @@ void TexturePassShader::useProgram() {
     glUseProgram(_programID);
 
     assert(_textureUiformLoc != -1);
-    glActiveTexture(GL_TEXTURE0);
     glUniform1i(_textureUiformLoc, 0);
 }
