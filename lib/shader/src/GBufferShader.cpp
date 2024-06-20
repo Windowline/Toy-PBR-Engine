@@ -1,4 +1,4 @@
-#include "GBufferShaderTmp.hpp"
+#include "GBufferShader.hpp"
 
 const char* vertexGBufferShaderTmp = R(
         layout (location = 0) in vec3 a_position;
@@ -42,12 +42,12 @@ const char* fragmentGBufferShaderTmp = R(
         }
 );
 
-GBufferShaderTmp::GBufferShaderTmp() {
+GBufferShader::GBufferShader() {
     this->load();
     BasicShader::basicUniformLoc();
 }
 
-bool GBufferShaderTmp::load() {
+bool GBufferShader::load() {
     string vShader = string("#version 330 core \n") + string(vertexGBufferShaderTmp);
     string fShader = string("#version 330 core \n") + string(fragmentGBufferShaderTmp);
 

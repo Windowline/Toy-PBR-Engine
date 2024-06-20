@@ -1,11 +1,11 @@
-#ifndef TOYRENDERER_TEXTUREPASSSHADERTMP_HPP
-#define TOYRENDERER_TEXTUREPASSSHADERTMP_HPP
+#ifndef TOYRENDERER_TEXTUREPASSSHADER_HPP
+#define TOYRENDERER_TEXTUREPASSSHADER_HPP
 
 #include "BasicShader.hpp"
 
-class TexturePassShaderTmp : public BasicShader {
+class TexturePassShader : public BasicShader {
 public:
-    TexturePassShaderTmp();
+    TexturePassShader();
     bool load() override;
     void useProgram() override;
 
@@ -17,4 +17,4 @@ private:
     GLint _textureUiformLoc = -1;
 };
 
-#endif //TOYRENDERER_TEXTUREPASSSHADERTMP_HPP
+#endif //TOYRENDERER_TEXTUREPASSSHADER_HPP

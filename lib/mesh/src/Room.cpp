@@ -1,9 +1,9 @@
-#include "Room2.hpp"
+#include "Room.hpp"
 #include <glad/glad.h>
 
 using namespace std;
 
-Room2::Room2(float size, vec3 backColor, vec3 topColor, vec3 leftColor,
+Room::Room(float size, vec3 backColor, vec3 topColor, vec3 leftColor,
            vec3 rightColor, vec3 bottomColor)
 
         :   _size(size),
@@ -154,7 +154,7 @@ Room2::Room2(float size, vec3 backColor, vec3 topColor, vec3 leftColor,
     glBindVertexArray(0);
 }
 
-void Room2::render() const {
+void Room::render() const {
     glBindVertexArray(_VAO);
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);

@@ -1,12 +1,12 @@
-#ifndef TOYRENDERER_DEFERREDLIGHTINGSHADERTMP_HPP
-#define TOYRENDERER_DEFERREDLIGHTINGSHADERTMP_HPP
+#ifndef TOYRENDERER_DEFERREDLIGHTINGSHADER_HPP
+#define TOYRENDERER_DEFERREDLIGHTINGSHADER_HPP
 
 #include "BasicShader.hpp"
 #include "Vector.hpp"
 
-class DeferredLightingShaderTmp : public BasicShader {
+class DeferredLightingShader : public BasicShader {
 public:
-    DeferredLightingShaderTmp();
+    DeferredLightingShader();
     bool load() override;
     void useProgram() override;
 
@@ -151,4 +151,4 @@ private:
     GLint _ssaoTextureUniformLocation = -1;
 };
 
-#endif //TOYRENDERER_DEFERREDLIGHTINGSHADERTMP_HPP
+#endif //TOYRENDERER_DEFERREDLIGHTINGSHADER_HPP

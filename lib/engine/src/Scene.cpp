@@ -1,23 +1,23 @@
 #include "Scene.hpp"
 #include "Engine.hpp"
 #include "ShaderManager.hpp"
-#include "Node2.hpp"
+#include "Node.hpp"
 #include "Camera.hpp"
 #include "FrameBufferObject.hpp"
 #include "GLUtilGeometry.hpp"
 
 #include "BasicShader.hpp"
-#include "ShadowDepthShaderTmp.hpp"
-#include "GBufferShaderTmp.hpp"
-#include "TexturePassShaderTmp.hpp"
-#include "SSAOShaderTmp.hpp"
-#include "SSAOBlurShaderTmp.hpp"
-#include "DeferredLightingShaderTmp.hpp"
-#include "AlbedoColorShaderTmp.hpp"
+#include "ShadowDepthShader.hpp"
+#include "GBufferShader.hpp"
+#include "TexturePassShader.hpp"
+#include "SSAOShader.hpp"
+#include "SSAOBlurShader.hpp"
+#include "DeferredLightingShader.hpp"
+#include "AlbedoColorShader.hpp"
 
-#include "Cube2.hpp"
-#include "Sphere2.hpp"
-#include "Room2.hpp"
+#include "Cube.hpp"
+#include "Sphere.hpp"
+#include "Room.hpp"
 #include "FullQuad.hpp"
 
 #include <random>
@@ -27,7 +27,7 @@ using namespace std;
 Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaultFBO(defaultFBO)
 {
     _fullQuad = make_unique<FullQuad>();
-    _textureShader = make_unique<TexturePassShaderTmp>();
+    _textureShader = make_unique<TexturePassShader>();
 
     _camera = std::make_shared<Camera>();
 
@@ -44,36 +44,36 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
 
 
     //방 메시를 생성합니다. 각면의 색상을 달리 받습니다.
-    auto roomMesh = std::make_shared<Room2>(100, vec3(0, 1, 0), vec3(0, 0, 0), vec3(1, 0, 0),
-                                                vec3(0, 0, 1), vec3(0.5, 0.5, 0.5));
+    auto roomMesh = std::make_shared<Room>(100, vec3(0, 1, 0), vec3(0, 0, 0), vec3(1, 0, 0),
+                                           vec3(0, 0, 1), vec3(0.5, 0.5, 0.5));
 
     //파란색 구체 메시를 생성합니다.
-    auto sphereMesh = std::make_shared<Sphere2>(16, vec3(0, 0, 1));
+    auto sphereMesh = std::make_shared<Sphere>(16, vec3(0, 0, 1));
 
     //흰색 정육면체 메시를 생성합니다.
-    auto cubeMesh = std::make_shared<Cube2>(20, vec3(1, 1, 1));
+    auto cubeMesh = std::make_shared<Cube>(20, vec3(1, 1, 1));
 
     //방 천장에 위치할 빛 구체를 생성합니다. 라이팅, 그림자 등의 연산에선 제외됩니다.
-    auto lightSphereMesh = std::make_shared<Sphere2>(4, vec3(1, 1, 1));
+    auto lightSphereMesh = std::make_shared<Sphere>(4, vec3(1, 1, 1));
 
 
     mat4 roomLocalTransform;
-    _room = std::make_shared<Node2>(this, roomMesh, roomLocalTransform);
+    _room = std::make_shared<Node>(this, roomMesh, roomLocalTransform);
 
 
     mat4 sphereLocalTransform = mat4::Translate(-20, -25, 20);
-    _sphere = std::make_shared<Node2>(this, sphereMesh, sphereLocalTransform);
+    _sphere = std::make_shared<Node>(this, sphereMesh, sphereLocalTransform);
 
 
     mat4 cubeLocalTransform = mat4::RotateY(45.f) * mat4::Translate(25, -40, -20);
-    _cube = std::make_shared<Node2>(this, cubeMesh, cubeLocalTransform);
+    _cube = std::make_shared<Node>(this, cubeMesh, cubeLocalTransform);
 
 
     mat4 lightSphereLocalTransform = mat4::Translate(_lightPositions.front().x,
                                                      _lightPositions.front().y + _lightYDelta,
                                                      _lightPositions.front().z);
 
-    _lightSphere = std::make_shared<Node2>(this, lightSphereMesh, lightSphereLocalTransform);
+    _lightSphere = std::make_shared<Node>(this, lightSphereMesh, lightSphereLocalTransform);
     _lightSphere->transformUpdate();
 
 
@@ -112,7 +112,7 @@ void Scene::setScreenSize(int w, int h) {
 
 void Scene::render() {
     if (_rootTransformDirty) {
-        visitNodes(_rootNode, [](const std::shared_ptr<Node2>& node) {
+        visitNodes(_rootNode, [](const std::shared_ptr<Node>& node) {
             node->transformUpdate();
         });
         _rootTransformDirty = false;
@@ -127,9 +127,9 @@ void Scene::render() {
         glClearColor(0.f, 1.f, 1.f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        auto wShader = weak_ptr<ShadowDepthShaderTmp>(shaderManager()->setActiveShader<ShadowDepthShaderTmp>(eShaderProgram_ShadowDepth));
+        auto wShader = weak_ptr<ShadowDepthShader>(shaderManager()->setActiveShader<ShadowDepthShader>(eShaderProgram_ShadowDepth));
 
-        visitNodes(_rootNode, [this, wShader](const shared_ptr<Node2>& node) {
+        visitNodes(_rootNode, [this, wShader](const shared_ptr<Node>& node) {
             if (auto shader = wShader.lock()) {
                 mat4 shadowMVP = node->worldTransform() * this->shadowLightViewProjection();
                 shader->shadowMVPUniformMatrix4fv(shadowMVP.pointer());
@@ -144,9 +144,9 @@ void Scene::render() {
         glClearColor(0.f, 0.f, 0.f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        auto wShader = weak_ptr<GBufferShaderTmp>(shaderManager()->setActiveShader<GBufferShaderTmp>(eShaderProgram_GBuffer));
+        auto wShader = weak_ptr<GBufferShader>(shaderManager()->setActiveShader<GBufferShader>(eShaderProgram_GBuffer));
 
-        visitNodes(_rootNode, [this, proj, view, wShader](const shared_ptr<Node2>& node) {
+        visitNodes(_rootNode, [this, proj, view, wShader](const shared_ptr<Node>& node) {
             if (auto shader = wShader.lock()) {
                 shader->projMatUniformMatrix4fv(proj.pointer());
                 shader->viewMatUniformMatrix4fv(view.pointer());
@@ -166,7 +166,7 @@ void Scene::render() {
         glClearColor(0.f, 0.f, 0.f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        auto shader = shaderManager()->setActiveShader<SSAOShaderTmp>(eShaderProgram_SSAO);
+        auto shader = shaderManager()->setActiveShader<SSAOShader>(eShaderProgram_SSAO);
         shader->viewMatUniformMatrix4fv(_camera->viewMat().pointer());
         shader->projMatUniformMatrix4fv(_camera->projMat().pointer());
         shader->samplesUniformVector(_ssaoKernel);
@@ -187,7 +187,7 @@ void Scene::render() {
     //SSAO Blur
     {
         _ssaoBlurFBO->bindWithViewport();
-        auto shader = shaderManager()->setActiveShader<SSAOBlurShaderTmp>(eShaderProgram_SSAO_BLUR);
+        auto shader = shaderManager()->setActiveShader<SSAOBlurShader>(eShaderProgram_SSAO_BLUR);
         shader->textureSizeUniform2f(_camera->screenSize().x, _camera->screenSize().y);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, _ssaoFBO->commonTexture());
@@ -198,7 +198,7 @@ void Scene::render() {
     {
         glBindFramebuffer(GL_FRAMEBUFFER, _defaultFBO);
         glViewport(0, 0, _camera->screenSize().x, _camera->screenSize().y);
-        auto shader = shaderManager()->setActiveShader<DeferredLightingShaderTmp>(eShaderProgram_DeferredLighting);
+        auto shader = shaderManager()->setActiveShader<DeferredLightingShader>(eShaderProgram_DeferredLighting);
         shader->ambientColorUniform3f(ambientColor().x, ambientColor().y, ambientColor().z);
         shader->diffuseColorUniform3f(diffuseColor().x, diffuseColor().y, diffuseColor().z);
         shader->specularColorUniform3f(specularColor().x, specularColor().y, specularColor().z);
@@ -225,7 +225,7 @@ void Scene::render() {
         //6 빛 구체 렌더링, 효과를 입히지 않고, 본연의 색만 입힙니다.
         glEnable(GL_CULL_FACE);
         glEnable(GL_DEPTH_TEST);
-        auto shaderLight = shaderManager()->setActiveShader<AlbedoColorShaderTmp>(eShaderProgram_ALBEDO_COLOR);
+        auto shaderLight = shaderManager()->setActiveShader<AlbedoColorShader>(eShaderProgram_ALBEDO_COLOR);
         shaderLight->projMatUniformMatrix4fv(proj.pointer());
         shaderLight->viewMatUniformMatrix4fv(view.pointer());
         shaderLight->worldMatUniformMatrix4fv(_lightSphere->worldTransform().pointer());
@@ -324,7 +324,7 @@ void Scene::buildSSAOInfo() {
 
 
 
-void Scene::visitNodes(std::shared_ptr<Node2> node, std::function<void(std::shared_ptr<Node2>)> func) {
+void Scene::visitNodes(std::shared_ptr<Node> node, std::function<void(std::shared_ptr<Node>)> func) {
     func(node);
     for (auto child : node->children()) {
         visitNodes(child, func);

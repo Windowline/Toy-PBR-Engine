@@ -6,21 +6,21 @@ add_library(shader STATIC
         include/BasicShader.hpp
         src/BasicShader.cpp
 
-        include/ShadowDepthShaderTmp.hpp
-        src/ShadowDepthShaderTmp.cpp
-        include/GBufferShaderTmp.hpp
-        src/GBufferShaderTmp.cpp
-        include/TexturePassShaderTmp.hpp
-        src/TexturePassShaderTmp.cpp
-        include/DepthDebugShaderTmp.hpp
-        src/DepthDebugShaderTmp.cpp
-        include/SSAOShaderTmp.hpp
-        src/SSAOShaderTmp.cpp
-        include/SSAOBlurShaderTmp.hpp
-        include/DeferredLightingShaderTmp.hpp
-        src/DeferredLightingShaderTmp.cpp
-        include/AlbedoColorShaderTmp.hpp
-        src/AlbedoColorShaderTmp.cpp
+        include/ShadowDepthShader.hpp
+        src/ShadowDepthShader.cpp
+        include/GBufferShader.hpp
+        src/GBufferShader.cpp
+        include/TexturePassShader.hpp
+        src/TexturePassShader.cpp
+        include/DepthDebugShader.hpp
+        src/DepthDebugShader.cpp
+        include/SSAOShader.hpp
+        src/SSAOShader.cpp
+        include/SSAOBlurShader.hpp
+        include/DeferredLightingShader.hpp
+        src/DeferredLightingShader.cpp
+        include/AlbedoColorShader.hpp
+        src/AlbedoColorShader.cpp
 )
 
 target_link_libraries(shader

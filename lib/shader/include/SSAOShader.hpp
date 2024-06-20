@@ -1,12 +1,12 @@
-#ifndef TOYRENDERER_SSAOSHADERTMP_HPP
-#define TOYRENDERER_SSAOSHADERTMP_HPP
+#ifndef TOYRENDERER_SSAOSHADER_HPP
+#define TOYRENDERER_SSAOSHADER_HPP
 
 #include "BasicShader.hpp"
 #include "Vector.hpp"
 
-class SSAOShaderTmp : public BasicShader {
+class SSAOShader : public BasicShader {
 public:
-    SSAOShaderTmp();
+    SSAOShader();
     bool load() override;
     void useProgram() override;
 

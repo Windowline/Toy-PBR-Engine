@@ -8,14 +8,14 @@
 class RenderEngine;
 class Camera;
 //class Node;
-class Node2;
+class Node;
 class ShaderManager;
 //class Sphere;
 //class Room;
 //class Cube;
 class FrameBufferObject;
 class FullQuad;
-class TexturePassShaderTmp;
+class TexturePassShader;
 
 
 /**
@@ -31,7 +31,7 @@ public:
 
     void setScreenSize(int w, int h);
 
-    void visitNodes(std::shared_ptr<Node2> node, std::function<void(std::shared_ptr<Node2>)> func);
+    void visitNodes(std::shared_ptr<Node> node, std::function<void(std::shared_ptr<Node>)> func);
 
     void render();
 
@@ -83,11 +83,11 @@ private:
 
     std::shared_ptr<Camera> _camera;
 
-    std::shared_ptr<Node2> _rootNode;
-    std::shared_ptr<Node2> _room;
-    std::shared_ptr<Node2> _cube;
-    std::shared_ptr<Node2> _sphere;
-    std::shared_ptr<Node2> _lightSphere;//조명에 위치한 흰색 구
+    std::shared_ptr<Node> _rootNode;
+    std::shared_ptr<Node> _room;
+    std::shared_ptr<Node> _cube;
+    std::shared_ptr<Node> _sphere;
+    std::shared_ptr<Node> _lightSphere;//조명에 위치한 흰색 구
 
     std::shared_ptr<FrameBufferObject> _gBuffer;
     std::shared_ptr<FrameBufferObject> _shadowDepthBuffer;
@@ -110,7 +110,7 @@ private:
     std::shared_ptr<FrameBufferObject> _ssaoBlurFBO;
 
     std::unique_ptr<FullQuad> _fullQuad;
-    std::unique_ptr<TexturePassShaderTmp> _textureShader;
+    std::unique_ptr<TexturePassShader> _textureShader;
 };
 
 #endif /* Scene_hpp */

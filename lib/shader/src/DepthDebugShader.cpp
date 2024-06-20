@@ -1,4 +1,4 @@
-#include "DepthDebugShaderTmp.hpp"
+#include "DepthDebugShader.hpp"
 
 const char* vertexDepthDebugTmp = R(
         layout (location = 0) in vec2 a_position;
@@ -34,12 +34,12 @@ const char* fragmentDepthDebugTmp = R(
         }
 );
 
-DepthDebugShaderTmp::DepthDebugShaderTmp() {
+DepthDebugShader::DepthDebugShader() {
     this->load();
     textureUniformLocation();
 }
 
-bool DepthDebugShaderTmp::load() {
+bool DepthDebugShader::load() {
     string vShader = string("#version 330 core \n") + string(vertexDepthDebugTmp);
     string fShader = string("#version 330 core \n") + string(fragmentDepthDebugTmp);
 
@@ -51,7 +51,7 @@ bool DepthDebugShaderTmp::load() {
     return true;
 }
 
-void DepthDebugShaderTmp::useProgram() {
+void DepthDebugShader::useProgram() {
     glUseProgram(_programID);
 
     assert(_textureUiformLoc != -1);

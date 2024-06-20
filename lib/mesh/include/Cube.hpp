@@ -1,12 +1,12 @@
 
-#ifndef TOYRENDERER_CUBE2_HPP
-#define TOYRENDERER_CUBE2_HPP
+#ifndef TOYRENDERER_CUBE_HPP
+#define TOYRENDERER_CUBE_HPP
 #include "BasicMeshInterface.h"
 #include "Vector.hpp"
 
-class Cube2 : public BasicMeshInterface {
+class Cube : public BasicMeshInterface {
 public:
-    Cube2(int size, vec3 color);
+    Cube(int size, vec3 color);
     void render() const override;
 
 private:
@@ -20,4 +20,4 @@ private:
 };
 
 
-#endif //TOYRENDERER_CUBE2_HPP
+#endif //TOYRENDERER_CUBE_HPP

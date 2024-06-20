@@ -1,4 +1,4 @@
-#include "AlbedoColorShaderTmp.hpp"
+#include "AlbedoColorShader.hpp"
 
 const char* vertexAlbedoShader = R(
         layout (location = 0) in vec3 a_position;
@@ -22,11 +22,11 @@ const char* fragmentAlbedoShader = R(
         }
 );
 
-AlbedoColorShaderTmp::AlbedoColorShaderTmp() {
+AlbedoColorShader::AlbedoColorShader() {
     this->load();
 }
 
-bool AlbedoColorShaderTmp::load() {
+bool AlbedoColorShader::load() {
     string vShader = string("#version 330 core \n") + string(vertexAlbedoShader);
     string fShader = string("#version 330 core \n") + string(fragmentAlbedoShader);
 

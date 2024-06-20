@@ -1,4 +1,4 @@
-#include "DeferredLightingShaderTmp.hpp"
+#include "DeferredLightingShader.hpp"
 #include "GLUtilGeometry.hpp"
 
 const char* vertexDeferred = R(
@@ -62,7 +62,7 @@ const char* fragmentDeferred = R(
         }
 );
 
-DeferredLightingShaderTmp::DeferredLightingShaderTmp() {
+DeferredLightingShader::DeferredLightingShader() {
     this->load();
     //uniform
     posTextureUniformLocation();
@@ -85,7 +85,7 @@ DeferredLightingShaderTmp::DeferredLightingShaderTmp() {
 }
 
 
-bool DeferredLightingShaderTmp::load() {
+bool DeferredLightingShader::load() {
     string vShader = string("#version 330 core \n") + string(vertexDeferred);
     string fShader = string("#version 330 core \n") + string(fragmentDeferred);
 
@@ -97,7 +97,7 @@ bool DeferredLightingShaderTmp::load() {
     return true;
 }
 
-void DeferredLightingShaderTmp::useProgram() {
+void DeferredLightingShader::useProgram() {
     glUseProgram(_programID);
 
     const int MAX_TEXTURE = 5;

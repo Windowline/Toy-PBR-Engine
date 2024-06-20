@@ -1,11 +1,11 @@
-#include "Sphere2.hpp"
+#include "Sphere.hpp"
 #include <glad/glad.h>
 
 #include <vector>
 
 using namespace std;
 
-Sphere2::Sphere2(float radius, vec3 color) : _radius(radius), _color(std::move(color)) {
+Sphere::Sphere(float radius, vec3 color) : _radius(radius), _color(std::move(color)) {
     constexpr int SECTOR_COUNT = 400;
     constexpr int STACK_COUNT = 400;
     constexpr double PI = 3.14159265358979323846264338327950288;
@@ -108,7 +108,7 @@ Sphere2::Sphere2(float radius, vec3 color) : _radius(radius), _color(std::move(c
     glBindVertexArray(0);
 }
 
-void Sphere2::render() const {
+void Sphere::render() const {
     glBindVertexArray(_VAO);
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);

@@ -1,12 +1,12 @@
-#ifndef TOYRENDERER_ROOM2_HPP
-#define TOYRENDERER_ROOM2_HPP
+#ifndef TOYRENDERER_ROOM_HPP
+#define TOYRENDERER_ROOM_HPP
 
 #include "BasicMeshInterface.h"
 #include "Vector.hpp"
 
-class Room2 : public BasicMeshInterface {
+class Room : public BasicMeshInterface {
 public:
-    Room2(float size, vec3 backColor, vec3 topColor, vec3 leftColor, vec3 rightColor, vec3 bottomColor);
+    Room(float size, vec3 backColor, vec3 topColor, vec3 leftColor, vec3 rightColor, vec3 bottomColor);
     void render() const override;
 
 private:
@@ -24,4 +24,4 @@ private:
     int _indSize;
 };
 
-#endif //TOYRENDERER_ROOM2_HPP
+#endif //TOYRENDERER_ROOM_HPP

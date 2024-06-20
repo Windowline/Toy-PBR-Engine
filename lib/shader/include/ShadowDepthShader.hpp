@@ -1,11 +1,11 @@
-#ifndef TOYRENDERER_SHADOWDEPTHSHADERTMP_HPP
-#define TOYRENDERER_SHADOWDEPTHSHADERTMP_HPP
+#ifndef TOYRENDERER_SHADOWDEPTHSHADER_HPP
+#define TOYRENDERER_SHADOWDEPTHSHADER_HPP
 
 #include "BasicShader.hpp"
 
-class ShadowDepthShaderTmp : public BasicShader {
+class ShadowDepthShader : public BasicShader {
 public:
-    ShadowDepthShaderTmp();
+    ShadowDepthShader();
     bool load() override;
 
     void shadowMVPUniformMatrix4fv(const GLfloat *value) const {
@@ -22,4 +22,4 @@ private:
 };
 
 
-#endif //TOYRENDERER_SHADOWDEPTHSHADERTMP_HPP
+#endif //TOYRENDERER_SHADOWDEPTHSHADER_HPP

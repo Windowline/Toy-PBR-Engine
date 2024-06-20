@@ -1,19 +1,19 @@
-#ifndef TOYRENDERER_NODE2_HPP
-#define TOYRENDERER_NODE2_HPP
+#ifndef TOYRENDERER_NODE_HPP
+#define TOYRENDERER_NODE_HPP
 #include "Matrix.hpp"
 #include <memory>
 
 class BasicMeshInterface;
 class Scene;
 
-class Node2 {
+class Node {
 
 public:
-    Node2(Scene *scene, std::shared_ptr<BasicMeshInterface> mesh, mat4 localTransform);
+    Node(Scene *scene, std::shared_ptr<BasicMeshInterface> mesh, mat4 localTransform);
 
-    virtual ~Node2() {}
+    virtual ~Node() {}
 
-    void addChild(std::shared_ptr<Node2> node);
+    void addChild(std::shared_ptr<Node> node);
 
     void transformUpdate();
 
@@ -25,7 +25,7 @@ public:
         return _worldTransform;
     }
 
-    const std::vector<std::shared_ptr<Node2>>& children() const {
+    const std::vector<std::shared_ptr<Node>>& children() const {
         return _children;
     }
 
@@ -37,10 +37,10 @@ private:
     mat4 _localTransform;
     mat4 _worldTransform;
     Scene* _scene;
-    Node2* _parent;
+    Node* _parent;
 
     std::shared_ptr<BasicMeshInterface> _mesh;
-    std::vector<std::shared_ptr<Node2>> _children;
+    std::vector<std::shared_ptr<Node>> _children;
 };
 
-#endif //TOYRENDERER_NODE2_HPP
+#endif //TOYRENDERER_NODE_HPP

@@ -1,4 +1,4 @@
-#include "ShadowDepthShaderTmp.hpp"
+#include "ShadowDepthShader.hpp"
 
 const char* vertexShadowDepthShaderTmp = R(
         layout (location = 0) in vec3 a_position;
@@ -28,12 +28,12 @@ const char* fragmentSwhadowDepthShaderTmp = R(
 );
 
 
-ShadowDepthShaderTmp::ShadowDepthShaderTmp() {
+ShadowDepthShader::ShadowDepthShader() {
     this->load();
     this->shadowMVPUniformLocation();
 }
 
-bool ShadowDepthShaderTmp::load() {
+bool ShadowDepthShader::load() {
     string vShader = string("#version 330 core \n") + string(vertexShadowDepthShaderTmp);
     string fShader = string("#version 330 core \n") + string(fragmentSwhadowDepthShaderTmp);
 

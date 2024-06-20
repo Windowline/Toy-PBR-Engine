@@ -1,4 +1,4 @@
-#include "TexturePassShaderTmp.hpp"
+#include "TexturePassShader.hpp"
 
 const char* vertexTexturePassShaderTmp = R(
         layout (location = 0) in vec2 a_position;
@@ -24,12 +24,12 @@ const char* fragmentTexturePassShaderTmp = R(
         }
 );
 
-TexturePassShaderTmp::TexturePassShaderTmp() {
+TexturePassShader::TexturePassShader() {
     this->load();
     textureUniformLocation();
 }
 
-bool TexturePassShaderTmp::load() {
+bool TexturePassShader::load() {
     string vShader = string("#version 330 core \n") + string(vertexTexturePassShaderTmp);
     string fShader = string("#version 330 core \n") + string(fragmentTexturePassShaderTmp);
 
@@ -41,7 +41,7 @@ bool TexturePassShaderTmp::load() {
     return true;
 }
 
-void TexturePassShaderTmp::useProgram() {
+void TexturePassShader::useProgram() {
     glUseProgram(_programID);
 
     assert(_textureUiformLoc != -1);

@@ -1,4 +1,4 @@
-#include "SSAOShaderTmp.hpp"
+#include "SSAOShader.hpp"
 #include "GLUtilGeometry.hpp"
 
 const char* vertexSSAOTmp = R(
@@ -60,7 +60,7 @@ const char* fragmentSSAOTmp = R(
 
 
 
-SSAOShaderTmp::SSAOShaderTmp() {
+SSAOShader::SSAOShader() {
     this->load();
 
     _posTextureUniformLocation = glGetUniformLocation(_programID, "u_posTexture");
@@ -70,7 +70,7 @@ SSAOShaderTmp::SSAOShaderTmp() {
     _screenSizeUniformLocation = glGetUniformLocation(_programID, "u_screenSize");
 }
 
-bool SSAOShaderTmp::load() {
+bool SSAOShader::load() {
     string vShader = string("#version 330 core \n") + string(vertexSSAOTmp);
     string fShader = string("#version 330 core \n") + string(fragmentSSAOTmp);
 
@@ -82,7 +82,7 @@ bool SSAOShaderTmp::load() {
     return true;
 }
 
-void SSAOShaderTmp::useProgram() {
+void SSAOShader::useProgram() {
     glUseProgram(_programID);
 
 

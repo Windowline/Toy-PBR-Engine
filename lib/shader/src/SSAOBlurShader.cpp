@@ -1,4 +1,4 @@
-#include "SSAOBlurShaderTmp.hpp"
+#include "SSAOBlurShader.hpp"
 
 const char* vertexSSAOBlur = R(
         layout (location = 0) in vec2 a_position;
@@ -33,13 +33,13 @@ const char* fragmentSSAOBlur = R(
         }
 );
 
-SSAOBlurShaderTmp::SSAOBlurShaderTmp() {
+SSAOBlurShader::SSAOBlurShader() {
     this->load();
     _ssaoTextureUniformLocation = glGetUniformLocation(_programID, "u_ssaoTexture");
     _textureSizeUniformLocation = glGetUniformLocation(_programID, "u_textureSize");
 }
 
-bool SSAOBlurShaderTmp::load() {
+bool SSAOBlurShader::load() {
     string vShader = string("#version 330 core \n") + string(vertexSSAOBlur);
     string fShader = string("#version 330 core \n") + string(fragmentSSAOBlur);
 
@@ -51,7 +51,7 @@ bool SSAOBlurShaderTmp::load() {
     return true;
 }
 
-void SSAOBlurShaderTmp::useProgram() {
+void SSAOBlurShader::useProgram() {
     glUseProgram(_programID);
 
     glActiveTexture(GL_TEXTURE0);

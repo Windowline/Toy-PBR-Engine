@@ -1,7 +1,7 @@
-#include "Cube2.hpp"
+#include "Cube.hpp"
 #include <glad/glad.h>
 
-Cube2::Cube2(int size, vec3 color) : _VAO(-1), _VBO(-1), _EBO(-1), _size(size), _color(color) {
+Cube::Cube(int size, vec3 color) : _VAO(-1), _VBO(-1), _EBO(-1), _size(size), _color(color) {
     float hSize = _size / 2.f;
 
     std::vector<vec3> positions = {
@@ -129,7 +129,7 @@ Cube2::Cube2(int size, vec3 color) : _VAO(-1), _VBO(-1), _EBO(-1), _size(size), 
     glBindVertexArray(0);
 }
 
-void Cube2::render() const {
+void Cube::render() const {
     glBindVertexArray(_VAO);
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);

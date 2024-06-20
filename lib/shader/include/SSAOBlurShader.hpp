@@ -1,11 +1,11 @@
-#ifndef TOYRENDERER_SSAOBLURSHADERTMP_HPP
-#define TOYRENDERER_SSAOBLURSHADERTMP_HPP
+#ifndef TOYRENDERER_SSAOBLURSHADER_HPP
+#define TOYRENDERER_SSAOBLURSHADER_HPP
 
 #include "BasicShader.hpp"
 
-class SSAOBlurShaderTmp : public BasicShader {
+class SSAOBlurShader : public BasicShader {
 public:
-    SSAOBlurShaderTmp();
+    SSAOBlurShader();
     bool load() override;
     void useProgram() override;
 
@@ -27,4 +27,4 @@ private:
 
 };
 
-#endif //TOYRENDERER_SSAOBLURSHADERTMP_HPP
+#endif //TOYRENDERER_SSAOBLURSHADER_HPP

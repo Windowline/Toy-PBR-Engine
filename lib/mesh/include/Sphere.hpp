@@ -1,12 +1,12 @@
-#ifndef TOYRENDERER_SPHERE2_HPP
-#define TOYRENDERER_SPHERE2_HPP
+#ifndef TOYRENDERER_SPHERE_HPP
+#define TOYRENDERER_SPHERE_HPP
 
 #include "BasicMeshInterface.h"
 #include "Vector.hpp"
 
-class Sphere2 : public BasicMeshInterface {
+class Sphere : public BasicMeshInterface {
 public:
-    Sphere2(float radius, vec3 color);
+    Sphere(float radius, vec3 color);
     void render() const override;
 
 private:
@@ -21,4 +21,4 @@ private:
 };
 
 
-#endif //TOYRENDERER_SPHERE2_HPP
+#endif //TOYRENDERER_SPHERE_HPP

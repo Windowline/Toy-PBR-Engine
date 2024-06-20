@@ -1,11 +1,11 @@
-#ifndef TOYRENDERER_GBUFFERSHADERTMP_HPP
-#define TOYRENDERER_GBUFFERSHADERTMP_HPP
+#ifndef TOYRENDERER_GBUFFERSHADER_HPP
+#define TOYRENDERER_GBUFFERSHADER_HPP
 
 #include "BasicShader.hpp"
 
-class GBufferShaderTmp : public BasicShader {
+class GBufferShader : public BasicShader {
 public:
-    GBufferShaderTmp();
+    GBufferShader();
     bool load() override;
 
     void worldMatUniformMatrix4fv(const GLfloat *value) {
@@ -25,4 +25,4 @@ private:
 
 };
 
-#endif //TOYRENDERER_GBUFFERSHADERTMP_HPP
+#endif //TOYRENDERER_GBUFFERSHADER_HPP
