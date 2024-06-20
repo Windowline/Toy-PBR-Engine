@@ -79,6 +79,7 @@ private:
     std::shared_ptr<Node> _cube;
     std::shared_ptr<Node> _sphere;
     std::shared_ptr<Node> _lightSphere;//조명에 위치한 흰색 구
+    std::shared_ptr<Node> _model;
 
     std::shared_ptr<FrameBufferObject> _gBuffer;
     std::shared_ptr<FrameBufferObject> _shadowDepthBuffer;

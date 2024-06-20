@@ -1,7 +1,8 @@
 # TODO
 # -DCMAKE_TOOLCHAIN_FILE="/Users/bagchangseon/vcpkg/scripts/buildsystems/vcpkg.cmake"
-# vcpkg install glad
-# vcpkg install glfw
+# ./vcpkg install glad
+# ./vcpkg install glfw
+# ./vcpkg install ASSIMP
 
 cmake_minimum_required(VERSION 3.28)
 project(ToyRenderer)
@@ -14,7 +15,9 @@ find_package(glfw3 CONFIG REQUIRED)
 add_subdirectory(lib)
 
 add_executable(app main.cpp
-        lib/util/GLUtilGeometry.hpp)
+        lib/util/GLUtilGeometry.hpp
+        lib/model/include/Model.hpp
+        lib/model/src/Model.cpp)
 
 target_link_libraries(app
         PRIVATE

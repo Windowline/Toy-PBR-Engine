@@ -5,6 +5,7 @@ add_library(engine STATIC
 
         include/Scene.hpp
         src/Scene.cpp
+
         include/Node.hpp
         src/Node.cpp
 )
@@ -13,17 +14,17 @@ target_include_directories(engine
 PUBLIC
         ../engine/include
         ../shader/include
-        ../mesh/include
+        ../basic_mesh/include
         ../camera/include
         ../frame_buffer/include
         ../camera/include
         ../math
         ../util
+        ../model/include
 )
 
 target_link_libraries(engine
  PUBLIC
-        math
 # PRIVATE
         shader
         mesh
@@ -31,4 +32,5 @@ target_link_libraries(engine
         frame_buffer
         math
         util
+        model
 )

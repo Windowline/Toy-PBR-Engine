@@ -19,6 +19,8 @@
 #include "Room.hpp"
 #include "FullQuad.hpp"
 
+#include "../model/include/Model.hpp"
+
 #include <random>
 
 using namespace std;
@@ -71,6 +73,10 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
 
     _lightSphere = make_shared<Node>(this, lightSphereMesh, lightSphereLocalTransform);
     _lightSphere->transformUpdate();
+
+
+    //    Model ourModel("/Users/bagchangseon/CLionProjects/ToyRenderer/lib/res/objects/cyborg/cyborg.obj");
+//    auto
 
 
     _rootTransformDirty = true;
