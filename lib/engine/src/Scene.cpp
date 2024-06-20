@@ -18,8 +18,7 @@
 #include "Sphere.hpp"
 #include "Room.hpp"
 #include "FullQuad.hpp"
-
-#include "../model/include/Model.hpp"
+#include "Model.hpp"
 
 #include <random>
 
@@ -75,16 +74,16 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
     _lightSphere->transformUpdate();
 
 
-    //    Model ourModel("/Users/bagchangseon/CLionProjects/ToyRenderer/lib/res/objects/cyborg/cyborg.obj");
-//    auto
-
+    mat4 modelLocalTransform = mat4::Scale(6.f) * mat4::Translate(5, -10, 20);
+    auto modelMesh = make_shared<Model>("/Users/bagchangseon/CLionProjects/ToyRenderer/lib/res/objects/backpack/backpack.obj", vec3(0.7, 0.7, 0.7));
+    _model = make_shared<Node>(this, modelMesh, modelLocalTransform);
 
     _rootTransformDirty = true;
 
-    //방이 최상위 계층이고, 그 아래에 구체와 정육면체가 있습니다.
     _rootNode = _room;
     _rootNode->addChild(_sphere);
     _rootNode->addChild(_cube);
+    _rootNode->addChild(_model);
 }
 
 Scene::~Scene() {

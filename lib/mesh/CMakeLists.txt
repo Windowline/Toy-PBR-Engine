@@ -16,19 +16,26 @@ add_library(mesh STATIC
 
         include/Room.hpp
         src/Room.cpp
+
+        include/Model.hpp
+        src/Model.cpp
 )
 
 target_include_directories(mesh
         PUBLIC
-        ../basic_mesh/include
+        include
         ../math
         ../util
         ../shader/include
 )
+
+find_package(assimp CONFIG REQUIRED)
 
 target_link_libraries(mesh
 PUBLIC
        math
        shader
        util
+PRIVATE
+       assimp::assimp
 )

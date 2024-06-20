@@ -14,13 +14,12 @@ target_include_directories(engine
 PUBLIC
         ../engine/include
         ../shader/include
-        ../basic_mesh/include
+        ../mesh/include
         ../camera/include
         ../frame_buffer/include
         ../camera/include
         ../math
         ../util
-        ../model/include
 )
 
 target_link_libraries(engine
@@ -32,5 +31,4 @@ target_link_libraries(engine
         frame_buffer
         math
         util
-        model
 )

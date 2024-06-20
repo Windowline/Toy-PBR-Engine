@@ -1,20 +1,21 @@
 #ifndef TOYRENDERER_MODEL_HPP
 #define TOYRENDERER_MODEL_HPP
 
-#include <glad/glad.h>
+#include "BasicMeshInterface.h"
 #include "Vector.hpp"
 
+#include <glad/glad.h>
 #include <stb_image.h>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
-
 #include <string>
 #include <fstream>
 #include <sstream>
 #include <iostream>
 #include <map>
 #include <vector>
+
 using namespace std;
 
 unsigned int TextureFromFile(const char *path, const string &directory, bool gamma = false);
@@ -22,16 +23,14 @@ unsigned int TextureFromFile(const char *path, const string &directory, bool gam
 #define MAX_BONE_INFLUENCE 4
 
 struct Vertex {
-    // position
     vec3 Position;
-    // normal
+    vec3 Color;
     vec3 Normal;
-    // texCoords
     vec2 TexCoords;
-    // tangent
     vec3 Tangent;
-    // bitangent
     vec3 Bitangent;
+
+
     //bone indexes which will influence this vertex
     int m_BoneIDs[MAX_BONE_INFLUENCE];
     //weights from each bone
@@ -44,7 +43,7 @@ struct Texture {
     string path;
 };
 
-class ModelMesh : BasicMeshInterface {
+class ModelMesh {
 public:
     // mesh Data
     vector<Vertex>       vertices;
@@ -166,32 +165,42 @@ private:
         // vertex Positions
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
-        // vertex normals
+
+        // vertex Colors;
         glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
-        // vertex texture coords
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Color));
+
+        // vertex normals
         glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
-        // vertex tangent
+        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Normal));
+
+        // vertex texture coords
         glEnableVertexAttribArray(3);
-        glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Tangent));
-        // vertex bitangent
+        glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
+
+        // vertex tangent
         glEnableVertexAttribArray(4);
-        glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Bitangent));
-        // ids
+        glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Tangent));
+
+        // vertex bitangent
         glEnableVertexAttribArray(5);
-        glVertexAttribIPointer(5, 4, GL_INT, sizeof(Vertex), (void*)offsetof(Vertex, m_BoneIDs));
+        glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Bitangent));
+
+        // ids
+        glEnableVertexAttribArray(6);
+        glVertexAttribIPointer(6, 4, GL_INT, sizeof(Vertex), (void*)offsetof(Vertex, m_BoneIDs));
 
         // weights
-        glEnableVertexAttribArray(6);
-        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, m_Weights));
+        glEnableVertexAttribArray(7);
+        glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, m_Weights));
+
         glBindVertexArray(0);
     }
 };
 
 
 
-class Model
+class Model : public BasicMeshInterface
 {
 public:
     // model data
@@ -200,10 +209,10 @@ public:
     string directory;
     bool gammaCorrection;
 
-//    Model();
+    vec3 _color;
 
     // constructor, expects a filepath to a 3D model.
-    Model(string const &path, bool gamma = false) : gammaCorrection(gamma)
+    Model(string const &path, vec3 color, bool gamma = false) : _color(color), gammaCorrection(gamma)
     {
         loadModel(path);
     }
@@ -276,6 +285,10 @@ private:
             vector.y = mesh->mVertices[i].y;
             vector.z = mesh->mVertices[i].z;
             vertex.Position = vector;
+
+            // colors
+            vertex.Color = _color;
+
             // normals
             if (mesh->HasNormals())
             {
