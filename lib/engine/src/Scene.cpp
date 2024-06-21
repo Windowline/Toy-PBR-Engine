@@ -93,13 +93,12 @@ Scene::~Scene() {
 
 //스크린 사이즈 변경에 의해 다시 만들어져야 할 것들을 업데이트합니다.
 void Scene::setScreenSize(int w, int h) {
-
     if (!_camera) {
         return;
     }
 
     glViewport(0, 0, w, h);
-    _camera->setScreenRect(Rect(0, 0, w, h));
+    _camera->setScreenRect(Rect{0, 0, w, h});
 
     _shadowLightView = Camera::createViewMatrix(vec3(0, 0, 0), _lightPositions.front(), vec3(0, 1, 0)); //라이트가 다수일 경우 shadow용 라이트는 첫번째 라이트로 정했습니다.
     _shadowLightProj = mat4::Ortho(-200, 300, -300, 300, -100, 1000);

@@ -19,7 +19,6 @@ float Yaw = -90.0;
 float Pitch = 0.f;
 float MovementSpeed = 8.f;
 float MouseSensitivity = 0.1f;
-//float Zoom;
 
 void processInput(GLFWwindow *window) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)

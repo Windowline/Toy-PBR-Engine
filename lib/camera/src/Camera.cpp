@@ -5,7 +5,7 @@ Camera::Camera() : _target(vec3(0, 0, 0)),
                    _eye(vec3(0, 0, 180)),
                    _fovy(45.f),
                    _needUpdateMat(false),
-                   _screenRect(0, 0, 0, 0)
+                   _screenRect({0, 0, 0, 0})
 {}
 
 
@@ -51,16 +51,51 @@ vec3 Camera::unproject(vec3 point) const {
     return world.xyz();
 }
 
+Basis3 Camera::CreateBasis(vec3 target, vec3 eye, vec3 up) {
+    //관점 정규직교 좌표계 생성
+    vec3 vDir = (target - eye).normalized();
+    vec3 vUp = (up - (vDir * up.dot(vDir))).normalized();
+    vec3 vSide = vDir.cross(vUp);
+    return Basis3{ vDir, vUp, vSide };
+}
+
+void Camera::updateViewPosition(int dir, float delta) {
+    const auto& basis = Camera::CreateBasis(_target, _eye, DEFAULT_UP);
+    vec3 updatedEye = _eye;
+
+    if (dir == 0)
+        updatedEye += basis.vDir * delta;
+    else if (dir == 1)
+        updatedEye -= basis.vDir * delta;
+    else if (dir == 2)
+        updatedEye -= basis.vSide * delta;
+    else if (dir == 3)
+        updatedEye += basis.vSide * delta;
+    else
+        std::cout << "unexpected dir " << std:: endl;
+
+    _eye = updatedEye;
+    _needUpdateMat = true;
+}
+
+void Camera::updateViewRotation(float yaw, float pitch) {
+    auto d2r = [](float d)->float {return d * 3.141592653589793238462 / 180.0f;};
+
+    vec3 front;
+    front.x = cos(d2r(yaw)) * cos(d2r(pitch));
+    front.y = sin(d2r(pitch));
+    front.z = sin(d2r(yaw)) * cos(d2r(pitch));
+    front.normalize();
+
+    float distance = (_eye - _target).length();
+    _target = front * distance;
+
+    _needUpdateMat = true;
+}
+
+
 mat4 Camera::createViewMatrix(vec3 target, vec3 eye, vec3 up) {
-   
-    auto createBasis = [](vec3 eye, vec3 up, vec3 targetPos) -> Basis3 {
-        vec3 vDir = (targetPos - eye).normalized();
-        vec3 vUp = (up - (vDir * up.dot(vDir))).normalized();
-        vec3 vSide = vDir.cross(vUp);
-        return Basis3{ vDir, vUp, vSide };
-    };
-    
-    const auto& basis = createBasis(eye, up, target); //eye 관점 정규직교 좌표계 생성
+    const auto& basis = Camera::CreateBasis(target, eye, up);
     
     mat4 ret;
     ret.x = vec4(std::move(basis.vSide), 0);
@@ -79,7 +114,7 @@ mat4 Camera::computeViewMat() const {
     
     return Camera::createViewMatrix(_target,
                                     _eye,
-                                    vec3(0, 1, 0));
+                                    DEFAULT_UP);
 //                                    mat4::RotateZ(_cameraYAngle).multiplication1n4(vec4(0, 1, 0, 0)).xyz().normalized());
 }
 
