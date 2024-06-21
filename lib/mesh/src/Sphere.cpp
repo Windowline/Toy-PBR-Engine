@@ -5,26 +5,30 @@
 
 using namespace std;
 
-Sphere::Sphere(float radius, vec3 color) : _radius(radius), _color(std::move(color)) {
+Sphere::Sphere(float radius, vec3 color) : _radius(radius), _color(move(color)) {
+    constexpr unsigned int X_SEGMENTS = 64;
+    constexpr unsigned int Y_SEGMENTS = 64;
+    constexpr float PI = 3.14159265359f;
+
     glGenVertexArrays(1, &_VAO);
     glGenBuffers(1, &_VBO);
     glGenBuffers(1, &_EBO);
 
-    std::vector<vec3> positions;
-    std::vector<vec3> normals;
-    std::vector<unsigned int> indices;
+    vector<vec3> positions;
+    vector<vec3> normals;
+    vector<unsigned int> indices;
 
-    const unsigned int X_SEGMENTS = 64;
-    const unsigned int Y_SEGMENTS = 64;
-    const float PI = 3.14159265359f;
+    positions.reserve((X_SEGMENTS + 1) * (Y_SEGMENTS + 1));
+    normals.reserve((X_SEGMENTS + 1) * (Y_SEGMENTS + 1));
+    indices.reserve(Y_SEGMENTS * (X_SEGMENTS + 1) * 2);
 
     for (unsigned int x = 0; x <= X_SEGMENTS; ++x) {
         for (unsigned int y = 0; y <= Y_SEGMENTS; ++y) {
             float xSegment = (float)x / (float)X_SEGMENTS;
             float ySegment = (float)y / (float)Y_SEGMENTS;
-            float xPos = std::cos(xSegment * 2.0f * PI) * std::sin(ySegment * PI);
-            float yPos = std::cos(ySegment * PI);
-            float zPos = std::sin(xSegment * 2.0f * PI) * std::sin(ySegment * PI);
+            float xPos = cos(xSegment * 2.0f * PI) * sin(ySegment * PI);
+            float yPos = cos(ySegment * PI);
+            float zPos = sin(xSegment * 2.0f * PI) * sin(ySegment * PI);
 
             vec3 p = vec3(xPos, yPos, zPos).normalized() * radius;
 
@@ -51,24 +55,26 @@ Sphere::Sphere(float radius, vec3 color) : _radius(radius), _color(std::move(col
 
     _indSize = static_cast<unsigned int>(indices.size());
 
-    std::vector<float> data;
+    vector<float> vertices;
+    vertices.reserve(3 * positions.size());
+
     for (unsigned int i = 0; i < positions.size(); ++i) {
-        data.push_back(positions[i].x);
-        data.push_back(positions[i].y);
-        data.push_back(positions[i].z);
+        vertices.push_back(positions[i].x);
+        vertices.push_back(positions[i].y);
+        vertices.push_back(positions[i].z);
 
-        data.push_back(_color.x);
-        data.push_back(_color.y);
-        data.push_back(_color.z);
+        vertices.push_back(_color.x);
+        vertices.push_back(_color.y);
+        vertices.push_back(_color.z);
 
-        data.push_back(normals[i].x);
-        data.push_back(normals[i].y);
-        data.push_back(normals[i].z);
+        vertices.push_back(normals[i].x);
+        vertices.push_back(normals[i].y);
+        vertices.push_back(normals[i].z);
     }
 
     glBindVertexArray(_VAO);
     glBindBuffer(GL_ARRAY_BUFFER, _VBO);
-    glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(float), &data[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), &vertices[0], GL_STATIC_DRAW);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
 
