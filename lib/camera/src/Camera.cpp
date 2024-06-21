@@ -1,12 +1,11 @@
 #include "Camera.hpp"
 
 Camera::Camera() : _target(vec3(0, 0, 0)),
-                   _eye(vec3(0, 0, 300)),
-                   _cameraYAngle(0),
+//                   _eye(vec3(0, 0, 300)),
+                   _eye(vec3(0, 0, 180)),
                    _fovy(45.f),
                    _needUpdateMat(false),
-                   _screenRect(0, 0, 0, 0),
-                   _eyeYOffet(0)
+                   _screenRect(0, 0, 0, 0)
 {}
 
 
@@ -79,8 +78,9 @@ mat4 Camera::createViewMatrix(vec3 target, vec3 eye, vec3 up) {
 mat4 Camera::computeViewMat() const {
     
     return Camera::createViewMatrix(_target,
-                                    _eye + vec3(0, _eyeYOffet, 0),
-                                    mat4::RotateZ(_cameraYAngle).multiplication1n4(vec4(0, 1, 0, 0)).xyz().normalized());
+                                    _eye,
+                                    vec3(0, 1, 0));
+//                                    mat4::RotateZ(_cameraYAngle).multiplication1n4(vec4(0, 1, 0, 0)).xyz().normalized());
 }
 
 

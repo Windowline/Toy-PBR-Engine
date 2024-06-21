@@ -3,27 +3,83 @@
 #include <iostream>
 #include "Engine.hpp"
 
+#include "Vector.hpp"
 
 RenderEngine* engine = nullptr;
 
-// process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
-// ---------------------------------------------------------------------------------------------------------
-void processInput(GLFWwindow *window)
-{
+float lastX = 800.0f / 2.0;
+float lastY = 600.0 / 2.0;
+bool firstMouse = true;
+
+// timing
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
+
+float Yaw = -90.0;
+float Pitch = 0.f;
+float MovementSpeed = 8.f;
+float MouseSensitivity = 0.1f;
+//float Zoom;
+
+void processInput(GLFWwindow *window) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+
+    float velocity = MovementSpeed * deltaTime;
+
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        engine->updateViewPosition(0, velocity);
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        engine->updateViewPosition(1, velocity);
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        engine->updateViewPosition(2, velocity);
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        engine->updateViewPosition(3, velocity);
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
 // ---------------------------------------------------------------------------------------------
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
-{
-    // make sure the viewport matches the new window dimensions; note that width and
-    // height will be significantly larger than specified on retina displays.
-//    glViewport(0, 0, width, height);
-
+void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     engine->setScreenSize(width, height);
 }
+
+void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
+    float xpos = static_cast<float>(xposIn);
+    float ypos = static_cast<float>(yposIn);
+
+    if (firstMouse) {
+        lastX = xpos;
+        lastY = ypos;
+        firstMouse = false;
+    }
+
+    float xoffset = xpos - lastX;
+    float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+
+    lastX = xpos;
+    lastY = ypos;
+
+    xoffset *= MouseSensitivity;
+    yoffset *= MouseSensitivity;
+
+    Yaw   += xoffset;
+    Pitch += yoffset;
+
+    const bool constrainPitch = true;
+
+    // make sure that when pitch is out of bounds, screen doesn't get flipped
+    if (constrainPitch) {
+        if (Pitch > 89.0f)
+            Pitch = 89.0f;
+        if (Pitch < -89.0f)
+            Pitch = -89.0f;
+    }
+
+    std::cout << "mouse_callback " << Yaw << ", " << Pitch << std::endl;
+    engine->updateViewRotation(Yaw, Pitch);
+}
+
+
 
 int main() {
     // glfw: initialize and configure
@@ -47,6 +103,9 @@ int main() {
     }
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetCursorPosCallback(window, mouse_callback);
+
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // glad: load all OpenGL function pointers
     // ---------------------------------------
@@ -66,6 +125,10 @@ int main() {
     //render loop
     while (!glfwWindowShouldClose(window))
     {
+        float currentFrame = glfwGetTime();
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+
         processInput(window);
 
         int viewport[4];

@@ -5,6 +5,7 @@
 
 #include "Matrix.hpp"
 #include "Vector.hpp"
+#include <iostream>
 
 struct Rect {
     Rect(int x_, int y_, int w_, int h_) {
@@ -63,18 +64,60 @@ public:
         return _eye;
     }
     
-    void setCameraYAngle(float v) {
-        _needUpdateMat = true;
-        _cameraYAngle = std::move(v);
-    }
-    
-    float cameraYAngle() const {
-        return _cameraYAngle;
-    }
-    
     void setScreenRect(Rect v) {
         _needUpdateMat = true;
         _screenRect = std::move(v);
+    }
+
+    void updateViewPosition(int dir, float delta) {
+        auto createBasis = [](vec3 eye, vec3 up, vec3 targetPos) -> Basis3 {
+            vec3 vDir = (targetPos - eye).normalized();
+            vec3 vUp = (up - (vDir * up.dot(vDir))).normalized();
+            vec3 vSide = vDir.cross(vUp);
+            return Basis3{ vDir, vUp, vSide };
+        };
+
+        const auto& basis = createBasis(_eye, vec3(0, 1, 0), _target);
+
+        vec3 updatedEye = _eye;
+
+        if (dir == 0)
+            updatedEye += basis.vDir * delta;
+        else if (dir == 1)
+            updatedEye -= basis.vDir * delta;
+        else if (dir == 2)
+            updatedEye -= basis.vSide * delta;
+        else if (dir == 3)
+            updatedEye += basis.vSide * delta;
+        else
+            std::cout << "unexpected dir " << std:: endl;
+
+        _eye = updatedEye;
+        _needUpdateMat = true;
+    }
+
+    void updateViewRotation(float yaw, float pitch) {
+        printf("yaw:  %f \n", yaw);
+
+        auto d2r = [](float d)->float {return d * 3.141592653589793238462 / 180.0f;};
+
+        vec3 front;
+        front.x = cos(d2r(yaw)) * cos(d2r(pitch));
+        front.y = sin(d2r(pitch));
+        front.z = sin(d2r(yaw)) * cos(d2r(pitch));
+        front.normalize();
+
+        float distance = (_eye - _target).length();
+        _target = front * distance;
+
+        _needUpdateMat = true;
+    }
+
+    void updateView(vec3 target, vec3 eye, vec3 up) {
+//        _needUpdateMat = true;
+//        _target = std::move(target);
+//        _eye = std::move(eye);
+//        _up = std::move(up);
     }
     
     Rect screenRect() const {
@@ -94,11 +137,7 @@ public:
     float fovy() const {
         return _fovy;
     }
-    
-    void setEyeYOffset(float v) {
-        _eyeYOffet = v;
-        _needUpdateMat = true;
-    }
+
     
     ivec2 project(vec3 worldPos);
     vec3 unproject(vec3 point) const;
@@ -121,8 +160,6 @@ private:
     
     vec3 _target;
     vec3 _eye;
-    float _cameraYAngle; //up (0,1,0)
-    float _eyeYOffet;
     
     Rect _screenRect;
     float _fovy;

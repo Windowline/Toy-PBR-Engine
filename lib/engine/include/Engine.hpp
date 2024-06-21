@@ -24,6 +24,11 @@ public:
 
     void setScreenSize(int w, int h);
 
+    //dir: forward:0, backward:1, left:2, right:3
+    void updateViewPosition(int dir, float delta);
+
+    void updateViewRotation(float yaw, float pitch);
+
 private:
     uint _defaultFBO;
 

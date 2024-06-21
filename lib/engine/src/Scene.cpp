@@ -67,7 +67,7 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
 
 
     mat4 lightSphereLocalTransform = mat4::Translate(_lightPositions.front().x,
-                                                     _lightPositions.front().y + _lightYDelta,
+                                                     _lightPositions.front().y,
                                                      _lightPositions.front().z);
 
     _lightSphere = make_shared<Node>(this, lightSphereMesh, lightSphereLocalTransform);
@@ -111,6 +111,17 @@ void Scene::setScreenSize(int w, int h) {
 
     buildSSAOInfo();
 }
+
+void Scene::updateViewPosition(int dir, float delta) {
+    if (_camera)
+        _camera->updateViewPosition(dir, delta);
+}
+
+void Scene::updateViewRotation(float yaw, float pitch) {
+    if (_camera)
+        _camera->updateViewRotation(yaw, pitch);
+}
+
 
 void Scene::render() {
     if (_rootTransformDirty) {

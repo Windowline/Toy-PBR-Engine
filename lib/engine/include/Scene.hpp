@@ -26,6 +26,10 @@ public:
 
     void setScreenSize(int w, int h);
 
+    void updateViewPosition(int dir, float delta);
+
+    void updateViewRotation(float yaw, float pitch);
+
     void visitNodes(std::shared_ptr<Node> node, std::function<void(std::shared_ptr<Node>)> func);
 
     void render();
@@ -55,9 +59,7 @@ public:
     }
 
     std::vector<vec3> lightPositions() const {
-        std::vector<vec3> ret = _lightPositions;
-        ret.front().y += _lightYDelta;
-        return ret;
+        return _lightPositions;
     }
 
 private:
@@ -92,7 +94,6 @@ private:
     vec3 _diffuseColor;
     vec3 _specularColor;
     std::vector<vec3> _lightPositions;
-    float _lightYDelta;
 
     //ssao
     std::vector<vec3> _ssaoKernel;
