@@ -148,6 +148,7 @@ void Scene::render() {
                 node->render();
             }
         });
+
     }
 
     // gbuffer
@@ -167,6 +168,7 @@ void Scene::render() {
                 node->render();
             }
         });
+
     }
 
     // SSAO

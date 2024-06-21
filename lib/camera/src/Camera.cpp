@@ -1,8 +1,7 @@
 #include "Camera.hpp"
 
 Camera::Camera() : _target(vec3(0, 0, 0)),
-//                   _eye(vec3(0, 0, 300)),
-                   _eye(vec3(0, 0, 180)),
+                   _eye(vec3(0, 0, 150)),
                    _fovy(45.f),
                    _needUpdateMat(false),
                    _screenRect({0, 0, 0, 0})
@@ -56,7 +55,7 @@ Basis3 Camera::CreateBasis(vec3 target, vec3 eye, vec3 up) {
     vec3 vDir = (target - eye).normalized();
     vec3 vUp = (up - (vDir * up.dot(vDir))).normalized();
     vec3 vSide = vDir.cross(vUp);
-    return Basis3{ vDir, vUp, vSide };
+    return {vDir, vUp, vSide};
 }
 
 void Camera::updateViewPosition(int dir, float delta) {

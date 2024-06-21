@@ -16,7 +16,7 @@ private:
 
     float _radius;
     vec3 _color;
-    int _indSize;
+    unsigned int _indSize;
 
 };
 

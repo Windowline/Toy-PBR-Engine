@@ -17,7 +17,7 @@ float lastFrame = 0.0f;
 
 float Yaw = -90.0;
 float Pitch = 0.f;
-float MovementSpeed = 8.f;
+float MovementSpeed = 32.f;
 float MouseSensitivity = 0.1f;
 
 void processInput(GLFWwindow *window) {
