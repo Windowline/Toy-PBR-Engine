@@ -1,10 +1,12 @@
 #include "Camera.hpp"
 
-Camera::Camera() : _target(vec3(0, 0, 0)),
-                   _eye(vec3(0, 0, 150)),
-                   _fovy(45.f),
-                   _needUpdateMat(false),
-                   _screenRect({0, 0, 0, 0})
+Camera::Camera(vec3 eye, vec3 target, vec3 up) :
+                          _eye(std::move(eye)),
+                          _target(std::move(target)),
+                          _up(std::move(up)),
+                          _fovy(45.f),
+                          _needUpdateMat(false),
+                          _screenRect({0, 0, 0, 0})
 {}
 
 
@@ -59,7 +61,7 @@ Basis3 Camera::CreateBasis(vec3 target, vec3 eye, vec3 up) {
 }
 
 void Camera::updateViewPosition(int dir, float delta) {
-    const auto& basis = Camera::CreateBasis(_target, _eye, DEFAULT_UP);
+    const auto& basis = Camera::CreateBasis(_target, _eye, _up);
     vec3 updatedEye = _eye;
 
     if (dir == 0)
@@ -113,7 +115,7 @@ mat4 Camera::computeViewMat() const {
     
     return Camera::createViewMatrix(_target,
                                     _eye,
-                                    DEFAULT_UP);
+                                    _up);
 //                                    mat4::RotateZ(_cameraYAngle).multiplication1n4(vec4(0, 1, 0, 0)).xyz().normalized());
 }
 

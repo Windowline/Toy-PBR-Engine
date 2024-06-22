@@ -6,12 +6,14 @@
 #include "Matrix.hpp"
 #include <mutex>
 
+class IBLPreprocessor;
 class Scene;
 class ShaderManager;
 
 class RenderEngine {
 
     friend class Scene;
+    friend class IBLPreprocessor;
 
 public:
     RenderEngine();

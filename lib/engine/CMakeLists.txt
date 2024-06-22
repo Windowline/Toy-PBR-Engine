@@ -18,6 +18,7 @@ PUBLIC
         ../camera/include
         ../frame_buffer/include
         ../camera/include
+        ../ibl/include
         ../math
         ../util
 )
@@ -31,4 +32,5 @@ target_link_libraries(engine
         frame_buffer
         math
         util
+        ibl
 )

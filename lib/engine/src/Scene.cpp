@@ -20,6 +20,8 @@
 #include "FullQuad.hpp"
 #include "Model.hpp"
 
+#include "IBLPreprocessor.hpp"
+
 #include <random>
 
 using namespace std;
@@ -29,7 +31,7 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
     _fullQuad = make_unique<FullQuad>();
     _textureShader = make_unique<TexturePassShader>();
 
-    _camera = make_shared<Camera>();
+    _camera = make_shared<Camera>(vec3(0, 0, 150), vec3(0, 0, 0));
 
     _lightPositions = {
         vec3(0.f, 44.f, 20.f)
@@ -84,11 +86,14 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
     _rootNode->addChild(_sphere);
     _rootNode->addChild(_cube);
     _rootNode->addChild(_model);
+
+    _iblPreprocessor = make_unique<IBLPreprocessor>(engine->_shaderManager, "/Users/bagchangseon/CLionProjects/ToyRenderer/lib/res/textures/hdr/newport_loft.hdr");
+    _iblPreprocessor->build();
 }
 
 Scene::~Scene() {
-    if (_noiseTexture != 0)
-        glDeleteTextures(1, &_noiseTexture);
+    if (_ssaoNoiseTexture != 0)
+        glDeleteTextures(1, &_ssaoNoiseTexture);
 }
 
 //스크린 사이즈 변경에 의해 다시 만들어져야 할 것들을 업데이트합니다.
@@ -123,6 +128,9 @@ void Scene::updateViewRotation(float yaw, float pitch) {
 
 
 void Scene::render() {
+//    debugIBL();
+//    return;
+
     if (_rootTransformDirty) {
         visitNodes(_rootNode, [](const shared_ptr<Node>& node) {
             node->transformUpdate();
@@ -187,9 +195,9 @@ void Scene::render() {
         shader->screenSizeUniform2f(_camera->screenSize().x, _camera->screenSize().y);
 
         const int COMPONENT_COUNT = 3;
-        array<GLuint, COMPONENT_COUNT> ssaoInputTextures { _gBuffer->gPositionTexture(),
-                                                                _gBuffer->gNormalTexture(),
-                                                                _noiseTexture };
+        array<GLuint, COMPONENT_COUNT> ssaoInputTextures {_gBuffer->gPositionTexture(),
+                                                          _gBuffer->gNormalTexture(),
+                                                          _ssaoNoiseTexture };
         for (int i = 0; i < COMPONENT_COUNT; ++i) {
             glActiveTexture(GL_TEXTURE0 + i);
             glBindTexture(GL_TEXTURE_2D, ssaoInputTextures[i]);
@@ -247,7 +255,13 @@ void Scene::render() {
     }
 }
 
-
+void Scene::debugIBL() {
+//    renderQuad(_iblPreprocessor->hdrTexture(), _camera->screenSize());
+//    renderQuad(_iblPreprocessor->irradianceMap(), _camera->screenSize()); // ?
+//    renderQuad(_iblPreprocessor->prefilterMap(), _camera->screenSize()); // ?
+//    renderQuad(_iblPreprocessor->envCubemap(), _camera->screenSize()); // ?
+    renderQuad(_iblPreprocessor->brdfLUTTexture(), _camera->screenSize()); // OK
+}
 
 void Scene::renderQuad(unsigned int texture, ivec2 screenSize) { //for debug
     glDisable(GL_CULL_FACE);
@@ -304,9 +318,8 @@ void Scene::buildSSAOInfo() {
     }
 
     //임의 벡터는 4x4 텍스처로 repeat하여 반복적으로 사용합니다. (메모리 효율)
-    glGenTextures(1, &_noiseTexture);
-    glBindTexture(GL_TEXTURE_2D, _noiseTexture);
-//    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, 4, 4, 0, GL_RGB, GL_FLOAT, &_ssaoNoise[0]);
+    glGenTextures(1, &_ssaoNoiseTexture);
+    glBindTexture(GL_TEXTURE_2D, _ssaoNoiseTexture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 4, 4, 0, GL_RGB, GL_FLOAT, &_ssaoNoise[0]);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);

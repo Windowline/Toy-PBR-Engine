@@ -25,9 +25,9 @@ struct Basis3 {
  * View, Projection Matrix 등을 만들고, 기타 유틸성 계산기능이 있습니다.
  */
 class Camera {
-  
+
 public:
-    Camera();
+    Camera(vec3 eye, vec3 target, vec3 up=vec3(0, 1, 0));
     
     const mat4& viewMat() {
         updateMat();
@@ -95,7 +95,7 @@ public:
     void updateViewRotation(float yaw, float pitch);
     
     static mat4 createViewMatrix(vec3 target, vec3 eye, vec3 up);
-    
+
 private:
     static Basis3 CreateBasis(vec3 target, vec3 eye, vec3 up);
 
@@ -105,6 +105,8 @@ private:
     
     vec3 _target;
     vec3 _eye;
+    vec3 _up;
+
     Rect _screenRect;
     float _fovy;
     
@@ -113,8 +115,6 @@ private:
     mat4 _viewProjMat;
     mat4 _invViewProjectionMat;
     bool _needUpdateMat;
-
-    const vec3 DEFAULT_UP = vec3(0, 1, 0);
 };
 
 

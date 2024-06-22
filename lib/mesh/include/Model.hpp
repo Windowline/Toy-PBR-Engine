@@ -30,7 +30,6 @@ struct Vertex {
     vec3 Tangent;
     vec3 Bitangent;
 
-
     //bone indexes which will influence this vertex
     int m_BoneIDs[MAX_BONE_INFLUENCE];
     //weights from each bone

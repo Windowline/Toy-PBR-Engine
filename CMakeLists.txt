@@ -17,7 +17,9 @@ add_subdirectory(lib)
 add_executable(app main.cpp
         lib/util/GLUtilGeometry.hpp
         lib/mesh/include/Model.hpp
-        lib/mesh/src/Model.cpp)
+        lib/mesh/src/Model.cpp
+        lib/ibl/include/IBLPreprocessor.hpp
+        lib/ibl/src/IBLPreprocessor.cpp)
 
 target_link_libraries(app
         PRIVATE

@@ -12,6 +12,7 @@ class ShaderManager;
 class FrameBufferObject;
 class FullQuad;
 class TexturePassShader;
+class IBLPreprocessor;
 
 /**
  * 장면에 필요한 렌더링 오브젝트, 빛, 그림자 정보 등을 관리하고,
@@ -63,10 +64,11 @@ public:
     }
 
 private:
-
     void renderQuad(unsigned int texture, ivec2 screenSize); //for debug
 
     void buildSSAOInfo();
+
+    void debugIBL();
 
     RenderEngine* _engine;
 
@@ -98,12 +100,14 @@ private:
     //ssao
     std::vector<vec3> _ssaoKernel;
     float _ssaoNoise[16*3];
-    unsigned int _noiseTexture;
+    unsigned int _ssaoNoiseTexture;
     std::shared_ptr<FrameBufferObject> _ssaoFBO;
     std::shared_ptr<FrameBufferObject> _ssaoBlurFBO;
 
     std::unique_ptr<FullQuad> _fullQuad;
     std::unique_ptr<TexturePassShader> _textureShader;
+
+    std::unique_ptr<IBLPreprocessor> _iblPreprocessor;
 };
 
 #endif /* Scene_hpp */

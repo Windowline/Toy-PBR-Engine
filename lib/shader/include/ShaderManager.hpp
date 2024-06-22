@@ -19,9 +19,12 @@ enum eShaderProgram : int
     eShaderProgram_ShadowDepth = 6,
     eShaderProgram_SSAO = 7,
     eShaderProgram_SSAO_BLUR = 8,
-    eShaderProgram_ALBEDO_COLOR = 9,
-    eShaderProgram_Test = 10,
-    eShaderProgram_Last = 11
+    eShaderProgram_EquirectangularToCubemap = 9,
+    eShaderProgram_Irradiance = 10,
+    eShaderProgram_Prefilter = 11,
+    eShaderProgram_BRDF = 12,
+    eShaderProgram_BG = 13,
+    eShaderProgram_Last = 14
 };
 
 
