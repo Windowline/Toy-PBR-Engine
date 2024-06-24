@@ -39,8 +39,8 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
     _textureShader = make_unique<TexturePassShader>();
 
 //    _camera = make_shared<Camera>(vec3(0, 0, 150), vec3(0, 0, 0));
-    _camera = make_shared<Camera>(vec3(0, 0, 0), vec3(0, 0, -1));
-//    _camera = make_shared<Camera>(vec3(0, 0, 0), vec3(0, 0, 1));
+//    _camera = make_shared<Camera>(vec3(0, 0, 0), vec3(0, 0, -1));
+    _camera = make_shared<Camera>(vec3(0, 0, 0), vec3(0, 0, 1));
 
 
     _lightPositions = {
@@ -98,7 +98,7 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
 //    _rootNode->addChild(_model);
 
     _iblPreprocessor = make_unique<IBLPreprocessor>(engine->_shaderManager, "/Users/bagchangseon/CLionProjects/ToyRenderer/lib/res/textures/hdr/newport_loft.hdr");
-//    _iblPreprocessor->build();
+    _iblPreprocessor->build();
 
 //    _rootNode->setEnabled(false);
 //    _model->setEnabled(false);
@@ -295,17 +295,17 @@ void Scene::renderSkyBox() {
     if (cubemapTexture == 5123) {
         cubemapTexture = loadSkybox___();
     }
-    
-    const mat4 proj = _camera->projMat();
+
+    const mat4& proj = _camera->projMat();
     const mat4& viewRot = _camera->viewRotMat();
 
     auto activeShader = shaderManager()->setActiveShader<BGShader>(eShaderProgram_BG);
     activeShader->projMatUniformMatrix4fv(proj.pointer());
     activeShader->viewMatUniformMatrix4fv(viewRot.pointer());
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
 
-//    glBindTexture(GL_TEXTURE_CUBE_MAP, _iblPreprocessor->envCubemap());
+    glActiveTexture(GL_TEXTURE0);
+//    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, _iblPreprocessor->envCubemap());
 //    glBindTexture(GL_TEXTURE_CUBE_MAP, _iblPreprocessor->irradianceMap()); // display irradiance map
 //    glBindTexture(GL_TEXTURE_CUBE_MAP, _iblPreprocessor->prefilterMap()); // display prefilter map
     renderCube___();

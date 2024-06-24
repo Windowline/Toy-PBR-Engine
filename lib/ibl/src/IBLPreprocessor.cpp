@@ -9,11 +9,6 @@
 #include "ImageLoader.hpp"
 #include <glad/glad.h>
 
-//#define STB_IMAGE_IMPLEMENTATION
-//#define STB_IMAGE_STATIC
-//#define STBI_ASSERT(x)
-//#include <stb_image.h>
-
 #include <array>
 
 using namespace std;
@@ -47,23 +42,18 @@ void IBLPreprocessor::build() {
 
     // pbr: load the HDR environment map
     // ---------------------------------
-//    stbi_set_flip_vertically_on_load(true);
     int width, height, nrComponents;
     float* data = Stb::loadImageFloat(_path.data(), &width, &height, &nrComponents, 0, true);
-//    float *data = stbi_loadf(_path.data(), &width, &height, &nrComponents, 0);
+    assert(data != NULL);
+    glGenTextures(1, &_hdrTexture);
+    glBindTexture(GL_TEXTURE_2D, _hdrTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT,data); // note how we specify the texture's data value to be float
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    //Stb::free(data);
 
-    if (data) {
-        glGenTextures(1, &_hdrTexture);
-        glBindTexture(GL_TEXTURE_2D, _hdrTexture);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT,data); // note how we specify the texture's data value to be float
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        Stb::free(data);
-//        stbi_image_free(data);
-    }
 
     // pbr: setup cubemap to render to and attach to framebuffer
     // ---------------------------------------------------------
@@ -80,24 +70,40 @@ void IBLPreprocessor::build() {
 
     // pbr: set up projection and view matrices for capturing data onto the 6 cubemap face directions
     auto d2r = [](float d)->float {return d * 3.141592653589793238462 / 180.0f;};
+//    array<mat4, 6> captureViews = {
+//            //eye, center, up
+//            Camera(vec3(0.0f, 0.0f, 0.0f), vec3(1.0f,  0.0f,  0.0f), vec3(0.0f, -1.0f,  0.0f)).viewMat(),
+//            Camera(vec3(0.0f, 0.0f, 0.0f), vec3(-1.0f,  0.0f,  0.0f), vec3(0.0f, -1.0f,  0.0f)).viewMat(),
+//            Camera(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f,  1.0f,  0.0f), vec3(0.0f,  0.0f,  1.0f)).viewMat(),
+//            Camera(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, -1.0f,  0.0f), vec3(0.0f,  0.0f, -1.0f)).viewMat(),
+//            Camera(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f,  0.0f,  1.0f), vec3(0.0f, -1.0f,  0.0f)).viewMat(),
+//            Camera(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f,  0.0f, -1.0f), vec3(0.0f, -1.0f,  0.0f)).viewMat()
+//    };
+//    array<mat4, 6> captureViews = {
+//            Camera(vec3(0.0f, 0.0f, 0.0f), vec3(1.0f,  0.0f,  0.0f), vec3(0.0f, -1.0f,  0.0f)).viewMat(),
+//            Camera(vec3(0.0f, 0.0f, 0.0f), vec3(-1.0f,  0.0f,  0.0f), vec3(0.0f, -1.0f,  0.0f)).viewMat(),
+//            Camera(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f,  1.0f,  0.0f), vec3(0.0f,  0.0f,  1.0f)).viewMat(),
+//            Camera(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, -1.0f,  0.0f), vec3(0.0f,  0.0f, -1.0f)).viewMat(),
+//            Camera(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f,  0.0f,  1.0f), vec3(0.0f, -1.0f,  0.0f)).viewMat(),
+//            Camera(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f,  0.0f, -1.0f), vec3(0.0f, -1.0f,  0.0f)).viewMat()
+//    };
     array<mat4, 6> captureViews = {
-            //eye, center, up
-            Camera(vec3(0.0f, 0.0f, 0.0f), vec3(1.0f,  0.0f,  0.0f), vec3(0.0f, -1.0f,  0.0f)).viewMat(),
-            Camera(vec3(0.0f, 0.0f, 0.0f), vec3(-1.0f,  0.0f,  0.0f), vec3(0.0f, -1.0f,  0.0f)).viewMat(),
-            Camera(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f,  1.0f,  0.0f), vec3(0.0f,  0.0f,  1.0f)).viewMat(),
-            Camera(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, -1.0f,  0.0f), vec3(0.0f,  0.0f, -1.0f)).viewMat(),
-            Camera(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f,  0.0f,  1.0f), vec3(0.0f, -1.0f,  0.0f)).viewMat(),
-            Camera(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f,  0.0f, -1.0f), vec3(0.0f, -1.0f,  0.0f)).viewMat()
+            Camera::createViewMatrix( vec3(1.0f,  0.0f,  0.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, -1.0f,  0.0f)),
+            Camera::createViewMatrix( vec3(-1.0f,  0.0f,  0.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, -1.0f,  0.0f)),
+            Camera::createViewMatrix( vec3(0.0f,  1.0f,  0.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f,  0.0f,  1.0f)),
+            Camera::createViewMatrix( vec3(0.0f, -1.0f,  0.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f,  0.0f, -1.0f)),
+            Camera::createViewMatrix( vec3(0.0f,  0.0f,  1.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, -1.0f,  0.0f)),
+            Camera::createViewMatrix( vec3(0.0f,  0.0f, -1.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, -1.0f,  0.0f))
     };
 
-    mat4 captureProjection = mat4::Frustum(100.0, 100.0, 90.0, 0.1, 10.0);
+//    mat4 captureProjection = mat4::Perspective(d2r(90.f), 1.f, 0.01, 10.0);
+    mat4 captureProjection = mat4::Frustum(100.0, 100.0, 90.0, 0.01, 10.0);
 
     // pbr: convert HDR equirectangular environment map to cubemap equivalent
     auto equi2cubeShader = _shaderManager->setActiveShader<EquirectangularToCubemapShader>(eShaderProgram_EquirectangularToCubemap);
     equi2cubeShader->projMatUniformMatrix4fv(captureProjection.pointer());
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, _hdrTexture);
-
     glViewport(0, 0, 512, 512); // don't forget to configure the viewport to the capture dimensions.
     glBindFramebuffer(GL_FRAMEBUFFER, _captureFBO);
     for (unsigned int i = 0; i < 6; ++i) {
@@ -107,8 +113,8 @@ void IBLPreprocessor::build() {
 
         renderCube();
     }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     glBindTexture(GL_TEXTURE_CUBE_MAP, _envCubemap);
     glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
