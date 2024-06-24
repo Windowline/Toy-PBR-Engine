@@ -24,5 +24,6 @@ void Node::setLocalTransform(mat4 localTransform) {
 }
 
 void Node::render() {
-    _mesh->render();
+    if (_enabled)
+        _mesh->render();
 }

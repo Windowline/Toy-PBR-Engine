@@ -102,14 +102,14 @@ bool DeferredLightingShader::load() {
 void DeferredLightingShader::useProgram() {
     glUseProgram(_programID);
 
-    const int MAX_TEXTURE = 5;
+    constexpr int TEXTURE_COUNT = 5;
 
-    std::array<GLint, MAX_TEXTURE> uniformLocs {
+    std::array<GLint, TEXTURE_COUNT> uniformLocs {
             _posTextureUniformLocation, _normalTextureUniformLocation,
             _albedoTextureUniformLocation, _shadowDepthUniformLocation, _ssaoTextureUniformLocation
     };
 
-    for (int i = 0; i < MAX_TEXTURE; ++i) {
+    for (int i = 0; i < TEXTURE_COUNT; ++i) {
         assert(uniformLocs[i] != -1);
         glUniform1i(uniformLocs[i], i);
         GLUtil::GL_ERROR_LOG();

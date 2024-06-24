@@ -35,6 +35,8 @@ add_library(shader STATIC
 
         include/BGShader.hpp
         src/BGShader.cpp
+        include/PBRShader.hpp
+        src/PBRShader.cpp
 )
 
 target_link_libraries(shader

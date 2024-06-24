@@ -68,6 +68,10 @@ private:
 
     void buildSSAOInfo();
 
+    void renderSkyBox();
+
+    void renderPBR();
+
     void debugIBL();
 
     RenderEngine* _engine;

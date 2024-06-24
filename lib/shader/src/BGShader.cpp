@@ -3,16 +3,16 @@
 const char* vertexBG = R(
         layout (location = 0) in vec3 aPos;
 
-        uniform mat4 u_proj;
-        uniform mat4 view;
+        uniform mat4 u_projMat;
+        uniform mat4 u_viewMat;
 
         out vec3 WorldPos;
 
         void main() {
             WorldPos = aPos;
 
-            mat4 u_view = mat4(mat3(view));
-            vec4 clipPos = u_proj * u_view * vec4(WorldPos, 1.0);
+            mat4 u_viewMat = mat4(mat3(u_viewMat));
+            vec4 clipPos = u_projMat * u_viewMat * vec4(WorldPos, 1.0);
 
             gl_Position = clipPos.xyww;
         }
@@ -39,7 +39,7 @@ const char* fragmentBG = R(
 BGShader::BGShader() {
     this->load();
     basicUniformLoc();
-    _equirectangularMapLoc =  glGetUniformLocation(_programID, "u_equirectangularMap");
+    _equirectangularMapLoc =  glGetUniformLocation(_programID, "u_environmentMap");
 }
 
 bool BGShader::load() {

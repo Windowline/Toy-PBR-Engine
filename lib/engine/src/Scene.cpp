@@ -13,6 +13,8 @@
 #include "SSAOShader.hpp"
 #include "SSAOBlurShader.hpp"
 #include "DeferredLightingShader.hpp"
+#include "BGShader.hpp"
+#include "PBRShader.hpp"
 
 #include "Cube.hpp"
 #include "Sphere.hpp"
@@ -26,12 +28,17 @@
 
 using namespace std;
 
+void renderCube___();
+
 Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaultFBO(defaultFBO)
 {
     _fullQuad = make_unique<FullQuad>();
     _textureShader = make_unique<TexturePassShader>();
 
     _camera = make_shared<Camera>(vec3(0, 0, 150), vec3(0, 0, 0));
+//    _camera = make_shared<Camera>(vec3(0, 0, 0), vec3(0, 0, -1));
+//    _camera = make_shared<Camera>(vec3(0, 0, 0), vec3(0, 0, 1));
+
 
     _lightPositions = {
         vec3(0.f, 44.f, 20.f)
@@ -89,6 +96,8 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
 
     _iblPreprocessor = make_unique<IBLPreprocessor>(engine->_shaderManager, "/Users/bagchangseon/CLionProjects/ToyRenderer/lib/res/textures/hdr/newport_loft.hdr");
     _iblPreprocessor->build();
+
+//    _rootNode->setEnabled(false);
 }
 
 Scene::~Scene() {
@@ -130,6 +139,11 @@ void Scene::updateViewRotation(float yaw, float pitch) {
 void Scene::render() {
 //    debugIBL();
 //    return;
+//    renderPBR();
+//    return;
+//    renderSkyBox();
+//    return;
+
 
     if (_rootTransformDirty) {
         visitNodes(_rootNode, [](const shared_ptr<Node>& node) {
@@ -140,6 +154,7 @@ void Scene::render() {
 
     const mat4& proj = _camera->projMat();
     const mat4& view = _camera->viewMat();
+    const mat4& shadowLightViewProj = shadowLightViewProjection();
 
     // depth
     {
@@ -147,11 +162,11 @@ void Scene::render() {
         glClearColor(0.f, 1.f, 1.f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        auto wShader = weak_ptr<ShadowDepthShader>(shaderManager()->setActiveShader<ShadowDepthShader>(eShaderProgram_ShadowDepth));
+        auto activeShader = shaderManager()->setActiveShader<ShadowDepthShader>(eShaderProgram_ShadowDepth);
 
-        visitNodes(_rootNode, [this, wShader](const shared_ptr<Node>& node) {
+        visitNodes(_rootNode, [shadowLightViewProj, wShader = weak_ptr<ShadowDepthShader>(activeShader)](const shared_ptr<Node>& node) {
             if (auto shader = wShader.lock()) {
-                mat4 shadowMVP = node->worldTransform() * this->shadowLightViewProjection();
+                mat4 shadowMVP = node->worldTransform() * shadowLightViewProj;
                 shader->shadowMVPUniformMatrix4fv(shadowMVP.pointer());
                 node->render();
             }
@@ -165,12 +180,12 @@ void Scene::render() {
         glClearColor(0.f, 0.f, 0.f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        auto wShader = weak_ptr<GBufferShader>(shaderManager()->setActiveShader<GBufferShader>(eShaderProgram_GBuffer));
+        auto activeShader = shaderManager()->setActiveShader<GBufferShader>(eShaderProgram_GBuffer);
+        activeShader->projMatUniformMatrix4fv(proj.pointer());
+        activeShader->viewMatUniformMatrix4fv(view.pointer());
 
-        visitNodes(_rootNode, [this, proj, view, wShader](const shared_ptr<Node>& node) {
+        visitNodes(_rootNode, [wShader = weak_ptr<GBufferShader>(activeShader)](const shared_ptr<Node>& node) {
             if (auto shader = wShader.lock()) {
-                shader->projMatUniformMatrix4fv(proj.pointer());
-                shader->viewMatUniformMatrix4fv(view.pointer());
                 shader->worldMatUniformMatrix4fv(node->worldTransform().pointer());
                 shader->worldNormalMatUniformMatrix4fv(node->worldTransform().invert().transposed().pointer());
                 node->render();
@@ -184,15 +199,14 @@ void Scene::render() {
         _ssaoFBO->bindWithViewport();
         glDisable(GL_CULL_FACE);
         glDisable(GL_DEPTH_TEST);
-
         glClearColor(0.f, 0.f, 0.f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        auto shader = shaderManager()->setActiveShader<SSAOShader>(eShaderProgram_SSAO);
-        shader->viewMatUniformMatrix4fv(view.pointer());
-        shader->projMatUniformMatrix4fv(proj.pointer());
-        shader->samplesUniformVector(_ssaoKernel);
-        shader->screenSizeUniform2f(_camera->screenSize().x, _camera->screenSize().y);
+        auto activeShader = shaderManager()->setActiveShader<SSAOShader>(eShaderProgram_SSAO);
+        activeShader->viewMatUniformMatrix4fv(view.pointer());
+        activeShader->projMatUniformMatrix4fv(proj.pointer());
+        activeShader->samplesUniformVector(_ssaoKernel);
+        activeShader->screenSizeUniform2f(_camera->screenSize().x, _camera->screenSize().y);
 
         const int COMPONENT_COUNT = 3;
         array<GLuint, COMPONENT_COUNT> ssaoInputTextures {_gBuffer->gPositionTexture(),
@@ -209,8 +223,8 @@ void Scene::render() {
     //SSAO Blur
     {
         _ssaoBlurFBO->bindWithViewport();
-        auto shader = shaderManager()->setActiveShader<SSAOBlurShader>(eShaderProgram_SSAO_BLUR);
-        shader->textureSizeUniform2f(_camera->screenSize().x, _camera->screenSize().y);
+        auto activeShader = shaderManager()->setActiveShader<SSAOBlurShader>(eShaderProgram_SSAO_BLUR);
+        activeShader->textureSizeUniform2f(_camera->screenSize().x, _camera->screenSize().y);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, _ssaoFBO->commonTexture());
         _fullQuad->render();
@@ -220,13 +234,13 @@ void Scene::render() {
     {
         glBindFramebuffer(GL_FRAMEBUFFER, _defaultFBO);
         glViewport(0, 0, _camera->screenSize().x, _camera->screenSize().y);
-        auto shader = shaderManager()->setActiveShader<DeferredLightingShader>(eShaderProgram_DeferredLighting);
-        shader->ambientColorUniform3f(ambientColor().x, ambientColor().y, ambientColor().z);
-        shader->diffuseColorUniform3f(diffuseColor().x, diffuseColor().y, diffuseColor().z);
-        shader->specularColorUniform3f(specularColor().x, specularColor().y, specularColor().z);
-        shader->worldLightPosUniform3fVector(lightPositions());
-        shader->worldEyePositionUniform3f(camera()->eye().x, camera()->eye().y, camera()->eye().z);
-        shader->shadowViewProjectionMatUniformMatrix4fv(_shadowLightViewProjection.pointer());
+        auto activeShader = shaderManager()->setActiveShader<DeferredLightingShader>(eShaderProgram_DeferredLighting);
+        activeShader->ambientColorUniform3f(ambientColor().x, ambientColor().y, ambientColor().z);
+        activeShader->diffuseColorUniform3f(diffuseColor().x, diffuseColor().y, diffuseColor().z);
+        activeShader->specularColorUniform3f(specularColor().x, specularColor().y, specularColor().z);
+        activeShader->worldLightPosUniform3fVector(lightPositions());
+        activeShader->worldEyePositionUniform3f(camera()->eye().x, camera()->eye().y, camera()->eye().z);
+        activeShader->shadowViewProjectionMatUniformMatrix4fv(_shadowLightViewProjection.pointer());
 
         const int GBUFFER_COMPONENT_COUNT = 5;
         array<GLuint, GBUFFER_COMPONENT_COUNT> textures {_gBuffer->gPositionTexture(),
@@ -253,6 +267,101 @@ void Scene::render() {
         shaderLight->worldMatUniformMatrix4fv(_lightSphere->worldTransform().pointer());
         _lightSphere->render();
     }
+}
+
+void Scene::renderSkyBox() {
+    const mat4 view = _camera->viewMat();
+    auto activeShader = shaderManager()->setActiveShader<BGShader>(eShaderProgram_BG);
+    activeShader->viewMatUniformMatrix4fv(view.pointer());
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, _iblPreprocessor->envCubemap());
+
+//    glBindTexture(GL_TEXTURE_CUBE_MAP, _iblPreprocessor->irradianceMap()); // display irradiance map
+//    glBindTexture(GL_TEXTURE_CUBE_MAP, _iblPreprocessor->prefilterMap()); // display prefilter map
+    renderCube___();
+}
+
+void Scene::renderPBR() {
+    constexpr int LIGHT_COUNT = 4;
+    vec3 lightPositions[] = {
+            vec3(-10.0f,  10.0f, 10.0f),
+            vec3( 10.0f,  10.0f, 10.0f),
+            vec3(-10.0f, -10.0f, 10.0f),
+            vec3( 10.0f, -10.0f, 10.0f),
+    };
+    vec3 lightColors[] = {
+            vec3(300.0f, 300.0f, 300.0f),
+            vec3(300.0f, 300.0f, 300.0f),
+            vec3(300.0f, 300.0f, 300.0f),
+            vec3(300.0f, 300.0f, 300.0f)
+    };
+
+    float* lightPosArray = new float[LIGHT_COUNT * 3];
+    float* lightColorArray = new float[LIGHT_COUNT * 3];
+    int idxPos = 0;
+    int idxColor = 0;
+
+    for (int i = 0; i < 4; ++i) {
+        auto& lightPos = lightPositions[i];
+        auto& lightColor = lightColors[i];
+
+        lightPosArray[idxPos++] = lightPos.x;
+        lightPosArray[idxPos++] = lightPos.y;
+        lightPosArray[idxPos++] = lightPos.z;
+
+        lightColorArray[idxColor++] = lightColor.x;
+        lightColorArray[idxColor++] = lightColor.y;
+        lightColorArray[idxColor++] = lightColor.z;
+    }
+
+
+    if (_rootTransformDirty) {
+        visitNodes(_rootNode, [](const shared_ptr<Node>& node) {
+            node->transformUpdate();
+        });
+        _rootTransformDirty = false;
+    }
+
+    const mat4& proj = _camera->projMat();
+    const mat4& view = _camera->viewMat();
+
+    auto activeShader = shaderManager()->setActiveShader<PBRShader>(eShaderProgram_PBR);
+//    glActiveTexture(GL_TEXTURE0);
+//    glBindTexture(GL_TEXTURE_2D, _iblPreprocessor->irradianceMap());
+//    glActiveTexture(GL_TEXTURE1);
+//    glBindTexture(GL_TEXTURE_2D, _iblPreprocessor->prefilterMap());
+//    glActiveTexture(GL_TEXTURE2);
+//    glBindTexture(GL_TEXTURE_2D, _iblPreprocessor->brdfLUTTexture());
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, _iblPreprocessor->irradianceMap());
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, _iblPreprocessor->prefilterMap());
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, _iblPreprocessor->brdfLUTTexture());
+
+
+    activeShader->lightPositionsUniformVec3fv(lightPosArray, LIGHT_COUNT);
+    activeShader->lightColorsUniformVec3fv(lightColorArray, LIGHT_COUNT);
+
+    delete[] lightPosArray;
+    delete[] lightColorArray;
+
+    activeShader->projMatUniformMatrix4fv(proj.pointer());
+    activeShader->viewMatUniformMatrix4fv(view.pointer());
+    activeShader->camPosUniform3f(_camera->eye().x, _camera->eye().y, _camera->eye().z);
+    activeShader->metallicUniform1f(0.5);
+    activeShader->roughnessUniform1f(0.5);
+    activeShader->albedoUniform3f(0.5, 0.0, 0.0);
+    activeShader->aoUniform1f(1.f);
+
+    visitNodes(_rootNode, [this, proj, view, wShader = weak_ptr<PBRShader>(activeShader)](const shared_ptr<Node>& node) {
+        if (auto shader = wShader.lock()) {
+            shader->worldMatUniformMatrix4fv(node->worldTransform().pointer());
+            shader->worldNormalMatUniformMatrix4fv(node->worldTransform().invert().transposed().pointer());
+            node->render();
+        }
+    });
 }
 
 void Scene::debugIBL() {
@@ -347,3 +456,79 @@ shared_ptr<ShaderManager> Scene::shaderManager() {
 shared_ptr<Camera> Scene::camera() {
     return _camera;
 }
+
+
+
+unsigned int cubeVAO = 0;
+unsigned int cubeVBO = 0;
+void renderCube___()
+{
+    // initialize (if necessary)
+    if (cubeVAO == 0)
+    {
+        float vertices[] = {
+                // back face
+                -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
+                1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
+                1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 0.0f, // bottom-right
+                1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f, // top-right
+                -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
+                -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 1.0f, // top-left
+                // front face
+                -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
+                1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 0.0f, // bottom-right
+                1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
+                1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f, // top-right
+                -1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 1.0f, // top-left
+                -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f, // bottom-left
+                // left face
+                -1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
+                -1.0f,  1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-left
+                -1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
+                -1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-left
+                -1.0f, -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-right
+                -1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-right
+                // right face
+                1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
+                1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
+                1.0f,  1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 1.0f, // top-right
+                1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f, // bottom-right
+                1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f, // top-left
+                1.0f, -1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-left
+                // bottom face
+                -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
+                1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 1.0f, // top-left
+                1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
+                1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f, // bottom-left
+                -1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f, // bottom-right
+                -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f, // top-right
+                // top face
+                -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
+                1.0f,  1.0f , 1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
+                1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 1.0f, // top-right
+                1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f, // bottom-right
+                -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f, // top-left
+                -1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f  // bottom-left
+        };
+        glGenVertexArrays(1, &cubeVAO);
+        glGenBuffers(1, &cubeVBO);
+        // fill buffer
+        glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+        // link vertex attributes
+        glBindVertexArray(cubeVAO);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+    }
+    // render Cube
+    glBindVertexArray(cubeVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(0);
+}
+

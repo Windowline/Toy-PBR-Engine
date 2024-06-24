@@ -24,7 +24,8 @@ enum eShaderProgram : int
     eShaderProgram_Prefilter = 11,
     eShaderProgram_BRDF = 12,
     eShaderProgram_BG = 13,
-    eShaderProgram_Last = 14
+    eShaderProgram_PBR = 14,
+    eShaderProgram_Last = 15
 };
 
 

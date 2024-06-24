@@ -33,6 +33,10 @@ public:
         return _mesh;
     }
 
+    void setEnabled(bool v) {
+        _enabled = v;
+    }
+
 private:
     mat4 _localTransform;
     mat4 _worldTransform;
@@ -41,6 +45,8 @@ private:
 
     std::shared_ptr<BasicMeshInterface> _mesh;
     std::vector<std::shared_ptr<Node>> _children;
+
+    bool _enabled = true;
 };
 
 #endif //TOYRENDERER_NODE_HPP
