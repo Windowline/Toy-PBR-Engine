@@ -28,7 +28,12 @@ class Camera {
 
 public:
     Camera(vec3 eye, vec3 target, vec3 up=vec3(0, 1, 0));
-    
+
+    const mat4& viewRotMat() {
+        updateMat();
+        return _viewRotMat;
+    }
+
     const mat4& viewMat() {
         updateMat();
         return _viewMat;
@@ -109,7 +114,8 @@ private:
 
     Rect _screenRect;
     float _fovy;
-    
+
+    mat4 _viewRotMat;
     mat4 _viewMat;
     mat4 _projMat;
     mat4 _viewProjMat;

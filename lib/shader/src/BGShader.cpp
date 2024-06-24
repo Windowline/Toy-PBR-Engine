@@ -2,7 +2,6 @@
 
 const char* vertexBG = R(
         layout (location = 0) in vec3 aPos;
-
         uniform mat4 u_projMat;
         uniform mat4 u_viewMat;
 
@@ -11,8 +10,8 @@ const char* vertexBG = R(
         void main() {
             WorldPos = aPos;
 
-            mat4 u_viewMat = mat4(mat3(u_viewMat));
-            vec4 clipPos = u_projMat * u_viewMat * vec4(WorldPos, 1.0);
+            mat4 rotView = mat4(mat3(u_viewMat));
+            vec4 clipPos = u_projMat * rotView * vec4(WorldPos, 1.0);
 
             gl_Position = clipPos.xyww;
         }

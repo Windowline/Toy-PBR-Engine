@@ -9,6 +9,7 @@ PUBLIC
     ../shader/include
     ../camera/include
     ../mesh/include
+    ../stb_image_loader/include
 )
 
 target_link_libraries(ibl
@@ -16,4 +17,5 @@ PRIVATE
    shader
    camera
    mesh
+   stb_image_loader
 )

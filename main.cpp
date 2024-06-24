@@ -74,7 +74,7 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
             Pitch = -89.0f;
     }
 
-    std::cout << "mouse_callback " << Yaw << ", " << Pitch << std::endl;
+//    std::cout << "mouse_callback " << Yaw << ", " << Pitch << std::endl;
     engine->updateViewRotation(Yaw, Pitch);
 }
 

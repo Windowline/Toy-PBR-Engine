@@ -140,6 +140,13 @@ void Camera::updateMat() {
     }
     
     _viewMat = computeViewMat();
+
+    _viewRotMat = _viewMat;
+    _viewProjMat.w.x = 0.0;
+    _viewProjMat.w.y = 0.0;
+    _viewProjMat.w.z = 0.0;
+    _viewProjMat.w.w = 1.0;
+
     _projMat = computeProjectionMat();
     _viewProjMat = _viewMat * _projMat;
     _invViewProjectionMat = _viewProjMat.invert();

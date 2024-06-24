@@ -19,6 +19,7 @@ PUBLIC
         ../frame_buffer/include
         ../camera/include
         ../ibl/include
+        ../stb_image_loader/include
         ../math
         ../util
 )
@@ -33,4 +34,5 @@ target_link_libraries(engine
         math
         util
         ibl
+        stb_image_loader
 )

@@ -112,6 +112,11 @@ private:
     std::unique_ptr<TexturePassShader> _textureShader;
 
     std::unique_ptr<IBLPreprocessor> _iblPreprocessor;
+
+
+    //
+    unsigned int skyboxVAO, skyboxVBO;
+    void buildSkyBoxVAO();
 };
 
 #endif /* Scene_hpp */

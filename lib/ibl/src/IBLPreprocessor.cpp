@@ -1,19 +1,18 @@
 #include "IBLPreprocessor.hpp"
 #include "ShaderManager.hpp"
-#include "ShaderManager.hpp"
 #include "IBLPreprocessDiffuseShaders.hpp"
 #include "IBLPreprocessSpecularShaders.hpp"
 #include "BGShader.hpp"
 
 #include "Camera.hpp"
 #include "FullQuad.hpp"
-
+#include "ImageLoader.hpp"
 #include <glad/glad.h>
 
-#define STB_IMAGE_IMPLEMENTATION
-#define STB_IMAGE_STATIC
-#define STBI_ASSERT(x)
-#include <stb_image.h>
+//#define STB_IMAGE_IMPLEMENTATION
+//#define STB_IMAGE_STATIC
+//#define STBI_ASSERT(x)
+//#include <stb_image.h>
 
 #include <array>
 
@@ -27,6 +26,14 @@ IBLPreprocessor::IBLPreprocessor(shared_ptr<ShaderManager> shaderManager, string
 }
 
 void IBLPreprocessor::build() {
+    // configure global opengl state
+    // -----------------------------
+    glEnable(GL_DEPTH_TEST);
+    // set depth function to less than AND equal for skybox depth trick.
+    glDepthFunc(GL_LEQUAL);
+    // enable seamless cubemap sampling for lower mip levels in the pre-filter map.
+    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
     // pbr: setup framebuffer
     // ----------------------
     glGenFramebuffers(1, &_captureFBO);
@@ -40,9 +47,10 @@ void IBLPreprocessor::build() {
 
     // pbr: load the HDR environment map
     // ---------------------------------
-    stbi_set_flip_vertically_on_load(true);
+//    stbi_set_flip_vertically_on_load(true);
     int width, height, nrComponents;
-    float *data = stbi_loadf(_path.data(), &width, &height, &nrComponents, 0);
+    float* data = Stb::loadImageFloat(_path.data(), &width, &height, &nrComponents, 0, true);
+//    float *data = stbi_loadf(_path.data(), &width, &height, &nrComponents, 0);
 
     if (data) {
         glGenTextures(1, &_hdrTexture);
@@ -53,10 +61,8 @@ void IBLPreprocessor::build() {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-        stbi_image_free(data);
-    } else {
-        std::cout << "Failed to load HDR image." << std::endl;
-        std::cout << stbi_failure_reason() << std::endl;
+        Stb::free(data);
+//        stbi_image_free(data);
     }
 
     // pbr: setup cubemap to render to and attach to framebuffer
@@ -84,8 +90,7 @@ void IBLPreprocessor::build() {
             Camera(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f,  0.0f, -1.0f), vec3(0.0f, -1.0f,  0.0f)).viewMat()
     };
 
-
-    mat4 captureProjection = mat4::Perspective(d2r(90.0), 1.0, 0.1, 10.0);
+    mat4 captureProjection = mat4::Frustum(100.0, 100.0, 90.0, 0.1, 10.0);
 
     // pbr: convert HDR equirectangular environment map to cubemap equivalent
     auto equi2cubeShader = _shaderManager->setActiveShader<EquirectangularToCubemapShader>(eShaderProgram_EquirectangularToCubemap);

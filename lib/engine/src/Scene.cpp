@@ -23,12 +23,15 @@
 #include "Model.hpp"
 
 #include "IBLPreprocessor.hpp"
+#include "ImageLoader.hpp"
 
 #include <random>
 
 using namespace std;
 
 void renderCube___();
+unsigned int loadSkybox___();
+unsigned int loadCubemap___(vector<std::string> faces);
 
 Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaultFBO(defaultFBO)
 {
@@ -95,9 +98,12 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
     _rootNode->addChild(_model);
 
     _iblPreprocessor = make_unique<IBLPreprocessor>(engine->_shaderManager, "/Users/bagchangseon/CLionProjects/ToyRenderer/lib/res/textures/hdr/newport_loft.hdr");
-    _iblPreprocessor->build();
+//    _iblPreprocessor->build();
 
 //    _rootNode->setEnabled(false);
+//    _model->setEnabled(false);
+
+    buildSkyBoxVAO();
 }
 
 Scene::~Scene() {
@@ -137,11 +143,25 @@ void Scene::updateViewRotation(float yaw, float pitch) {
 
 
 void Scene::render() {
-//    debugIBL();
-//    return;
-//    renderPBR();
-//    return;
+    //test
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+    glFrontFace(GL_CCW);
+    glCullFace(GL_BACK);
+
+
+//    glEnable(GL_DEPTH_TEST);
+//    glDepthFunc(GL_LEQUAL);
+//    // default buffer clear
+//    glClearColor(0.f, 1.f, 0.f, 1.f);
+//    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+//
 //    renderSkyBox();
+//
+//    glDepthFunc(GL_LESS); // set depth function back to default
+//
 //    return;
 
 
@@ -270,15 +290,33 @@ void Scene::render() {
 }
 
 void Scene::renderSkyBox() {
-    const mat4 view = _camera->viewMat();
-    auto activeShader = shaderManager()->setActiveShader<BGShader>(eShaderProgram_BG);
-    activeShader->viewMatUniformMatrix4fv(view.pointer());
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, _iblPreprocessor->envCubemap());
 
+    static unsigned int cubemapTexture = 5123;
+    if (cubemapTexture == 5123) {
+        cubemapTexture = loadSkybox___();
+    }
+
+
+    const mat4 proj = _camera->projMat();
+//    const mat4& viewRot = _camera->viewRotMat();
+    const mat4& viewRot = _camera->viewMat();
+
+    auto activeShader = shaderManager()->setActiveShader<BGShader>(eShaderProgram_BG);
+    activeShader->projMatUniformMatrix4fv(proj.pointer());
+    activeShader->viewMatUniformMatrix4fv(viewRot.pointer());
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+
+//    glBindTexture(GL_TEXTURE_CUBE_MAP, _iblPreprocessor->envCubemap());
 //    glBindTexture(GL_TEXTURE_CUBE_MAP, _iblPreprocessor->irradianceMap()); // display irradiance map
 //    glBindTexture(GL_TEXTURE_CUBE_MAP, _iblPreprocessor->prefilterMap()); // display prefilter map
-    renderCube___();
+//    renderCube___();
+
+    glBindVertexArray(skyboxVAO);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, _iblPreprocessor->envCubemap());
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(0);
 }
 
 void Scene::renderPBR() {
@@ -463,6 +501,9 @@ unsigned int cubeVAO = 0;
 unsigned int cubeVBO = 0;
 void renderCube___()
 {
+
+
+
     // initialize (if necessary)
     if (cubeVAO == 0)
     {
@@ -532,3 +573,97 @@ void renderCube___()
     glBindVertexArray(0);
 }
 
+
+void Scene::buildSkyBoxVAO() {
+    float skyboxVertices[] = {
+            // positions
+            -1.0f,  1.0f, -1.0f,
+            -1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
+
+            -1.0f, -1.0f,  1.0f,
+            -1.0f, -1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f,  1.0f,
+            -1.0f, -1.0f,  1.0f,
+
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+
+            -1.0f, -1.0f,  1.0f,
+            -1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f, -1.0f,  1.0f,
+            -1.0f, -1.0f,  1.0f,
+
+            -1.0f,  1.0f, -1.0f,
+            1.0f,  1.0f, -1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            -1.0f,  1.0f,  1.0f,
+            -1.0f,  1.0f, -1.0f,
+
+            -1.0f, -1.0f, -1.0f,
+            -1.0f, -1.0f,  1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            -1.0f, -1.0f,  1.0f,
+            1.0f, -1.0f,  1.0f
+    };
+
+
+    glGenVertexArrays(1, &skyboxVAO);
+    glGenBuffers(1, &skyboxVBO);
+    glBindVertexArray(skyboxVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+}
+
+unsigned int loadSkybox___() {
+    vector<string> faces =
+    {
+        std::string("/Users/bagchangseon/CLionProjects/ToyRenderer/lib/res/textures/skybox/right.jpg"),
+        std::string("/Users/bagchangseon/CLionProjects/ToyRenderer/lib/res/textures/skybox/left.jpg"),
+        std::string("/Users/bagchangseon/CLionProjects/ToyRenderer/lib/res/textures/skybox/top.jpg"),
+        std::string("/Users/bagchangseon/CLionProjects/ToyRenderer/lib/res/textures/skybox/bottom.jpg"),
+        std::string("/Users/bagchangseon/CLionProjects/ToyRenderer/lib/res/textures/skybox/front.jpg"),
+        std::string("/Users/bagchangseon/CLionProjects/ToyRenderer/lib/res/textures/skybox/back.jpg")
+    };
+
+   return loadCubemap___(faces);
+}
+
+unsigned int loadCubemap___(vector<std::string> faces)
+{
+    unsigned int textureID;
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+    int width, height, nrChannels;
+    for (unsigned int i = 0; i < faces.size(); i++) {
+//        unsigned char *data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
+        unsigned char *data = Stb::loadImageUChar(faces[i].c_str(), &width, &height, &nrChannels, 0);
+        if (data) {
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+//            Stb::free(data);
+        }
+    }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    return textureID;
+}
