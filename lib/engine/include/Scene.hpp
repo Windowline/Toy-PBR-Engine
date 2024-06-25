@@ -73,7 +73,6 @@ private:
     void renderPBR();
 
     void debugIBL(); //for debug
-
     void renderQuad(unsigned int texture, ivec2 screenSize); //for debug
 
     RenderEngine* _engine;
@@ -111,10 +110,6 @@ private:
     std::unique_ptr<TexturePassShader> _textureShader;
     std::unique_ptr<IBLPreprocessor> _iblPreprocessor;
 
-
-
-    unsigned int skyboxVAO, skyboxVBO;
-    void buildSkyBoxVAO();
 };
 
 #endif /* Scene_hpp */
