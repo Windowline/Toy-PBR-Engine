@@ -24,12 +24,6 @@ const char* fragmentBG = R(
         uniform samplerCube u_environmentMap;
 
         void main() {
-//            FragColor = texture(u_environmentMap, WorldPos);
-
-//            vec3 tmp = textureLod(u_environmentMap, WorldPos, 0.0).rgb;
-//            FragColor = vec4(1.0, 0.0, 0.0, 1.0);
-
-
             vec3 envColor = textureLod(u_environmentMap, WorldPos, 0.0).rgb;
 
             // HDR tonemap and gamma correct

@@ -64,6 +64,7 @@ protected:
         _viewMatLoc = glGetUniformLocation(_programID, "u_viewMat");
         _projMatLoc = glGetUniformLocation(_programID, "u_projMat");
         _worldNormalMatLoc = glGetUniformLocation(_programID, "u_worldNormalMat");
+        int asdasd = 10;
     }
 
     GLuint loadShader_tmp(GLenum type, const char *shaderSrc);

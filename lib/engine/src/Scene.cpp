@@ -32,6 +32,7 @@ using namespace std;
 void renderCube___();
 unsigned int loadSkybox___();
 unsigned int loadCubemap___(vector<std::string> faces);
+void renderSphere__();
 
 Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaultFBO(defaultFBO)
 {
@@ -40,7 +41,9 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
 
 //    _camera = make_shared<Camera>(vec3(0, 0, 150), vec3(0, 0, 0));
 //    _camera = make_shared<Camera>(vec3(0, 0, 0), vec3(0, 0, -1));
-    _camera = make_shared<Camera>(vec3(0, 0, 0), vec3(0, 0, 1));
+//    _camera = make_shared<Camera>(vec3(0, 0, 0), vec3(0, 0, 1));
+
+    _camera = make_shared<Camera>(vec3(0, 0, 0), vec3(0, 0, -1));
 
 
     _lightPositions = {
@@ -102,6 +105,7 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
 
 //    _rootNode->setEnabled(false);
 //    _model->setEnabled(false);
+//    _cube->setEnabled(false);
 
     buildSkyBoxVAO();
 }
@@ -143,26 +147,34 @@ void Scene::updateViewRotation(float yaw, float pitch) {
 
 
 void Scene::render() {
-    //test
-//    glEnable(GL_BLEND);
-//    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-//    glEnable(GL_DEPTH_TEST);
+//    debugIBL();
+//    return;
+
+    // configure global opengl state
+    // -----------------------------
+    glEnable(GL_DEPTH_TEST);
+    // set depth function to less than AND equal for skybox depth trick.
+    glDepthFunc(GL_LEQUAL);
+    // enable seamless cubemap sampling for lower mip levels in the pre-filter map.
+    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
 //    glEnable(GL_CULL_FACE);
 //    glFrontFace(GL_CCW);
 //    glCullFace(GL_BACK);
 
-
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
     // default buffer clear
     glClearColor(0.f, 1.f, 0.f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    renderSkyBox();
+    renderPBR();
 
+    renderSkyBox();
     glDepthFunc(GL_LESS); // set depth function back to default
 
     return;
+
+
+    ///////////////////////////////////////
 
 
     if (_rootTransformDirty) {
@@ -290,7 +302,6 @@ void Scene::render() {
 }
 
 void Scene::renderSkyBox() {
-
     static unsigned int cubemapTexture = 5123;
     if (cubemapTexture == 5123) {
         cubemapTexture = loadSkybox___();
@@ -355,14 +366,20 @@ void Scene::renderPBR() {
     const mat4& proj = _camera->projMat();
     const mat4& view = _camera->viewMat();
 
-    auto activeShader = shaderManager()->setActiveShader<PBRShader>(eShaderProgram_PBR);
-//    glActiveTexture(GL_TEXTURE0);
-//    glBindTexture(GL_TEXTURE_2D, _iblPreprocessor->irradianceMap());
-//    glActiveTexture(GL_TEXTURE1);
-//    glBindTexture(GL_TEXTURE_2D, _iblPreprocessor->prefilterMap());
-//    glActiveTexture(GL_TEXTURE2);
-//    glBindTexture(GL_TEXTURE_2D, _iblPreprocessor->brdfLUTTexture());
 
+    ////////////// basic //////////////
+//    auto basic = shaderManager()->setActiveShader<BasicShader>(eShaderProgram_Default);
+//    basic->projMatUniformMatrix4fv(proj.pointer());
+//    basic->viewMatUniformMatrix4fv(view.pointer());
+//
+//    mat4 worldMat = mat4::Translate(0, 0, -100);
+//    basic->worldMatUniformMatrix4fv(worldMat.pointer());
+//    basic->worldNormalMatUniformMatrix4fv(worldMat.invert().transposed().pointer());
+//    _sphere->render();
+//    return;
+    ///////////////////////////
+
+    auto activeShader = shaderManager()->setActiveShader<PBRShader>(eShaderProgram_PBR);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, _iblPreprocessor->irradianceMap());
     glActiveTexture(GL_TEXTURE1);
@@ -370,28 +387,50 @@ void Scene::renderPBR() {
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, _iblPreprocessor->brdfLUTTexture());
 
-
-    activeShader->lightPositionsUniformVec3fv(lightPosArray, LIGHT_COUNT);
-    activeShader->lightColorsUniformVec3fv(lightColorArray, LIGHT_COUNT);
+//    activeShader->lightPositionsUniformVec3fv(lightPosArray, LIGHT_COUNT);
+//    activeShader->lightColorsUniformVec3fv(lightColorArray, LIGHT_COUNT);
 
     delete[] lightPosArray;
     delete[] lightColorArray;
 
-    activeShader->projMatUniformMatrix4fv(proj.pointer());
-    activeShader->viewMatUniformMatrix4fv(view.pointer());
     activeShader->camPosUniform3f(_camera->eye().x, _camera->eye().y, _camera->eye().z);
     activeShader->metallicUniform1f(0.5);
     activeShader->roughnessUniform1f(0.5);
     activeShader->albedoUniform3f(0.5, 0.0, 0.0);
     activeShader->aoUniform1f(1.f);
 
-    visitNodes(_rootNode, [this, proj, view, wShader = weak_ptr<PBRShader>(activeShader)](const shared_ptr<Node>& node) {
-        if (auto shader = wShader.lock()) {
-            shader->worldMatUniformMatrix4fv(node->worldTransform().pointer());
-            shader->worldNormalMatUniformMatrix4fv(node->worldTransform().invert().transposed().pointer());
-            node->render();
-        }
-    });
+    activeShader->projMatUniformMatrix4fv(proj.pointer());
+    activeShader->viewMatUniformMatrix4fv(view.pointer());
+
+    mat4 world = mat4::Translate(0, 0, -100);
+    activeShader->worldMatUniformMatrix4fv(world.pointer());
+    activeShader->worldNormalMatUniformMatrix4fv(world.invert().transposed().pointer());
+    _sphere->render();
+//    renderSphere__();
+
+
+
+
+//    int nrRows = 7;
+//    int nrColumns = 7;
+//    float spacing = 2.5;
+//
+//    for (int row = 0; row < nrRows; ++row) {
+//        for (int col = 0; col < nrColumns; ++col) {
+//            mat4 world = mat4::Translate((float)(col - (nrColumns / 2)) * spacing, (float)(row - (nrRows / 2)) * spacing, -2.0f);
+//            activeShader->worldMatUniformMatrix4fv(world.pointer());
+//            activeShader->worldNormalMatUniformMatrix4fv(world.invert().transposed().pointer());
+//            renderSphere__();
+//        }
+//    }
+
+//    visitNodes(_rootNode, [wShader = weak_ptr<PBRShader>(activeShader)](const shared_ptr<Node>& node) {
+//        if (auto shader = wShader.lock()) {
+//            shader->worldMatUniformMatrix4fv(node->worldTransform().pointer());
+//            shader->worldNormalMatUniformMatrix4fv(node->worldTransform().invert().transposed().pointer());
+//            node->render();
+//        }
+//    });
 }
 
 void Scene::debugIBL() {
@@ -493,8 +532,6 @@ unsigned int cubeVAO = 0;
 unsigned int cubeVBO = 0;
 void renderCube___()
 {
-
-
 
     // initialize (if necessary)
     if (cubeVAO == 0)
@@ -647,7 +684,7 @@ unsigned int loadCubemap___(vector<std::string> faces)
         unsigned char *data = Stb::loadImageUChar(faces[i].c_str(), &width, &height, &nrChannels, 0);
         assert(data != NULL);
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-//        Stb::free(data)
+        Stb::free(data);
     }
 
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -657,4 +694,100 @@ unsigned int loadCubemap___(vector<std::string> faces)
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
     return textureID;
+}
+
+
+unsigned int sphereVAO__ = 0;
+unsigned int indexCount__;
+void renderSphere__()
+{
+    if (sphereVAO__ == 0)
+    {
+        glGenVertexArrays(1, &sphereVAO__);
+
+        unsigned int vbo, ebo;
+        glGenBuffers(1, &vbo);
+        glGenBuffers(1, &ebo);
+
+        std::vector<vec3> positions;
+        std::vector<vec2> uv;
+        std::vector<vec3> normals;
+        std::vector<unsigned int> indices;
+
+        const unsigned int X_SEGMENTS = 64;
+        const unsigned int Y_SEGMENTS = 64;
+        const float PI = 3.14159265359f;
+        for (unsigned int x = 0; x <= X_SEGMENTS; ++x)
+        {
+            for (unsigned int y = 0; y <= Y_SEGMENTS; ++y)
+            {
+                float xSegment = (float)x / (float)X_SEGMENTS;
+                float ySegment = (float)y / (float)Y_SEGMENTS;
+                float xPos = std::cos(xSegment * 2.0f * PI) * std::sin(ySegment * PI);
+                float yPos = std::cos(ySegment * PI);
+                float zPos = std::sin(xSegment * 2.0f * PI) * std::sin(ySegment * PI);
+
+                positions.push_back(vec3(xPos, yPos, zPos));
+                uv.push_back(vec2(xSegment, ySegment));
+                normals.push_back(vec3(xPos, yPos, zPos));
+            }
+        }
+
+        bool oddRow = false;
+        for (unsigned int y = 0; y < Y_SEGMENTS; ++y)
+        {
+            if (!oddRow) // even rows: y == 0, y == 2; and so on
+            {
+                for (unsigned int x = 0; x <= X_SEGMENTS; ++x)
+                {
+                    indices.push_back(y * (X_SEGMENTS + 1) + x);
+                    indices.push_back((y + 1) * (X_SEGMENTS + 1) + x);
+                }
+            }
+            else
+            {
+                for (int x = X_SEGMENTS; x >= 0; --x)
+                {
+                    indices.push_back((y + 1) * (X_SEGMENTS + 1) + x);
+                    indices.push_back(y * (X_SEGMENTS + 1) + x);
+                }
+            }
+            oddRow = !oddRow;
+        }
+        indexCount__ = static_cast<unsigned int>(indices.size());
+
+        std::vector<float> data;
+        for (unsigned int i = 0; i < positions.size(); ++i)
+        {
+            data.push_back(positions[i].x);
+            data.push_back(positions[i].y);
+            data.push_back(positions[i].z);
+            if (normals.size() > 0)
+            {
+                data.push_back(normals[i].x);
+                data.push_back(normals[i].y);
+                data.push_back(normals[i].z);
+            }
+            if (uv.size() > 0)
+            {
+                data.push_back(uv[i].x);
+                data.push_back(uv[i].y);
+            }
+        }
+        glBindVertexArray(sphereVAO__);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(float), &data[0], GL_STATIC_DRAW);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
+        unsigned int stride = (3 + 2 + 3) * sizeof(float);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (void*)(3 * sizeof(float)));
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride, (void*)(6 * sizeof(float)));
+    }
+
+    glBindVertexArray(sphereVAO__);
+    glDrawElements(GL_TRIANGLE_STRIP, indexCount__, GL_UNSIGNED_INT, 0);
 }

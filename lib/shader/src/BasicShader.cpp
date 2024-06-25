@@ -11,9 +11,12 @@ const char* vertexBasicShader = R(
         uniform mat4 u_worldNormalMat;
 
         out vec3 v_color;
+        out vec3 v_normal;
 
         void main()
         {
+            vec4 normal = u_worldNormalMat * vec4(a_normal.xyz, 0.0);
+            v_normal = normalize(normal.xyz);
             v_color = a_color;
             gl_Position = u_projMat * u_viewMat * u_worldMat * vec4(a_position.xyz, 1.0);
         }
@@ -21,6 +24,7 @@ const char* vertexBasicShader = R(
 
 const char* fragmentBasicShader = R(
         in vec3 v_color;
+        in vec3 v_normal;
         out vec4 FragColor;
 
         void main()

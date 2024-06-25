@@ -52,7 +52,7 @@ void IBLPreprocessor::build() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    //Stb::free(data);
+    Stb::free(data);
 
 
     // pbr: setup cubemap to render to and attach to framebuffer
@@ -69,34 +69,15 @@ void IBLPreprocessor::build() {
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     // pbr: set up projection and view matrices for capturing data onto the 6 cubemap face directions
-    auto d2r = [](float d)->float {return d * 3.141592653589793238462 / 180.0f;};
-//    array<mat4, 6> captureViews = {
-//            //eye, center, up
-//            Camera(vec3(0.0f, 0.0f, 0.0f), vec3(1.0f,  0.0f,  0.0f), vec3(0.0f, -1.0f,  0.0f)).viewMat(),
-//            Camera(vec3(0.0f, 0.0f, 0.0f), vec3(-1.0f,  0.0f,  0.0f), vec3(0.0f, -1.0f,  0.0f)).viewMat(),
-//            Camera(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f,  1.0f,  0.0f), vec3(0.0f,  0.0f,  1.0f)).viewMat(),
-//            Camera(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, -1.0f,  0.0f), vec3(0.0f,  0.0f, -1.0f)).viewMat(),
-//            Camera(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f,  0.0f,  1.0f), vec3(0.0f, -1.0f,  0.0f)).viewMat(),
-//            Camera(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f,  0.0f, -1.0f), vec3(0.0f, -1.0f,  0.0f)).viewMat()
-//    };
-//    array<mat4, 6> captureViews = {
-//            Camera(vec3(0.0f, 0.0f, 0.0f), vec3(1.0f,  0.0f,  0.0f), vec3(0.0f, -1.0f,  0.0f)).viewMat(),
-//            Camera(vec3(0.0f, 0.0f, 0.0f), vec3(-1.0f,  0.0f,  0.0f), vec3(0.0f, -1.0f,  0.0f)).viewMat(),
-//            Camera(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f,  1.0f,  0.0f), vec3(0.0f,  0.0f,  1.0f)).viewMat(),
-//            Camera(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, -1.0f,  0.0f), vec3(0.0f,  0.0f, -1.0f)).viewMat(),
-//            Camera(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f,  0.0f,  1.0f), vec3(0.0f, -1.0f,  0.0f)).viewMat(),
-//            Camera(vec3(0.0f, 0.0f, 0.0f), vec3(0.0f,  0.0f, -1.0f), vec3(0.0f, -1.0f,  0.0f)).viewMat()
-//    };
     array<mat4, 6> captureViews = {
-            Camera::createViewMatrix( vec3(1.0f,  0.0f,  0.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, -1.0f,  0.0f)),
-            Camera::createViewMatrix( vec3(-1.0f,  0.0f,  0.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, -1.0f,  0.0f)),
-            Camera::createViewMatrix( vec3(0.0f,  1.0f,  0.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f,  0.0f,  1.0f)),
-            Camera::createViewMatrix( vec3(0.0f, -1.0f,  0.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f,  0.0f, -1.0f)),
-            Camera::createViewMatrix( vec3(0.0f,  0.0f,  1.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, -1.0f,  0.0f)),
-            Camera::createViewMatrix( vec3(0.0f,  0.0f, -1.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, -1.0f,  0.0f))
+            Camera::createViewMatrix(vec3(1.0f,  0.0f,  0.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f)),
+            Camera::createViewMatrix(vec3(-1.0f, 0.0f,  0.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f)),
+            Camera::createViewMatrix(vec3(0.0f,  1.0f,  0.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 0.0f,  1.0f)),
+            Camera::createViewMatrix(vec3(0.0f,  -1.0f, 0.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 0.0f,  -1.0f)),
+            Camera::createViewMatrix(vec3(0.0f,  0.0f,  1.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f)),
+            Camera::createViewMatrix(vec3(0.0f,  0.0f,  -1.0f),vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f))
     };
 
-//    mat4 captureProjection = mat4::Perspective(d2r(90.f), 1.f, 0.01, 10.0);
     mat4 captureProjection = mat4::Frustum(100.0, 100.0, 90.0, 0.01, 10.0);
 
     // pbr: convert HDR equirectangular environment map to cubemap equivalent

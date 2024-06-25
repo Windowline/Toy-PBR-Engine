@@ -1,4 +1,5 @@
 #include "Camera.hpp"
+#include <cassert>
 
 Camera::Camera(vec3 eye, vec3 target, vec3 up) :
                           _eye(std::move(eye)),
@@ -135,10 +136,8 @@ void Camera::updateMat() {
         return;
     }
 
-    if (_screenRect.w == 0 || _screenRect.h == 0) {
-        return;
-    }
-    
+    assert(_screenRect.w > 0 && _screenRect.h > 0);
+
     _viewMat = computeViewMat();
 
     _viewRotMat = _viewMat;
