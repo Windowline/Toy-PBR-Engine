@@ -387,42 +387,35 @@ void Scene::renderPBR() {
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, _iblPreprocessor->brdfLUTTexture());
 
-//    activeShader->lightPositionsUniformVec3fv(lightPosArray, LIGHT_COUNT);
-//    activeShader->lightColorsUniformVec3fv(lightColorArray, LIGHT_COUNT);
+    activeShader->lightPositionsUniformVec3fv(lightPosArray, LIGHT_COUNT);
+    activeShader->lightColorsUniformVec3fv(lightColorArray, LIGHT_COUNT);
 
     delete[] lightPosArray;
     delete[] lightColorArray;
 
     activeShader->camPosUniform3f(_camera->eye().x, _camera->eye().y, _camera->eye().z);
-    activeShader->metallicUniform1f(0.5);
-    activeShader->roughnessUniform1f(0.5);
+    activeShader->metallicUniform1f(0.9);
+    activeShader->roughnessUniform1f(0.1);
     activeShader->albedoUniform3f(0.5, 0.0, 0.0);
     activeShader->aoUniform1f(1.f);
 
     activeShader->projMatUniformMatrix4fv(proj.pointer());
     activeShader->viewMatUniformMatrix4fv(view.pointer());
 
-    mat4 world = mat4::Translate(0, 0, -100);
-    activeShader->worldMatUniformMatrix4fv(world.pointer());
-    activeShader->worldNormalMatUniformMatrix4fv(world.invert().transposed().pointer());
-    _sphere->render();
-//    renderSphere__();
+    int nrRows = 7;
+    int nrColumns = 7;
+    float spacing = 2.5 * 20;
 
-
-
-
-//    int nrRows = 7;
-//    int nrColumns = 7;
-//    float spacing = 2.5;
-//
-//    for (int row = 0; row < nrRows; ++row) {
-//        for (int col = 0; col < nrColumns; ++col) {
-//            mat4 world = mat4::Translate((float)(col - (nrColumns / 2)) * spacing, (float)(row - (nrRows / 2)) * spacing, -2.0f);
-//            activeShader->worldMatUniformMatrix4fv(world.pointer());
-//            activeShader->worldNormalMatUniformMatrix4fv(world.invert().transposed().pointer());
-//            renderSphere__();
-//        }
-//    }
+    for (int row = 0; row < nrRows; ++row) {
+        activeShader->metallicUniform1f((float)row / (float)nrRows);
+        for (int col = 0; col < nrColumns; ++col) {
+            activeShader->roughnessUniform1f(clamp((float)col / (float)nrColumns, 0.05f, 1.0f));
+            mat4 world = mat4::Translate((float)(col - (nrColumns / 2)) * spacing, (float)(row - (nrRows / 2)) * spacing, -100.0f);
+            activeShader->worldMatUniformMatrix4fv(world.pointer());
+            activeShader->worldNormalMatUniformMatrix4fv(world.invert().transposed().pointer());
+            _sphere->render();
+        }
+    }
 
 //    visitNodes(_rootNode, [wShader = weak_ptr<PBRShader>(activeShader)](const shared_ptr<Node>& node) {
 //        if (auto shader = wShader.lock()) {

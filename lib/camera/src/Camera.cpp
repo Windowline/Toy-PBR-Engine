@@ -126,8 +126,8 @@ mat4 Camera::computeProjectionMat() const {
     return mat4::Frustum(static_cast<float>(_screenRect.w),
                          static_cast<float>(_screenRect.h),
                          static_cast<float>(_fovy),
-                         10.f,
-                         1000.f);
+                         0.01f,
+                         10000.f);
 }
 
 

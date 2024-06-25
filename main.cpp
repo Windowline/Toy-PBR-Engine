@@ -6,6 +6,12 @@
 #include "Vector.hpp"
 
 RenderEngine* engine = nullptr;
+constexpr float ASPECT_RATIO = 0.5625;
+//constexpr unsigned int SCR_WIDTH = 1600;
+//constexpr unsigned int SCR_HEIGHT = SCR_WIDTH * ASPECT_RATIO;
+constexpr unsigned int SCR_WIDTH = 1280*2;
+constexpr unsigned int SCR_HEIGHT = 720*2;
+
 
 float lastX = 800.0f / 2.0;
 float lastY = 600.0 / 2.0;
@@ -94,7 +100,7 @@ int main() {
 
     // glfw window creation
     // --------------------
-    GLFWwindow *window = glfwCreateWindow(800, 600, "RenderEngine", NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "RenderEngine", NULL, NULL);
     if (window == NULL) {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
@@ -129,9 +135,6 @@ int main() {
         lastFrame = currentFrame;
 
         processInput(window);
-
-        int viewport[4];
-        glGetIntegerv(GL_VIEWPORT, viewport);
 
         engine->render();
 
