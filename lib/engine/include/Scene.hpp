@@ -23,6 +23,7 @@ class Scene {
 public:
 
     Scene(RenderEngine* engine, unsigned int defaultFBO);
+
     virtual ~Scene();
 
     void setScreenSize(int w, int h);

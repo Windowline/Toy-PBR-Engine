@@ -39,12 +39,7 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
     _fullQuad = make_unique<FullQuad>();
     _textureShader = make_unique<TexturePassShader>();
 
-//    _camera = make_shared<Camera>(vec3(0, 0, 150), vec3(0, 0, 0));
-//    _camera = make_shared<Camera>(vec3(0, 0, 0), vec3(0, 0, -1));
-//    _camera = make_shared<Camera>(vec3(0, 0, 0), vec3(0, 0, 1));
-
-    _camera = make_shared<Camera>(vec3(0, 0, 0), vec3(0, 0, -1));
-
+    _camera = make_shared<Camera>(vec3(0, 0, 10), vec3(0, 0, -1));
 
     _lightPositions = {
         vec3(0.f, 44.f, 20.f)
@@ -56,56 +51,51 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
 
 
     //방 메시를 생성합니다. 각면의 색상을 달리 받습니다.
-    auto roomMesh = make_shared<Room>(100, vec3(0, 1, 0), vec3(0, 0, 0), vec3(1, 0, 0),
+    auto roomMesh = make_shared<Room>(1, vec3(0, 1, 0), vec3(0, 0, 0), vec3(1, 0, 0),
                                            vec3(0, 0, 1), vec3(0.5, 0.5, 0.5));
-
-    //파란색 구체 메시를 생성합니다.
-    auto sphereMesh = make_shared<Sphere>(16, vec3(0, 0, 1));
-
-    //흰색 정육면체 메시를 생성합니다.
-    auto cubeMesh = make_shared<Cube>(20, vec3(1, 1, 1));
-
-    //방 천장에 위치할 빛 구체를 생성합니다. 라이팅, 그림자 등의 연산에선 제외됩니다.
-    auto lightSphereMesh = make_shared<Sphere>(4, vec3(1, 1, 1));
-
-
     mat4 roomLocalTransform;
     _room = make_shared<Node>(this, roomMesh, roomLocalTransform);
 
 
-    mat4 sphereLocalTransform = mat4::Translate(-20, -25, 20);
+    constexpr float Z_ALIGN = -20.f;
+
+    // shpere
+    auto sphereMesh = make_shared<Sphere>(1, vec3(0, 0, 1));
+    mat4 sphereLocalTransform = mat4::Scale(16) * mat4::Translate(0, 0, Z_ALIGN);
     _sphere = make_shared<Node>(this, sphereMesh, sphereLocalTransform);
 
-
-    mat4 cubeLocalTransform = mat4::RotateY(45.f) * mat4::Translate(25, -40, -20);
+    // cube
+    auto cubeMesh = make_shared<Cube>(1, vec3(0.7, 0.7, 0.7));
+    mat4 cubeLocalTransform = mat4::Scale(20.f) * mat4::RotateY(45.f) * mat4::Translate(40, 0, Z_ALIGN);
     _cube = make_shared<Node>(this, cubeMesh, cubeLocalTransform);
 
 
-    mat4 lightSphereLocalTransform = mat4::Translate(_lightPositions.front().x,
-                                                     _lightPositions.front().y,
-                                                     _lightPositions.front().z);
+    // model
+    auto modelMesh = make_shared<Model>("/Users/bagchangseon/CLionProjects/ToyRenderer/lib/res/objects/backpack/backpack.obj", vec3(0.7, 0.7, 0.7));
+    mat4 modelLocalTransform = mat4::Scale(6.f) * mat4::Translate(-40, 30, Z_ALIGN - 20);
+    _model = make_shared<Node>(this, modelMesh, modelLocalTransform);
 
+
+    //방 천장에 위치할 빛 구체를 생성합니다. 라이팅, 그림자 등의 연산에선 제외됩니다.
+    auto lightSphereMesh = make_shared<Sphere>(1, vec3(1, 1, 1));
+    mat4 lightSphereLocalTransform = mat4::Scale(10.f) * mat4::Translate(_lightPositions.front().x,
+                                                                _lightPositions.front().y,
+                                                                _lightPositions.front().z);
     _lightSphere = make_shared<Node>(this, lightSphereMesh, lightSphereLocalTransform);
     _lightSphere->transformUpdate();
 
-
-    mat4 modelLocalTransform = mat4::Scale(6.f) * mat4::Translate(5, -10, 20);
-//    auto modelMesh = make_shared<Model>("/Users/bagchangseon/CLionProjects/ToyRenderer/lib/res/objects/backpack/backpack.obj", vec3(0.7, 0.7, 0.7));
-//    _model = make_shared<Node>(this, modelMesh, modelLocalTransform);
 
     _rootTransformDirty = true;
 
     _rootNode = _room;
     _rootNode->addChild(_sphere);
     _rootNode->addChild(_cube);
-//    _rootNode->addChild(_model);
+    _rootNode->addChild(_model);
 
     _iblPreprocessor = make_unique<IBLPreprocessor>(engine->_shaderManager, "/Users/bagchangseon/CLionProjects/ToyRenderer/lib/res/textures/hdr/newport_loft.hdr");
     _iblPreprocessor->build();
 
-//    _rootNode->setEnabled(false);
-//    _model->setEnabled(false);
-//    _cube->setEnabled(false);
+    _rootNode->setEnabled(false);
 
     buildSkyBoxVAO();
 }
@@ -147,9 +137,6 @@ void Scene::updateViewRotation(float yaw, float pitch) {
 
 
 void Scene::render() {
-//    debugIBL();
-//    return;
-
     // configure global opengl state
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
@@ -158,16 +145,18 @@ void Scene::render() {
     // enable seamless cubemap sampling for lower mip levels in the pre-filter map.
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
-//    glEnable(GL_CULL_FACE);
-//    glFrontFace(GL_CCW);
-//    glCullFace(GL_BACK);
+    glEnable(GL_CULL_FACE);
+    glFrontFace(GL_CCW);
+    glCullFace(GL_BACK);
 
     // default buffer clear
     glClearColor(0.f, 1.f, 0.f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+
     renderPBR();
 
+    glDisable(GL_CULL_FACE);
     renderSkyBox();
     glDepthFunc(GL_LESS); // set depth function back to default
 
@@ -366,19 +355,6 @@ void Scene::renderPBR() {
     const mat4& proj = _camera->projMat();
     const mat4& view = _camera->viewMat();
 
-
-    ////////////// basic //////////////
-//    auto basic = shaderManager()->setActiveShader<BasicShader>(eShaderProgram_Default);
-//    basic->projMatUniformMatrix4fv(proj.pointer());
-//    basic->viewMatUniformMatrix4fv(view.pointer());
-//
-//    mat4 worldMat = mat4::Translate(0, 0, -100);
-//    basic->worldMatUniformMatrix4fv(worldMat.pointer());
-//    basic->worldNormalMatUniformMatrix4fv(worldMat.invert().transposed().pointer());
-//    _sphere->render();
-//    return;
-    ///////////////////////////
-
     auto activeShader = shaderManager()->setActiveShader<PBRShader>(eShaderProgram_PBR);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, _iblPreprocessor->irradianceMap());
@@ -402,21 +378,22 @@ void Scene::renderPBR() {
     activeShader->projMatUniformMatrix4fv(proj.pointer());
     activeShader->viewMatUniformMatrix4fv(view.pointer());
 
+    //#### render sample spheres
     int nrRows = 7;
     int nrColumns = 7;
-    float spacing = 2.5 * 20;
-
+    float spacing = 2.5 * _sphere->worldTransform().getScale().x;
     for (int row = 0; row < nrRows; ++row) {
         activeShader->metallicUniform1f((float)row / (float)nrRows);
         for (int col = 0; col < nrColumns; ++col) {
             activeShader->roughnessUniform1f(clamp((float)col / (float)nrColumns, 0.05f, 1.0f));
-            mat4 world = mat4::Translate((float)(col - (nrColumns / 2)) * spacing, (float)(row - (nrRows / 2)) * spacing, -100.0f);
+            mat4 world = mat4::Scale(_sphere->worldTransform().getScale().x) * mat4::Translate((float)(col - (nrColumns / 2)) * spacing, (float)(row - (nrRows / 2)) * spacing, -100.0f);
             activeShader->worldMatUniformMatrix4fv(world.pointer());
             activeShader->worldNormalMatUniformMatrix4fv(world.invert().transposed().pointer());
             _sphere->render();
         }
     }
 
+    //#### render models
 //    visitNodes(_rootNode, [wShader = weak_ptr<PBRShader>(activeShader)](const shared_ptr<Node>& node) {
 //        if (auto shader = wShader.lock()) {
 //            shader->worldMatUniformMatrix4fv(node->worldTransform().pointer());

@@ -14,18 +14,21 @@ void RenderEngine::prepare() {
 
 void RenderEngine::setScreenSize(int w, int h) {
     _screenSize = ivec2(w, h);
-    if (_scene)
+    if (_scene) {
         _scene->setScreenSize(_screenSize.x, _screenSize.y);
+    }
 }
 
 void RenderEngine::updateViewPosition(int dir, float delta) {
-    if (_scene)
+    if (_scene) {
         _scene->updateViewPosition(dir, delta);
+    }
 }
 
 void RenderEngine::updateViewRotation(float yaw, float pitch) {
-    if (_scene)
+    if (_scene) {
         _scene->updateViewRotation(yaw, pitch);
+    }
 }
 
 
