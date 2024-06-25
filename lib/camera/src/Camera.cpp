@@ -54,43 +54,48 @@ vec3 Camera::unproject(vec3 point) const {
 }
 
 Basis3 Camera::CreateBasis(vec3 target, vec3 eye, vec3 up) {
-    //관점 정규직교 좌표계 생성
-    vec3 vDir = (target - eye).normalized();
-    vec3 vUp = (up - (vDir * up.dot(vDir))).normalized();
-    vec3 vSide = vDir.cross(vUp);
-    return {vDir, vUp, vSide};
+    //카메라 관점 정규직교 좌표계 생성
+    vec3 viewDir = (target - eye).normalized();
+    vec3 viewUp = (up - (viewDir * up.dot(viewDir))).normalized();
+    vec3 viewSide = viewDir.cross(viewUp).normalized();
+    return {viewDir, viewUp, viewSide};
 }
 
 void Camera::updateViewPosition(int dir, float delta) {
     const auto& basis = Camera::CreateBasis(_target, _eye, _up);
     vec3 updatedEye = _eye;
+    vec3 updateTarget = _target;
 
     if (dir == 0)
-        updatedEye += basis.vDir * delta;
+        updatedEye += basis.viewDir * delta;
     else if (dir == 1)
-        updatedEye -= basis.vDir * delta;
-    else if (dir == 2)
-        updatedEye -= basis.vSide * delta;
-    else if (dir == 3)
-        updatedEye += basis.vSide * delta;
-    else
+        updatedEye -= basis.viewDir * delta;
+    else if (dir == 2) {
+        updatedEye -= basis.viewSide * delta;
+        updateTarget -= basis.viewSide * delta;
+    } else if (dir == 3) {
+        updatedEye += basis.viewSide * delta;
+        updateTarget += basis.viewSide * delta;
+    } else {
         std::cout << "unexpected dir " << std:: endl;
+    }
 
     _eye = updatedEye;
+    _target = updateTarget;
     _needUpdateMat = true;
 }
 
 void Camera::updateViewRotation(float yaw, float pitch) {
     auto d2r = [](float d)->float {return d * 3.141592653589793238462 / 180.0f;};
 
-    vec3 front;
-    front.x = cos(d2r(yaw)) * cos(d2r(pitch));
-    front.y = sin(d2r(pitch));
-    front.z = sin(d2r(yaw)) * cos(d2r(pitch));
-    front.normalize();
+    vec3 viewDir;
+    viewDir.x = cos(d2r(yaw)) * cos(d2r(pitch));
+    viewDir.y = sin(d2r(pitch));
+    viewDir.z = sin(d2r(yaw)) * cos(d2r(pitch));
+    viewDir.normalize();
 
     float distance = (_eye - _target).length();
-    _target = front * distance;
+    _target = viewDir * distance;
 
     _needUpdateMat = true;
 }
@@ -100,9 +105,9 @@ mat4 Camera::createViewMatrix(vec3 target, vec3 eye, vec3 up) {
     const auto& basis = Camera::CreateBasis(target, eye, up);
     
     mat4 ret;
-    ret.x = vec4(std::move(basis.vSide), 0);
-    ret.y = vec4(std::move(basis.vUp), 0);
-    ret.z = vec4(std::move(-basis.vDir), 0);
+    ret.x = vec4(std::move(basis.viewSide), 0);
+    ret.y = vec4(std::move(basis.viewUp), 0);
+    ret.z = vec4(std::move(-basis.viewDir), 0);
     ret.w = vec4(0, 0, 0, 1);
 
     vec4 eyeInverse = ret * vec4(-eye, 1);
@@ -113,11 +118,9 @@ mat4 Camera::createViewMatrix(vec3 target, vec3 eye, vec3 up) {
 }
 
 mat4 Camera::computeViewMat() const {
-    
     return Camera::createViewMatrix(_target,
                                     _eye,
                                     _up);
-//                                    mat4::RotateZ(_cameraYAngle).multiplication1n4(vec4(0, 1, 0, 0)).xyz().normalized());
 }
 
 

@@ -13,6 +13,7 @@ class FrameBufferObject;
 class FullQuad;
 class TexturePassShader;
 class IBLPreprocessor;
+class Cube;
 
 /**
  * 장면에 필요한 렌더링 오브젝트, 빛, 그림자 정보 등을 관리하고,
@@ -65,31 +66,27 @@ public:
     }
 
 private:
-    void renderQuad(unsigned int texture, ivec2 screenSize); //for debug
-
     void buildSSAOInfo();
 
     void renderSkyBox();
 
     void renderPBR();
 
-    void debugIBL();
+    void debugIBL(); //for debug
+
+    void renderQuad(unsigned int texture, ivec2 screenSize); //for debug
 
     RenderEngine* _engine;
-
     unsigned int _defaultFBO;
-
     bool _rootTransformDirty;
 
     std::shared_ptr<Camera> _camera;
-
     std::shared_ptr<Node> _rootNode;
     std::shared_ptr<Node> _room;
     std::shared_ptr<Node> _cube;
     std::shared_ptr<Node> _sphere;
     std::shared_ptr<Node> _lightSphere;//조명에 위치한 흰색 구
     std::shared_ptr<Node> _model;
-
     std::shared_ptr<FrameBufferObject> _gBuffer;
     std::shared_ptr<FrameBufferObject> _shadowDepthBuffer;
 
@@ -110,12 +107,12 @@ private:
     std::shared_ptr<FrameBufferObject> _ssaoBlurFBO;
 
     std::unique_ptr<FullQuad> _fullQuad;
+    std::unique_ptr<Cube> _fullCube;
     std::unique_ptr<TexturePassShader> _textureShader;
-
     std::unique_ptr<IBLPreprocessor> _iblPreprocessor;
 
 
-    //
+
     unsigned int skyboxVAO, skyboxVBO;
     void buildSkyBoxVAO();
 };

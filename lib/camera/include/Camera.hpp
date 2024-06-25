@@ -15,9 +15,9 @@ struct Rect {
 };
 
 struct Basis3 {
-    vec3 vDir;
-    vec3 vUp;
-    vec3 vSide;
+    vec3 viewDir;
+    vec3 viewUp;
+    vec3 viewSide;
 };
 
 /**

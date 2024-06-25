@@ -29,13 +29,13 @@
 
 using namespace std;
 
-void renderCube___();
-unsigned int loadSkybox___();
-unsigned int loadCubemap___(vector<std::string> faces);
-void renderSphere__();
+//////////////////// For Debug ////////////////////////////
+unsigned int ___loadSkyboxForDebug___();
+
 
 Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaultFBO(defaultFBO)
 {
+    _fullCube = make_unique<Cube>(2, vec3(1, 1, 1));
     _fullQuad = make_unique<FullQuad>();
     _textureShader = make_unique<TexturePassShader>();
 
@@ -56,9 +56,7 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
     mat4 roomLocalTransform;
     _room = make_shared<Node>(this, roomMesh, roomLocalTransform);
 
-
     constexpr float Z_ALIGN = -20.f;
-
     // shpere
     auto sphereMesh = make_shared<Sphere>(1, vec3(0, 0, 1));
     mat4 sphereLocalTransform = mat4::Scale(16) * mat4::Translate(0, 0, Z_ALIGN);
@@ -126,13 +124,15 @@ void Scene::setScreenSize(int w, int h) {
 }
 
 void Scene::updateViewPosition(int dir, float delta) {
-    if (_camera)
+    if (_camera) {
         _camera->updateViewPosition(dir, delta);
+    }
 }
 
 void Scene::updateViewRotation(float yaw, float pitch) {
-    if (_camera)
+    if (_camera) {
         _camera->updateViewRotation(yaw, pitch);
+    }
 }
 
 
@@ -152,7 +152,6 @@ void Scene::render() {
     // default buffer clear
     glClearColor(0.f, 1.f, 0.f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 
     renderPBR();
 
@@ -291,11 +290,6 @@ void Scene::render() {
 }
 
 void Scene::renderSkyBox() {
-    static unsigned int cubemapTexture = 5123;
-    if (cubemapTexture == 5123) {
-        cubemapTexture = loadSkybox___();
-    }
-
     const mat4& proj = _camera->projMat();
     const mat4& viewRot = _camera->viewRotMat();
 
@@ -304,11 +298,8 @@ void Scene::renderSkyBox() {
     activeShader->viewMatUniformMatrix4fv(viewRot.pointer());
 
     glActiveTexture(GL_TEXTURE0);
-//    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
     glBindTexture(GL_TEXTURE_CUBE_MAP, _iblPreprocessor->envCubemap());
-//    glBindTexture(GL_TEXTURE_CUBE_MAP, _iblPreprocessor->irradianceMap()); // display irradiance map
-//    glBindTexture(GL_TEXTURE_CUBE_MAP, _iblPreprocessor->prefilterMap()); // display prefilter map
-    renderCube___();
+    _fullCube->render();
 }
 
 void Scene::renderPBR() {
@@ -401,31 +392,6 @@ void Scene::renderPBR() {
 //            node->render();
 //        }
 //    });
-}
-
-void Scene::debugIBL() {
-//    renderQuad(_iblPreprocessor->hdrTexture(), _camera->screenSize());
-//    renderQuad(_iblPreprocessor->irradianceMap(), _camera->screenSize()); // ?
-//    renderQuad(_iblPreprocessor->prefilterMap(), _camera->screenSize()); // ?
-//    renderQuad(_iblPreprocessor->envCubemap(), _camera->screenSize()); // ?
-    renderQuad(_iblPreprocessor->brdfLUTTexture(), _camera->screenSize()); // OK
-}
-
-void Scene::renderQuad(unsigned int texture, ivec2 screenSize) { //for debug
-    glDisable(GL_CULL_FACE);
-    //glDisable(GL_DEPTH_TEST);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, _defaultFBO);
-    glViewport(0, 0, _camera->screenSize().x, _camera->screenSize().y);
-    glClearColor(0.f, 0.f, 0.f, 1.f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    _textureShader->useProgram();
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture);
-
-    _fullQuad->render();
 }
 
 //Screen Space Ambient Occlusion을 위한 정보를 빌드합니다.
@@ -629,9 +595,35 @@ void Scene::buildSkyBoxVAO() {
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 }
 
-unsigned int loadSkybox___() {
-    vector<string> faces =
-    {
+
+//////////////////// For Debug ////////////////////////////
+void Scene::debugIBL() {
+//    renderQuad(_iblPreprocessor->hdrTexture(), _camera->screenSize());
+//    renderQuad(_iblPreprocessor->irradianceMap(), _camera->screenSize()); // ?
+//    renderQuad(_iblPreprocessor->prefilterMap(), _camera->screenSize()); // ?
+//    renderQuad(_iblPreprocessor->envCubemap(), _camera->screenSize()); // ?
+    renderQuad(_iblPreprocessor->brdfLUTTexture(), _camera->screenSize()); // OK
+}
+
+void Scene::renderQuad(unsigned int texture, ivec2 screenSize) { //for debug
+    glDisable(GL_CULL_FACE);
+    //glDisable(GL_DEPTH_TEST);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, _defaultFBO);
+    glViewport(0, 0, _camera->screenSize().x, _camera->screenSize().y);
+    glClearColor(0.f, 0.f, 0.f, 1.f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    _textureShader->useProgram();
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    _fullQuad->render();
+}
+
+unsigned int ___loadSkyboxForDebug___() {
+    vector<string> faces = {
         std::string("/Users/bagchangseon/CLionProjects/ToyRenderer/lib/res/textures/skybox/right.jpg"),
         std::string("/Users/bagchangseon/CLionProjects/ToyRenderer/lib/res/textures/skybox/left.jpg"),
         std::string("/Users/bagchangseon/CLionProjects/ToyRenderer/lib/res/textures/skybox/top.jpg"),
@@ -640,11 +632,6 @@ unsigned int loadSkybox___() {
         std::string("/Users/bagchangseon/CLionProjects/ToyRenderer/lib/res/textures/skybox/back.jpg")
     };
 
-   return loadCubemap___(faces);
-}
-
-unsigned int loadCubemap___(vector<std::string> faces)
-{
     unsigned int textureID;
     glGenTextures(1, &textureID);
     glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
@@ -664,100 +651,4 @@ unsigned int loadCubemap___(vector<std::string> faces)
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
     return textureID;
-}
-
-
-unsigned int sphereVAO__ = 0;
-unsigned int indexCount__;
-void renderSphere__()
-{
-    if (sphereVAO__ == 0)
-    {
-        glGenVertexArrays(1, &sphereVAO__);
-
-        unsigned int vbo, ebo;
-        glGenBuffers(1, &vbo);
-        glGenBuffers(1, &ebo);
-
-        std::vector<vec3> positions;
-        std::vector<vec2> uv;
-        std::vector<vec3> normals;
-        std::vector<unsigned int> indices;
-
-        const unsigned int X_SEGMENTS = 64;
-        const unsigned int Y_SEGMENTS = 64;
-        const float PI = 3.14159265359f;
-        for (unsigned int x = 0; x <= X_SEGMENTS; ++x)
-        {
-            for (unsigned int y = 0; y <= Y_SEGMENTS; ++y)
-            {
-                float xSegment = (float)x / (float)X_SEGMENTS;
-                float ySegment = (float)y / (float)Y_SEGMENTS;
-                float xPos = std::cos(xSegment * 2.0f * PI) * std::sin(ySegment * PI);
-                float yPos = std::cos(ySegment * PI);
-                float zPos = std::sin(xSegment * 2.0f * PI) * std::sin(ySegment * PI);
-
-                positions.push_back(vec3(xPos, yPos, zPos));
-                uv.push_back(vec2(xSegment, ySegment));
-                normals.push_back(vec3(xPos, yPos, zPos));
-            }
-        }
-
-        bool oddRow = false;
-        for (unsigned int y = 0; y < Y_SEGMENTS; ++y)
-        {
-            if (!oddRow) // even rows: y == 0, y == 2; and so on
-            {
-                for (unsigned int x = 0; x <= X_SEGMENTS; ++x)
-                {
-                    indices.push_back(y * (X_SEGMENTS + 1) + x);
-                    indices.push_back((y + 1) * (X_SEGMENTS + 1) + x);
-                }
-            }
-            else
-            {
-                for (int x = X_SEGMENTS; x >= 0; --x)
-                {
-                    indices.push_back((y + 1) * (X_SEGMENTS + 1) + x);
-                    indices.push_back(y * (X_SEGMENTS + 1) + x);
-                }
-            }
-            oddRow = !oddRow;
-        }
-        indexCount__ = static_cast<unsigned int>(indices.size());
-
-        std::vector<float> data;
-        for (unsigned int i = 0; i < positions.size(); ++i)
-        {
-            data.push_back(positions[i].x);
-            data.push_back(positions[i].y);
-            data.push_back(positions[i].z);
-            if (normals.size() > 0)
-            {
-                data.push_back(normals[i].x);
-                data.push_back(normals[i].y);
-                data.push_back(normals[i].z);
-            }
-            if (uv.size() > 0)
-            {
-                data.push_back(uv[i].x);
-                data.push_back(uv[i].y);
-            }
-        }
-        glBindVertexArray(sphereVAO__);
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(float), &data[0], GL_STATIC_DRAW);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
-        unsigned int stride = (3 + 2 + 3) * sizeof(float);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0);
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (void*)(3 * sizeof(float)));
-        glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride, (void*)(6 * sizeof(float)));
-    }
-
-    glBindVertexArray(sphereVAO__);
-    glDrawElements(GL_TRIANGLE_STRIP, indexCount__, GL_UNSIGNED_INT, 0);
 }
