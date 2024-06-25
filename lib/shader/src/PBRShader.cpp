@@ -4,14 +4,12 @@
 #include <iostream>
 
 const char* vertexPBR = R(
-        layout (location = 0) in vec3 aPos;
-        layout (location = 1) in vec3 aColor;
-        layout (location = 2) in vec3 aNormal;
-//        layout (location = 3) in vec2 aTexCoords;
+        layout (location = 0) in vec3 a_position;
+        layout (location = 1) in vec3 a_color;
+        layout (location = 2) in vec3 a_normal;
 
-//        out vec2 TexCoords;
-        out vec3 WorldPos;
-        out vec3 Normal;
+        out vec3 v_worldPos;
+        out vec3 v_normal;
 
         uniform mat4 u_projMat;
         uniform mat4 u_viewMat;
@@ -20,19 +18,16 @@ const char* vertexPBR = R(
 
         void main()
         {
-//            TexCoords = aTexCoords;
-            WorldPos = vec3(u_worldMat * vec4(aPos, 1.0));
-            Normal = normalize((u_worldNormalMat * vec4(aNormal, 0.0)).xyz);
-
-            gl_Position =  u_projMat * u_viewMat * vec4(WorldPos, 1.0);
+            v_worldPos = vec3(u_worldMat * vec4(a_position, 1.0));
+            v_normal = normalize((u_worldNormalMat * vec4(a_normal, 0.0)).xyz);
+            gl_Position =  u_projMat * u_viewMat * vec4(v_worldPos, 1.0);
         }
 );
 
 const char* fragmentPBR = R(
         out vec4 FragColor;
-//        in vec2 TexCoords;
-        in vec3 WorldPos;
-        in vec3 Normal;
+        in vec3 v_worldPos;
+        in vec3 v_normal;
 
 // material parameters
         uniform vec3 albedo;
@@ -98,90 +93,10 @@ const char* fragmentPBR = R(
             return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
         }
 // ----------------------------------------------------------------------------
-
-//        void main() {
-//            vec3 N = Normal;
-//            vec3 V = normalize(camPos - WorldPos);
-//            vec3 R = reflect(-V, N);
-//
-//            // calculate reflectance at normal incidence; if dia-electric (like plastic) use F0
-//            // of 0.04 and if it's a metal, use the albedo color as F0 (metallic workflow)
-//            vec3 F0 = vec3(0.04);
-//            F0 = mix(F0, albedo, metallic);
-//
-//            vec3 Lo = vec3(0.0);
-//            for(int i = 0; i < 4; ++i)
-//            {
-//                // calculate per-light radiance
-//                vec3 L = normalize(lightPositions[i] - WorldPos);
-//                vec3 H = normalize(V + L);
-//                float distance = length(lightPositions[i] - WorldPos);
-//                float attenuation = 1.0 / (distance * distance);
-//                vec3 radiance = lightColors[i] * attenuation;
-//
-//                // Cook-Torrance BRDF
-//                float NDF = DistributionGGX(N, H, roughness);
-//                float G   = GeometrySmith(N, V, L, roughness);
-//                vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);
-//
-//                vec3 numerator    = NDF * G * F;
-//                float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001; // + 0.0001 to prevent divide by zero
-//                vec3 specular = numerator / denominator;
-//
-//                // kS is equal to Fresnel
-//                vec3 kS = F;
-//                // for energy conservation, the diffuse and specular light can't
-//                // be above 1.0 (unless the surface emits light); to preserve this
-//                // relationship the diffuse component (kD) should equal 1.0 - kS.
-//                vec3 kD = vec3(1.0) - kS;
-//                // multiply kD by the inverse metalness such that only non-metals
-//                // have diffuse lighting, or a linear blend if partly metal (pure metals
-//                // have no diffuse light).
-//                kD *= 1.0 - metallic;
-//
-//                // scale light by NdotL
-//                float NdotL = max(dot(N, L), 0.0);
-//
-//                // add to outgoing radiance Lo
-//                Lo += (kD * albedo / PI + specular) * radiance * NdotL; // note that we already multiplied the BRDF by the Fresnel (kS) so we won't multiply by kS again
-//            }
-//
-//            // ambient lighting (we now use IBL as the ambient term)
-//            vec3 F = fresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);
-//
-//            vec3 kS = F;
-//            vec3 kD = 1.0 - kS;
-//            kD *= 1.0 - metallic;
-//
-//            vec3 irradiance = texture(irradianceMap, N).rgb;
-//            vec3 diffuse = irradiance * albedo;
-//
-//            //
-//            const float MAX_REFLECTION_LOD = 4.0;
-//            vec3 prefilteredColor = textureLod(prefilterMap, R,  roughness * MAX_REFLECTION_LOD).rgb;
-//            vec2 brdf  = texture(brdfLUT, vec2(max(dot(N, V), 0.0), roughness)).rg;
-////            vec2 brdf  = texture(brdfLUT, vec2(0.1, 0.1)).rg;
-//
-////            vec2 brdf = vec2(0.5, 0.5);
-//            vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
-//
-//            vec3 ambient = (kD * diffuse + specular) * ao;
-//
-//            vec3 color = ambient + Lo;
-//
-//            color = color / (color + vec3(1.0));
-//            // gamma correct
-//            color = pow(color, vec3(1.0/2.2));
-//
-////            FragColor = vec4(1.0, 0.0, 0.0, 1.0);
-//            FragColor = vec4(color , 1.0);
-//        }
-
-
         void main()
         {
-            vec3 N = Normal;
-            vec3 V = normalize(camPos - WorldPos);
+            vec3 N = v_normal;
+            vec3 V = normalize(camPos - v_worldPos);
             vec3 R = reflect(-V, N);
 
             // calculate reflectance at normal incidence; if dia-electric (like plastic) use F0
@@ -194,9 +109,9 @@ const char* fragmentPBR = R(
             for(int i = 0; i < 4; ++i)
             {
                 // calculate per-light radiance
-                vec3 L = normalize(lightPositions[i] - WorldPos);
+                vec3 L = normalize(lightPositions[i] - v_worldPos);
                 vec3 H = normalize(V + L);
-                float distance = length(lightPositions[i] - WorldPos);
+                float distance = length(lightPositions[i] - v_worldPos);
                 float attenuation = 1.0 / (distance * distance);
                 vec3 radiance = lightColors[i] * attenuation;
 
@@ -253,7 +168,6 @@ const char* fragmentPBR = R(
             color = pow(color, vec3(1.0/2.2));
 
             FragColor = vec4(color , 1.0);
-//            FragColor = vec4(1.0, 0.0, 0.0, 1.0);
         }
 );
 
