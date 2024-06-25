@@ -37,6 +37,8 @@ add_library(shader STATIC
         src/BGShader.cpp
         include/PBRShader.hpp
         src/PBRShader.cpp
+        include/DeferredPBRShader.hpp
+        src/DeferredPBRShader.cpp
 )
 
 target_link_libraries(shader
