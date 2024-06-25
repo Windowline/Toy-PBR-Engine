@@ -34,6 +34,7 @@ void RenderEngine::updateViewRotation(float yaw, float pitch) {
 
 void RenderEngine::render() {
     initScene();
+    _scene->update();
     _scene->render();
 }
 

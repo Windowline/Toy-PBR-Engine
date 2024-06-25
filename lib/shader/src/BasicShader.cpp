@@ -83,7 +83,7 @@ GLuint BasicShader::loadShader_tmp(GLenum type, const char *shaderSrc) {
         char* infoLog = (char*)malloc(sizeof(char) * infoLen );
 
         glGetShaderInfoLog ( shader, infoLen, NULL, infoLog );
-        printf( "compiling log shader[%s:%d]:\n%s\n", shaderSrc, type, infoLog );
+        printf( "compiling log shader[%d]:\n%s\n", type, infoLog );
 
         free(infoLog);
     }

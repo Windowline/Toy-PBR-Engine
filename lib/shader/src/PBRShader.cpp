@@ -204,8 +204,6 @@ bool PBRShader::load() {
 void PBRShader::useProgram() {
     glUseProgram(_programID);
 
-
-
     constexpr int TEXTURE_COUNT = 3;
 
     std::array<GLint, TEXTURE_COUNT> textureLocs = {

@@ -149,6 +149,7 @@ private:
     GLint _shadowViewProjectionMatLocation = -1;
 
     GLint _ssaoTextureUniformLocation = -1;
+
 };
 
 #endif //TOYRENDERER_DEFERREDLIGHTINGSHADER_HPP

@@ -35,6 +35,8 @@ public:
 
     void visitNodes(std::shared_ptr<Node> node, std::function<void(std::shared_ptr<Node>)> func);
 
+    void update();
+
     void render();
 
     std::shared_ptr<ShaderManager> shaderManager();
@@ -66,11 +68,14 @@ public:
     }
 
 private:
-    void buildSSAOInfo();
+    void renderPBR();
+    void renderDeferredPhong();
+    void renderDeferredPBR();
+
 
     void renderSkyBox();
 
-    void renderPBR();
+    void buildSSAOInfo();
 
     void debugIBL(); //for debug
     void renderQuad(unsigned int texture, ivec2 screenSize); //for debug
@@ -97,6 +102,7 @@ private:
     vec3 _diffuseColor;
     vec3 _specularColor;
     std::vector<vec3> _lightPositions;
+    std::vector<vec3> _lightColors;
 
     //ssao
     std::vector<vec3> _ssaoKernel;

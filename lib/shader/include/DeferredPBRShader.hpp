@@ -15,6 +15,7 @@ public:
     }
 
     void posTextureUniform1i(GLuint value) {
+        assert(_posTextureUniformLocation != -1);
         glUniform1i(_posTextureUniformLocation, value);
     }
 
@@ -24,6 +25,7 @@ public:
     }
 
     void normalTextureUniform1i(GLuint value) {
+        assert(_normalTextureUniformLocation != -1);
         glUniform1i(_normalTextureUniformLocation, value);
     }
 
@@ -33,6 +35,7 @@ public:
     }
 
     void albedoTextureUniform1i(GLuint value) {
+        assert(_albedoTextureUniformLocation != -1);
         glUniform1i(_albedoTextureUniformLocation, value);
     }
 
@@ -41,6 +44,7 @@ public:
     }
 
     void shadowDepthUniform1i(GLuint value) {
+        assert(_shadowDepthUniformLocation != -1);
         glUniform1i(_shadowDepthUniformLocation, value);
     }
 
@@ -51,10 +55,12 @@ public:
     }
 
     void worldLightPosUniform3fv(const GLfloat* v, GLsizei count) {
+        assert(_worldLightPosUniformLocation != -1);
         glUniform3fv(_worldLightPosUniformLocation, count, v);
     }
 
-    void worldLightPosUniform3fVector(const std::vector<vec3>& lightPositions) {
+    //position or color
+    void lightUniform3fVector(const std::vector<vec3>& lightPositions, bool isPosition=true) {
         const int LIGHT_COMPONENT_COUNT = 3;
         float* lightPosArray = new float[lightPositions.size() * LIGHT_COMPONENT_COUNT];
         int idx = 0;
@@ -64,10 +70,15 @@ public:
             lightPosArray[idx++] = lightPos.z;
         }
 
-        worldLightPosUniform3fv(lightPosArray, (int)lightPositions.size());
+        if (isPosition) {
+            worldLightPosUniform3fv(lightPosArray, (int)lightPositions.size());
+        } else {
+            lightColorsUniformVec3fv(lightPosArray, (int)lightPositions.size());
+        }
+
         lightCountUniform1i((int)lightPositions.size());
 
-        delete [] lightPosArray;
+        delete[] lightPosArray;
     }
 
     void lightCountUniformLocation() {
@@ -75,6 +86,7 @@ public:
     }
 
     void lightCountUniform1i(GLint value) {
+        assert(_lightCountUniformLocation != -1);
         glUniform1i(_lightCountUniformLocation, value);
     }
 
@@ -85,6 +97,7 @@ public:
     }
 
     void diffuseColorUniform3f(GLfloat value1, GLfloat value2, GLfloat value3) {
+        assert(_diffuseColorUniformLocation != -1);
         glUniform3f(_diffuseColorUniformLocation, value1, value2, value3);
     }
 
@@ -94,6 +107,7 @@ public:
     }
 
     void specularColorUniform3f(GLfloat value1, GLfloat value2, GLfloat value3) {
+        assert(_specularColorUniformLocation != -1);
         glUniform3f(_specularColorUniformLocation, value1, value2, value3);
     }
 
@@ -104,6 +118,7 @@ public:
     }
 
     void ambientColorUniform3f(GLfloat value1, GLfloat value2, GLfloat value3) {
+        assert(_ambientColorUniformLocation != -1);
         glUniform3f(_ambientColorUniformLocation, value1, value2, value3);
     }
 
@@ -114,6 +129,7 @@ public:
     }
 
     void worldEyePositionUniform3f(GLfloat value1, GLfloat value2, GLfloat value3) {
+        assert(_worldEyePositionUniformLocation != -1);
         glUniform3f(_worldEyePositionUniformLocation, value1, value2, value3);
     }
 
@@ -124,6 +140,7 @@ public:
     }
 
     void shadowViewProjectionMatUniformMatrix4fv(const GLfloat *value) {
+        assert(_shadowViewProjectionMatLocation != -1);
         glUniformMatrix4fv(_shadowViewProjectionMatLocation, 1, GL_FALSE, value);
     }
 
@@ -131,6 +148,25 @@ public:
     void ssaoTextureUniformLocation() {
         _ssaoTextureUniformLocation = glGetUniformLocation(_programID, "u_ssaoTexture");
     }
+
+
+    //for IBL
+    void metallicUniform1f(GLfloat v) {
+        assert(_metallicLoc != -1);
+        glUniform1f(_metallicLoc, v);
+    }
+
+    void roughnessUniform1f(GLfloat v) {
+        assert(_roughnessLoc != -1);
+        glUniform1f(_roughnessLoc, v);
+    }
+
+    void lightColorsUniformVec3fv(const GLfloat* v, int count) {
+        assert(_lightColorsLoc != -1);
+        glUniform3fv(_lightColorsLoc, count, v);
+    }
+
+
 
 private:
     GLint _posTextureUniformLocation = -1;
@@ -149,6 +185,15 @@ private:
     GLint _shadowViewProjectionMatLocation = -1;
 
     GLint _ssaoTextureUniformLocation = -1;
+
+    //PBR
+    GLint _metallicLoc = -1;
+    GLint _roughnessLoc = -1;
+    GLint _lightColorsLoc = -1;
+
+    GLint _irradianceMapLoc = -1;
+    GLint _prefilterMapLoc = -1;
+    GLint _brdfLUTLoc = -1;
 };
 
 
