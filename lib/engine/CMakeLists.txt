@@ -38,5 +38,4 @@ target_link_libraries(engine
         util
         ibl
         stb_image_loader
-        res_directory
 )
