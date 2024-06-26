@@ -88,6 +88,7 @@ private:
     std::shared_ptr<Node> _rootNode;
     std::shared_ptr<Node> _room;
     std::shared_ptr<Node> _cube;
+    std::shared_ptr<Node> _plane;
     std::shared_ptr<Node> _sphere;
     std::shared_ptr<Node> _lightSphere;//조명에 위치한 흰색 구
     std::shared_ptr<Node> _model;

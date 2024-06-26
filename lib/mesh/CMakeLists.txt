@@ -19,6 +19,8 @@ add_library(mesh STATIC
 
         include/Model.hpp
         src/Model.cpp
+        include/Plane.hpp
+        src/Plane.cpp
 )
 
 target_include_directories(mesh

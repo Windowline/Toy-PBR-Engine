@@ -2,6 +2,8 @@
 #define MATRIX_DATA
 
 #include "Vector.hpp"
+#include <iostream>
+#include <iomanip>
 
 
 #define MATRIX4_ARRAY_SIZE 16
@@ -450,6 +452,35 @@ struct Matrix4 {
 //        Result[3][2] = - (static_cast<T>(2) * zFar * zNear) / (zFar - zNear);
 //        return Result;
     }
+
+    static void Print(Matrix4<T> mat) {
+        std::cout << "========================================================" << std::endl;
+        std::cout << std::fixed << std::setprecision(2) << mat.x.x << " ";
+        std::cout << std::fixed << std::setprecision(2) << mat.x.y << " ";
+        std::cout << std::fixed << std::setprecision(2) << mat.x.z << " ";
+        std::cout << std::fixed << std::setprecision(2) << mat.x.w << " ";
+        std::cout << std::endl;
+
+        std::cout << std::fixed << std::setprecision(2) << mat.y.x << " ";
+        std::cout << std::fixed << std::setprecision(2) << mat.y.y << " ";
+        std::cout << std::fixed << std::setprecision(2) << mat.y.z << " ";
+        std::cout << std::fixed << std::setprecision(2) << mat.y.w << " ";
+        std::cout << std::endl;
+
+        std::cout << std::fixed << std::setprecision(2) << mat.z.x << " ";
+        std::cout << std::fixed << std::setprecision(2) << mat.z.y << " ";
+        std::cout << std::fixed << std::setprecision(2) << mat.z.z << " ";
+        std::cout << std::fixed << std::setprecision(2) << mat.z.w << " ";
+        std::cout << std::endl;
+
+        std::cout << std::fixed << std::setprecision(2) << mat.w.x << " ";
+        std::cout << std::fixed << std::setprecision(2) << mat.w.y << " ";
+        std::cout << std::fixed << std::setprecision(2) << mat.w.z << " ";
+        std::cout << std::fixed << std::setprecision(2) << mat.w.w << " ";
+        std::cout << std::endl;
+        std::cout << "========================================================" << std::endl;
+    }
+
 
     static Matrix4<T> Frustum(T screenW, T screenH, T fovy, T near, T far) {
         T aspect = screenW / screenH;

@@ -24,6 +24,7 @@ const char* fragmentSwhadowDepthShaderTmp = R(
         void main()
         {
             shadowDepth = vec4(vec3(v_shadowClipPos.z / v_shadowClipPos.w), 1.0);
+//            shadowDepth = vec4(vec3(0.0, 0.0, 1.0), 1.0);
         }
 );
 

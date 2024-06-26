@@ -22,17 +22,23 @@
 #include "Room.hpp"
 #include "FullQuad.hpp"
 #include "Model.hpp"
+#include "Plane.hpp"
 
 #include "IBLPreprocessor.hpp"
 #include "ImageLoader.hpp"
 
 #include <random>
+//#include <pair.h>
 
 using namespace std;
 
 //////////////////// For Debug ////////////////////////////
 unsigned int ___loadSkyboxForDebug___();
+pair<unsigned int, unsigned int>  ___buildDepthFBO___();
 
+
+//constexpr float Z_ALIGN = -20.f;
+constexpr float Z_ALIGN = 0.f;
 
 Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaultFBO(defaultFBO)
 {
@@ -40,10 +46,16 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
     _fullQuad = make_unique<FullQuad>();
     _textureShader = make_unique<TexturePassShader>();
 
-    _camera = make_shared<Camera>(vec3(0, 0, 10), vec3(0, 0, -1));
+    _camera = make_shared<Camera>(vec3(0, 0, 300), vec3(0, 0, 0));
 
     _lightPositions = {
-        vec3(0.f, 44.f, 20.f)
+//            vec3(-0.2f, 10.0f, -0.3f)
+//            vec3(-1.f, 50.f, -5.f)
+//            vec3(-1.f, 120.f, -5.f)
+//            vec3(-2.f, 40.f, -7.f)
+            vec3(-2.f, 30.f, -2.f)
+
+//            vec3(0.f, 30.f, 0.f)
     };
 
     _lightColors = {
@@ -54,17 +66,16 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
     _specularColor = vec3(0.9f, 0.9f, 0.9f);
     _diffuseColor = vec3(0.5f, 0.5f, 0.5f);
 
-
-    //방 메시를 생성합니다. 각면의 색상을 달리 받습니다.
     auto roomMesh = make_shared<Room>(1, vec3(0, 1, 0), vec3(0, 0, 0), vec3(1, 0, 0),
                                            vec3(0, 0, 1), vec3(0.5, 0.5, 0.5));
     mat4 roomLocalTransform;
     _room = make_shared<Node>(this, roomMesh, roomLocalTransform);
 
-    constexpr float Z_ALIGN = -20.f;
     // shpere
     auto sphereMesh = make_shared<Sphere>(1, vec3(0, 0, 1));
-    mat4 sphereLocalTransform = mat4::Scale(16) * mat4::Translate(0, 0, Z_ALIGN);
+//    mat4 sphereLocalTransform = mat4::Scale(16) * mat4::Translate(0, 0, Z_ALIGN);
+//    mat4 sphereLocalTransform = mat4::Scale(16) * mat4::Translate(-20, -25, 20);
+    mat4 sphereLocalTransform = mat4::Scale(16) * mat4::Translate(0.f, 0.f, 0.f);
     _sphere = make_shared<Node>(this, sphereMesh, sphereLocalTransform);
 
     // cube
@@ -75,29 +86,42 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
 
     // model
     auto modelMesh = make_shared<Model>("/Users/bagchangseon/CLionProjects/ToyRenderer/lib/res/objects/backpack/backpack.obj", vec3(0.7, 0.7, 0.7));
-    mat4 modelLocalTransform = mat4::Scale(6.f) * mat4::Translate(-40, 30, Z_ALIGN - 20);
+    mat4 modelLocalTransform = mat4::Scale(6.f) * mat4::Translate(-40, 30, Z_ALIGN - 10);
     _model = make_shared<Node>(this, modelMesh, modelLocalTransform);
 
+    // plane
+    auto plane = make_shared<Plane>(1, vec3(0, 1, 0));
+    mat4 planeLocalTransform = mat4::Scale(120.f, 120.f, 1.f) * mat4::RotateX(90.f) * mat4::Translate(0, -20, 0);
+    _plane = make_shared<Node>(this, plane, planeLocalTransform);
 
     //방 천장에 위치할 빛 구체를 생성합니다. 라이팅, 그림자 등의 연산에선 제외됩니다.
     auto lightSphereMesh = make_shared<Sphere>(1, vec3(1, 1, 1));
-    mat4 lightSphereLocalTransform = mat4::Scale(10.f) * mat4::Translate(_lightPositions.front().x,
-                                                                            _lightPositions.front().y,
-                                                                            _lightPositions.front().z);
+    mat4 lightSphereLocalTransform = mat4::Scale(2.f) * mat4::Translate(_lightPositions.front().x,
+                                                                           _lightPositions.front().y,
+                                                                           _lightPositions.front().z);
     _lightSphere = make_shared<Node>(this, lightSphereMesh, lightSphereLocalTransform);
     _lightSphere->transformUpdate();
 
     _rootTransformDirty = true;
 
     _rootNode = _room;
+    _rootNode->setEnabled(false);
+//    _rootNode->addChild(_cube);
+//    _rootNode->addChild(_model);
+    _rootNode->addChild(_plane);
     _rootNode->addChild(_sphere);
-    _rootNode->addChild(_cube);
-    _rootNode->addChild(_model);
+
+    /* 쉐도우 뎁스맵 생성시 광원기준 가까운것부터 그려야한다. */
 
     _iblPreprocessor = make_unique<IBLPreprocessor>(engine->_shaderManager, "/Users/bagchangseon/CLionProjects/ToyRenderer/lib/res/textures/hdr/newport_loft.hdr");
     _iblPreprocessor->build();
 
-    _rootNode->setEnabled(false);
+    _shadowLightView = Camera::createViewMatrix(vec3(0, 0, 0), _lightPositions.front(), vec3(0, 1, 0)); //라이트가 다수일 경우 shadow용 라이트는 첫번째 라이트로 정했습니다.
+    _shadowLightProj = mat4::Ortho(-100, 100, -100, 100, 0.1f, 60.f);
+//    _shadowLightProj = mat4::Ortho(-50, 50, -50, 50, 0.1f, 500.f);
+
+    _shadowLightViewProjection = _shadowLightView * _shadowLightProj;
+    _shadowDepthBuffer = make_shared<FrameBufferObject>(ivec2(1024, 1024), _defaultFBO, FrameBufferObject::Type::Common);
 }
 
 Scene::~Scene() {
@@ -113,14 +137,7 @@ void Scene::setScreenSize(int w, int h) {
 
     glViewport(0, 0, w, h);
     _camera->setScreenRect(Rect{0, 0, w, h});
-
-    _shadowLightView = Camera::createViewMatrix(vec3(0, 0, 0), _lightPositions.front(), vec3(0, 1, 0)); //라이트가 다수일 경우 shadow용 라이트는 첫번째 라이트로 정했습니다.
-    _shadowLightProj = mat4::Ortho(-200, 300, -300, 300, -100, 1000);
-    _shadowLightViewProjection = _shadowLightView * _shadowLightProj;
-
     _gBuffer = make_shared<FrameBufferObject>(_camera->screenSize(), _defaultFBO, FrameBufferObject::Type::GBuffer);
-
-    _shadowDepthBuffer = make_shared<FrameBufferObject>(ivec2(2048, 2048), _defaultFBO, FrameBufferObject::Type::Common);
 
     buildSSAOInfo();
 }
@@ -263,30 +280,37 @@ void Scene::renderDeferredPBR() {
     glFrontFace(GL_CCW);
     glCullFace(GL_BACK);
 
+    glBindFramebuffer(GL_FRAMEBUFFER, _defaultFBO);
     glClearColor(0.f, 0.f, 0.f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     const mat4& proj = _camera->projMat();
     const mat4& view = _camera->viewMat();
-    const mat4& shadowLightViewProj = shadowLightViewProjection();
     mat4 identity;
 
     // depth
     {
-        _shadowDepthBuffer->bindWithViewport();
-        glClearColor(0.f, 1.f, 1.f, 1.f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        static bool rendered = false;
+        if (!rendered) {
+            _shadowDepthBuffer->bindWithViewport();
+            glClearColor(0.f, 0.f, 1.f, 1.f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            auto activeShader = shaderManager()->setActiveShader<ShadowDepthShader>(eShaderProgram_ShadowDepth);
 
-        auto activeShader = shaderManager()->setActiveShader<ShadowDepthShader>(eShaderProgram_ShadowDepth);
+            visitNodes(_rootNode, [this, wShader = weak_ptr<ShadowDepthShader>(activeShader)](const shared_ptr<Node>& node) {
+                if (auto shader = wShader.lock()) {
+                    mat4 shadowMVP = node->worldTransform() * _shadowLightView * _shadowLightProj;
+                    shader->shadowMVPUniformMatrix4fv(shadowMVP.pointer());
+                    node->render();
+                }
+            });
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            rendered = true;
+        }
 
-        visitNodes(_rootNode, [shadowLightViewProj, wShader = weak_ptr<ShadowDepthShader>(activeShader)](const shared_ptr<Node>& node) {
-            if (auto shader = wShader.lock()) {
-                mat4 shadowMVP = node->worldTransform() * shadowLightViewProj;
-                shader->shadowMVPUniformMatrix4fv(shadowMVP.pointer());
-                node->render();
-            }
-        });
-
+//        renderQuad(_shadowDepthBuffer->commonTexture(), _camera->screenSize());
+//        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+//        return;
     }
 
     // gbuffer
@@ -375,12 +399,11 @@ void Scene::renderDeferredPBR() {
         auto activeShader = shaderManager()->setActiveShader<DeferredPBRShader>(eShaderProgram_DeferredPBR);
         //Samplers: GBuffer, Depth, SSAO
         const int GBUFFER_COMPONENT_COUNT = 5;
-        array<GLuint, GBUFFER_COMPONENT_COUNT> textures {_gBuffer->gPositionTexture(),
-                                                         _gBuffer->gNormalTexture(),
-                                                         _gBuffer->gAlbedoTexture(),
-                                                         _shadowDepthBuffer->commonTexture(),
-                                                         _ssaoBlurFBO->commonTexture(),
-        };
+        array<GLuint, GBUFFER_COMPONENT_COUNT> textures { _gBuffer->gPositionTexture(),
+                                                          _gBuffer->gNormalTexture(),
+                                                          _gBuffer->gAlbedoTexture(),
+                                                          _shadowDepthBuffer->commonTexture(),
+                                                          _ssaoBlurFBO->commonTexture() };
 
         int textureIndex = 0;
         for (; textureIndex < GBUFFER_COMPONENT_COUNT; ++textureIndex) {
@@ -412,6 +435,16 @@ void Scene::renderDeferredPBR() {
 
         _fullQuad->render();
     }
+
+    //6 빛 구체 렌더링, 효과를 입히지 않고, 본연의 색만 입힙니다.
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
+    auto activeShader = shaderManager()->setActiveShader<BasicShader>(eShaderProgram_Default);
+    activeShader->worldMatUniformMatrix4fv(_lightSphere->worldTransform().pointer());
+    activeShader->worldNormalMatUniformMatrix4fv(_lightSphere->worldTransform().invert().transposed().pointer());
+    activeShader->viewMatUniformMatrix4fv(view.pointer());
+    activeShader->projMatUniformMatrix4fv(proj.pointer());
+    _lightSphere->render();
 }
 
 
@@ -550,4 +583,34 @@ unsigned int ___loadSkyboxForDebug___() {
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
     return textureID;
+}
+
+
+pair<unsigned int, unsigned int>  ___buildDepthFBO___() {
+    const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+
+    static unsigned int depthMapFBO = 0;
+    static unsigned int depthMap = 0;
+
+    if (depthMap != 0) {
+        return {depthMapFBO, depthMap};
+    }
+
+    glGenFramebuffers(1, &depthMapFBO);
+// create depth texture
+    glGenTextures(1, &depthMap);
+    glBindTexture(GL_TEXTURE_2D, depthMap);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+// attach depth texture as FBO's depth buffer
+    glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    return {depthMapFBO, depthMap};
 }

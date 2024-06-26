@@ -32,6 +32,7 @@ ivec2 FrameBufferObject::size() const {
     return _size;
 }
 
+//TODO Deprecate
 void FrameBufferObject::bindWithViewport() {
     assert(_fboId != 0);
     glBindFramebuffer(GL_FRAMEBUFFER, _fboId);
