@@ -11,7 +11,8 @@ public:
     
     enum class Type : int {
         GBuffer = 0,
-        Common = 1
+        Common = 1,
+        Depth = 2,
     };
     
     

@@ -43,7 +43,7 @@ void FrameBufferObject::init() {
     glGenFramebuffers(1, &_fboId);
     glBindFramebuffer(GL_FRAMEBUFFER, _fboId);
     
-    //TODO: 포멧 효율화
+    //TODO: 포멧 효율
     if (_type == Type::GBuffer) {
         
         // - position color buffer
@@ -86,7 +86,7 @@ void FrameBufferObject::init() {
         GLUtil::GL_ERROR_LOG();
         
         
-    } else {
+    } else if (_type == Type::Common) {
         
         glGenTextures(1, &_commonTexture);
         glBindTexture(GL_TEXTURE_2D, _commonTexture);
@@ -98,6 +98,19 @@ void FrameBufferObject::init() {
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _commonTexture, 0);
         GLUtil::GL_ERROR_LOG();
         
+    } else if (_type == Type::Depth) {
+        glGenTextures(1, &_commonTexture);
+        glBindTexture(GL_TEXTURE_2D, _commonTexture);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, _size.x, _size.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        // attach depth texture as FBO's depth buffer
+        glBindFramebuffer(GL_FRAMEBUFFER, _fboId);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, _commonTexture, 0);
+        glDrawBuffer(GL_NONE);
+        glReadBuffer(GL_NONE);
     }
     
     GLenum check = glCheckFramebufferStatus(GL_FRAMEBUFFER);

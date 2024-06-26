@@ -34,10 +34,8 @@ using namespace std;
 
 //////////////////// For Debug ////////////////////////////
 unsigned int ___loadSkyboxForDebug___();
-pair<unsigned int, unsigned int>  ___buildDepthFBO___();
-/////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////
 
-//constexpr float Z_ALIGN = -20.f;
 constexpr float Z_ALIGN = 0.f;
 
 Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaultFBO(defaultFBO)
@@ -82,7 +80,7 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
 
     // plane
     auto plane = make_shared<Plane>(1, vec3(0, 1, 0));
-    mat4 planeLocalTransform = mat4::Scale(120.f, 120.f, 1.f) * mat4::RotateX(90.f) * mat4::Translate(0, -20, 0);
+    mat4 planeLocalTransform = mat4::Scale(120.f, 120.f, 1.f) * mat4::RotateX(90.f) * mat4::Translate(0, -20, Z_ALIGN);
     _plane = make_shared<Node>(this, plane, planeLocalTransform);
 
     //방 천장에 위치할 빛 구체를 생성합니다. 라이팅, 그림자 등의 연산에선 제외됩니다.
@@ -110,7 +108,7 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
     _shadowLightProj = mat4::Ortho(-100, 100, -100, 100, 0.1f, 60.f);
 
     _shadowLightViewProjection = _shadowLightView * _shadowLightProj;
-    _shadowDepthBuffer = make_shared<FrameBufferObject>(ivec2(1024, 1024), _defaultFBO, FrameBufferObject::Type::Common);
+    _shadowDepthBuffer = make_shared<FrameBufferObject>(ivec2(1024, 1024), _defaultFBO, FrameBufferObject::Type::Depth);
 }
 
 Scene::~Scene() {
@@ -150,6 +148,8 @@ void Scene::update() {
         });
         _rootTransformDirty = false;
     }
+
+
 }
 
 
@@ -277,14 +277,9 @@ void Scene::renderDeferredPBR() {
     const mat4& view = _camera->viewMat();
     mat4 identity;
 
-    auto [depthMapFBO, depthMap] = ___buildDepthFBO___();
-
     // depth
     {
-//        _shadowDepthBuffer->bindWithViewport();
-        glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-        glViewport(0, 0, 1024, 1024);
-
+        _shadowDepthBuffer->bindWithViewport();
         glClearColor(0.f, 0.f, 1.f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         auto activeShader = shaderManager()->setActiveShader<ShadowDepthShader>(eShaderProgram_ShadowDepth);
@@ -387,8 +382,7 @@ void Scene::renderDeferredPBR() {
         array<GLuint, GBUFFER_COMPONENT_COUNT> textures { _gBuffer->gPositionTexture(),
                                                           _gBuffer->gNormalTexture(),
                                                           _gBuffer->gAlbedoTexture(),
-//                                                          _shadowDepthBuffer->commonTexture(),
-                                                          depthMap,
+                                                          _shadowDepthBuffer->commonTexture(),
                                                           _ssaoBlurFBO->commonTexture() };
 
         int textureIndex = 0;
@@ -569,34 +563,4 @@ unsigned int ___loadSkyboxForDebug___() {
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
     return textureID;
-}
-
-
-pair<unsigned int, unsigned int>  ___buildDepthFBO___() {
-    const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
-
-    static unsigned int depthMapFBO = 0;
-    static unsigned int depthMap = 0;
-
-    if (depthMap != 0) {
-        return {depthMapFBO, depthMap};
-    }
-
-    glGenFramebuffers(1, &depthMapFBO);
-// create depth texture
-    glGenTextures(1, &depthMap);
-    glBindTexture(GL_TEXTURE_2D, depthMap);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-// attach depth texture as FBO's depth buffer
-    glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
-    glDrawBuffer(GL_NONE);
-    glReadBuffer(GL_NONE);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    return {depthMapFBO, depthMap};
 }
