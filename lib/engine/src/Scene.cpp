@@ -290,27 +290,18 @@ void Scene::renderDeferredPBR() {
 
     // depth
     {
-        static bool rendered = false;
-        if (!rendered) {
-            _shadowDepthBuffer->bindWithViewport();
-            glClearColor(0.f, 0.f, 1.f, 1.f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            auto activeShader = shaderManager()->setActiveShader<ShadowDepthShader>(eShaderProgram_ShadowDepth);
+        _shadowDepthBuffer->bindWithViewport();
+        glClearColor(0.f, 0.f, 1.f, 1.f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        auto activeShader = shaderManager()->setActiveShader<ShadowDepthShader>(eShaderProgram_ShadowDepth);
 
-            visitNodes(_rootNode, [this, wShader = weak_ptr<ShadowDepthShader>(activeShader)](const shared_ptr<Node>& node) {
-                if (auto shader = wShader.lock()) {
-                    mat4 shadowMVP = node->worldTransform() * _shadowLightView * _shadowLightProj;
-                    shader->shadowMVPUniformMatrix4fv(shadowMVP.pointer());
-                    node->render();
-                }
-            });
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            rendered = true;
-        }
-
-//        renderQuad(_shadowDepthBuffer->commonTexture(), _camera->screenSize());
-//        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-//        return;
+        visitNodes(_rootNode, [this, wShader = weak_ptr<ShadowDepthShader>(activeShader)](const shared_ptr<Node>& node) {
+            if (auto shader = wShader.lock()) {
+                mat4 shadowMVP = node->worldTransform() * _shadowLightView * _shadowLightProj;
+                shader->shadowMVPUniformMatrix4fv(shadowMVP.pointer());
+                node->render();
+            }
+        });
     }
 
     // gbuffer
