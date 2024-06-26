@@ -13,7 +13,7 @@ using namespace std;
 
 class IBLPreprocessor {
 public:
-    IBLPreprocessor(shared_ptr<ShaderManager> shaderManager, string_view path);
+    IBLPreprocessor(shared_ptr<ShaderManager> shaderManager, const string& path);
 
     void build();
 
@@ -47,7 +47,7 @@ private:
     void renderBRDFLUT(unsigned int captureFBO, unsigned int captureRBO);
 
     shared_ptr<ShaderManager> _shaderManager;
-    string_view _path;
+    string _path;
     unique_ptr<FullQuad> _fullQuad;
     unique_ptr<Cube> _fullCube;
 

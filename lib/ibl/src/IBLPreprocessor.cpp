@@ -8,7 +8,7 @@
 #include <glad/glad.h>
 #include <array>
 
-IBLPreprocessor::IBLPreprocessor(shared_ptr<ShaderManager> shaderManager, string_view path) : _shaderManager(shaderManager), _path(path) {
+IBLPreprocessor::IBLPreprocessor(shared_ptr<ShaderManager> shaderManager, const string& path) : _shaderManager(shaderManager), _path(path) {
     _fullCube = make_unique<Cube>(2, vec3(1, 1, 1));
     _fullQuad = make_unique<FullQuad>();
 }
@@ -51,7 +51,7 @@ void IBLPreprocessor::renderEnvironmentCubeMapFromHDR(unsigned int captureFBO, c
     // pbr: load the HDR environment map
     // ---------------------------------
     int width, height, nrComponents;
-    float* data = Stb::loadImageFloat(_path.data(), &width, &height, &nrComponents, 0, true);
+    float* data = Stb::loadImageFloat(_path.c_str(), &width, &height, &nrComponents, 0, true);
     assert(data != NULL);
     glGenTextures(1, &_hdrTexture);
     glBindTexture(GL_TEXTURE_2D, _hdrTexture);

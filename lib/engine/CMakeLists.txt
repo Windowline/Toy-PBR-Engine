@@ -10,6 +10,8 @@ add_library(engine STATIC
         src/Node.cpp
 )
 
+configure_file(${CMAKE_SOURCE_DIR}/config/PathInfo.h.in ${CMAKE_BINARY_DIR}/config/PathInfo.h)
+
 target_include_directories(engine
 PUBLIC
         ../engine/include
@@ -22,6 +24,7 @@ PUBLIC
         ../stb_image_loader/include
         ../math
         ../util
+        ${CMAKE_BINARY_DIR}/config
 )
 
 target_link_libraries(engine
@@ -35,4 +38,5 @@ target_link_libraries(engine
         util
         ibl
         stb_image_loader
+        res_directory
 )

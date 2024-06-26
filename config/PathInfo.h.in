@@ -1,0 +1,8 @@
+#ifndef PROJECT_HOME_h
+#define PROJECT_HOME_h
+#include <string>
+
+const std::string PROJECT_HOME_DIR = "${CMAKE_SOURCE_DIR}";
+const std::string RESOURCE_DIR = "${CMAKE_SOURCE_DIR}/lib/res";
+
+#endif

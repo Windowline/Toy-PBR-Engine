@@ -5,7 +5,7 @@
 
 using namespace std;
 
-Sphere::Sphere(float radius, vec3 color) : _radius(radius), _color(move(color)) {
+Sphere::Sphere(float radius, vec3 color) : _radius(radius), _color(color) {
     constexpr unsigned int X_SEGMENTS = 64;
     constexpr unsigned int Y_SEGMENTS = 64;
     constexpr float PI = 3.14159265359f;

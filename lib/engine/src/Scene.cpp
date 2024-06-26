@@ -26,16 +26,16 @@
 
 #include "IBLPreprocessor.hpp"
 #include "ImageLoader.hpp"
+#include "PathInfo.h"
 
 #include <random>
-//#include <pair.h>
 
 using namespace std;
 
 //////////////////// For Debug ////////////////////////////
 unsigned int ___loadSkyboxForDebug___();
 pair<unsigned int, unsigned int>  ___buildDepthFBO___();
-
+/////////////////////////////////////////////////////////
 
 //constexpr float Z_ALIGN = -20.f;
 constexpr float Z_ALIGN = 0.f;
@@ -46,16 +46,10 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
     _fullQuad = make_unique<FullQuad>();
     _textureShader = make_unique<TexturePassShader>();
 
-    _camera = make_shared<Camera>(vec3(0, 0, 300), vec3(0, 0, 0));
+    _camera = make_shared<Camera>(vec3(0, 0, 130), vec3(0, 0, 0));
 
     _lightPositions = {
-//            vec3(-0.2f, 10.0f, -0.3f)
-//            vec3(-1.f, 50.f, -5.f)
-//            vec3(-1.f, 120.f, -5.f)
-//            vec3(-2.f, 40.f, -7.f)
             vec3(-2.f, 30.f, -2.f)
-
-//            vec3(0.f, 30.f, 0.f)
     };
 
     _lightColors = {
@@ -73,8 +67,6 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
 
     // shpere
     auto sphereMesh = make_shared<Sphere>(1, vec3(0, 0, 1));
-//    mat4 sphereLocalTransform = mat4::Scale(16) * mat4::Translate(0, 0, Z_ALIGN);
-//    mat4 sphereLocalTransform = mat4::Scale(16) * mat4::Translate(-20, -25, 20);
     mat4 sphereLocalTransform = mat4::Scale(16) * mat4::Translate(0.f, 0.f, 0.f);
     _sphere = make_shared<Node>(this, sphereMesh, sphereLocalTransform);
 
@@ -83,10 +75,9 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
     mat4 cubeLocalTransform = mat4::Scale(20.f) * mat4::RotateY(45.f) * mat4::Translate(40, 0, Z_ALIGN);
     _cube = make_shared<Node>(this, cubeMesh, cubeLocalTransform);
 
-
     // model
-    auto modelMesh = make_shared<Model>("/Users/bagchangseon/CLionProjects/ToyRenderer/lib/res/objects/backpack/backpack.obj", vec3(0.7, 0.7, 0.7));
-    mat4 modelLocalTransform = mat4::Scale(6.f) * mat4::Translate(-40, 30, Z_ALIGN - 10);
+    auto modelMesh = make_shared<Model>(RESOURCE_DIR + "/objects/monkey/monkey.obj", vec3(0.7, 0.7, 0.7));
+    mat4 modelLocalTransform = mat4::Scale(6.f) * mat4::Translate(-40, 10.f, Z_ALIGN - 10);
     _model = make_shared<Node>(this, modelMesh, modelLocalTransform);
 
     // plane
@@ -104,21 +95,19 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
 
     _rootTransformDirty = true;
 
+    /* 만일 쉐도우 뎁스맵 생성시 뎁스버퍼를 붙일 수 없다면, 광원기준 가까운것부터 그려야한다. */
     _rootNode = _room;
     _rootNode->setEnabled(false);
-//    _rootNode->addChild(_cube);
-//    _rootNode->addChild(_model);
-    _rootNode->addChild(_plane);
     _rootNode->addChild(_sphere);
+    _rootNode->addChild(_cube);
+    _rootNode->addChild(_model);
+    _rootNode->addChild(_plane);
 
-    /* 쉐도우 뎁스맵 생성시 광원기준 가까운것부터 그려야한다. */
-
-    _iblPreprocessor = make_unique<IBLPreprocessor>(engine->_shaderManager, "/Users/bagchangseon/CLionProjects/ToyRenderer/lib/res/textures/hdr/newport_loft.hdr");
+    _iblPreprocessor = make_unique<IBLPreprocessor>(engine->_shaderManager, RESOURCE_DIR + "/textures/hdr/newport_loft.hdr");
     _iblPreprocessor->build();
 
     _shadowLightView = Camera::createViewMatrix(vec3(0, 0, 0), _lightPositions.front(), vec3(0, 1, 0)); //라이트가 다수일 경우 shadow용 라이트는 첫번째 라이트로 정했습니다.
     _shadowLightProj = mat4::Ortho(-100, 100, -100, 100, 0.1f, 60.f);
-//    _shadowLightProj = mat4::Ortho(-50, 50, -50, 50, 0.1f, 500.f);
 
     _shadowLightViewProjection = _shadowLightView * _shadowLightProj;
     _shadowDepthBuffer = make_shared<FrameBufferObject>(ivec2(1024, 1024), _defaultFBO, FrameBufferObject::Type::Common);
@@ -288,9 +277,14 @@ void Scene::renderDeferredPBR() {
     const mat4& view = _camera->viewMat();
     mat4 identity;
 
+    auto [depthMapFBO, depthMap] = ___buildDepthFBO___();
+
     // depth
     {
-        _shadowDepthBuffer->bindWithViewport();
+//        _shadowDepthBuffer->bindWithViewport();
+        glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+        glViewport(0, 0, 1024, 1024);
+
         glClearColor(0.f, 0.f, 1.f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         auto activeShader = shaderManager()->setActiveShader<ShadowDepthShader>(eShaderProgram_ShadowDepth);
@@ -393,7 +387,8 @@ void Scene::renderDeferredPBR() {
         array<GLuint, GBUFFER_COMPONENT_COUNT> textures { _gBuffer->gPositionTexture(),
                                                           _gBuffer->gNormalTexture(),
                                                           _gBuffer->gAlbedoTexture(),
-                                                          _shadowDepthBuffer->commonTexture(),
+//                                                          _shadowDepthBuffer->commonTexture(),
+                                                          depthMap,
                                                           _ssaoBlurFBO->commonTexture() };
 
         int textureIndex = 0;
@@ -547,12 +542,12 @@ void Scene::renderQuad(unsigned int texture, ivec2 screenSize) { //for debug
 
 unsigned int ___loadSkyboxForDebug___() {
     vector<string> faces = {
-        std::string("/Users/bagchangseon/CLionProjects/ToyRenderer/lib/res/textures/skybox/right.jpg"),
-        std::string("/Users/bagchangseon/CLionProjects/ToyRenderer/lib/res/textures/skybox/left.jpg"),
-        std::string("/Users/bagchangseon/CLionProjects/ToyRenderer/lib/res/textures/skybox/top.jpg"),
-        std::string("/Users/bagchangseon/CLionProjects/ToyRenderer/lib/res/textures/skybox/bottom.jpg"),
-        std::string("/Users/bagchangseon/CLionProjects/ToyRenderer/lib/res/textures/skybox/front.jpg"),
-        std::string("/Users/bagchangseon/CLionProjects/ToyRenderer/lib/res/textures/skybox/back.jpg")
+        RESOURCE_DIR + "/textures/skybox/right.jpg",
+        RESOURCE_DIR + "/textures/skybox/left.jpg",
+        RESOURCE_DIR + "/textures/skybox/top.jpg",
+        RESOURCE_DIR + "/textures/skybox/bottom.jpg",
+        RESOURCE_DIR + "/textures/skybox/front.jpg",
+        RESOURCE_DIR + "/textures/skybox/back.jpg"
     };
 
     unsigned int textureID;
