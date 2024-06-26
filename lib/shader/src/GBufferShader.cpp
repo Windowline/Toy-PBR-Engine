@@ -10,18 +10,26 @@ const char* vertexGBufferShaderTmp = R(
         uniform mat4 u_projMat;
         uniform mat4 u_worldNormalMat;
 
+        uniform float u_isRenderSkyBox;
+
         out vec3 v_color;
         out vec3 v_position;
         out vec3 v_normal;
 
-        void main()
-        {
+        void main() {
            vec4 worldPos = u_worldMat * vec4(a_position, 1.0);
            v_normal = normalize((u_worldNormalMat * vec4(a_normal, 0.0)).xyz);
-
            v_color = a_color;
            v_position = worldPos.xyz;
-           gl_Position = u_projMat * u_viewMat * u_worldMat * vec4(a_position, 1.0);
+
+           if (u_isRenderSkyBox > 0.5) {
+               vec4 clipPos = u_projMat * mat4(mat3(u_viewMat)) * worldPos;
+               gl_Position = clipPos.xyww;
+           } else {
+               vec4 clipPos = u_projMat * u_viewMat * worldPos;
+               gl_Position = clipPos;
+           }
+
         }
 );
 
@@ -34,17 +42,31 @@ const char* fragmentGBufferShaderTmp = R(
         layout (location = 1) out vec4 gNormal;
         layout (location = 2) out vec4 gAlbedo;
 
-        void main()
-        {
+        uniform samplerCube u_environmentMap;
+        uniform float u_isRenderSkyBox;
+
+        void main() {
             gPosition = vec4(v_position, 1.0);
             gNormal = vec4(normalize(v_normal), 1.0);
-            gAlbedo = vec4(v_color, 1.0);
+
+            if (u_isRenderSkyBox > 0.5) {
+                vec3 envColor = textureLod(u_environmentMap, v_position, 0.0).rgb;
+                // HDR tonemap and gamma correct
+                envColor = envColor / (envColor + vec3(1.0));
+                envColor = pow(envColor, vec3(1.0/2.2));
+                gAlbedo = vec4(envColor, -1.0);
+            } else {
+                gAlbedo = vec4(v_color, 1.0);
+            }
         }
 );
 
 GBufferShader::GBufferShader() {
     this->load();
     basicUniformLoc();
+
+    _isRenderSkyBoxLoc = glGetUniformLocation(_programID, "u_isRenderSkyBox");
+    _envCubeMapLoc =  glGetUniformLocation(_programID, "u_environmentMap");
 }
 
 bool GBufferShader::load() {
@@ -57,4 +79,10 @@ bool GBufferShader::load() {
     assert(_programID != 0);
 
     return true;
+}
+
+void GBufferShader::useProgram() {
+    glUseProgram(_programID);
+    assert(_envCubeMapLoc != -1);
+    glUniform1i(_envCubeMapLoc, 0);
 }

@@ -7,21 +7,17 @@ class GBufferShader : public BasicShader {
 public:
     GBufferShader();
     bool load() override;
+    void useProgram() override;
 
-    void worldMatUniformMatrix4fv(const GLfloat *value) {
-        glUniformMatrix4fv(_worldMatUniformLocation, 1, GL_FALSE, value);
+    void isRenderSkyBokxUniform1f(GLfloat value) {
+        assert(_isRenderSkyBoxLoc != -1);
+        glUniform1f(_isRenderSkyBoxLoc, value);
     }
 
 private:
-    void worldUniformLocation() {
-        _worldMatUniformLocation = glGetUniformLocation(_programID, "u_worldMat");
-    }
 
-
-
-    GLint _worldMatUniformLocation;
-    GLint _worldViewMatUniformLocation;
-    GLint _projMatUniformLocation;
+    GLint _isRenderSkyBoxLoc = -1;
+    GLint _envCubeMapLoc = -1;
 
 };
 

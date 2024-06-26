@@ -167,12 +167,14 @@ const char* fragmentDeferredPBR = R(
             float ao = texture(u_ssaoTexture,  v_texCoord).r;
             vec3 N = texture(u_normalTexture, v_texCoord).rgb;
             vec3 E = normalize(worldPos - u_worldEyePos);
-
             vec3 color = albedo * u_ambientColor * ao;
 
-            vec3 colorIBL = applyIBL(N, worldPos, albedo, 1.0);
-
-            fragColor = vec4(colorIBL, 1.0);
+            if (texture(u_albedoTexture, v_texCoord).a > 0.0) {
+                vec3 colorIBL = applyIBL(N, worldPos, albedo, 1.0);
+                fragColor = vec4(colorIBL, 1.0);
+            } else { //skybox
+                fragColor = vec4(albedo, 1.0);
+            }
 
             //tmp
             float rr = u_roughness;
@@ -193,16 +195,24 @@ const char* fragmentDeferredPBR = R(
             float shadowDepth = texture(u_shadowDepth, shadowDepthUV).x;
             float curDepth = shadowClipPos.z / shadowClipPos.w;
             bool shadow = curDepth > shadowDepth + 0.005;
+
+//            float abeldoAlpha = texture(u_albedoTexture, v_texCoord).a;
 //
-//            for (int i = 0; i < u_lightCount; ++i) {
-//                vec3 L = normalize(worldPos - u_worldLightPos[i]);
-//                float df = shadow ? 0.0 : max(0.0, dot(N, -L)); // 그림자 지는 영역은 난반사광과 경면광을 제외합니다.
-//                color += (albedo * df * u_diffuseColor);
-//                float sf = shadow ? 0.0 : pow(clamp(dot(reflect(-L, N), E), 0.0, 1.0), 24.0);
-//                color += (sf * u_specularColor);
+////            fragColor = vec4(vec3(abeldoAlpha), 1.0);
+//
+//            if (abeldoAlpha > 0.0) {
+//                for (int i = 0; i < u_lightCount; ++i) {
+//                    vec3 L = normalize(worldPos - u_worldLightPos[i]);
+//                    float df = shadow ? 0.0 : max(0.0, dot(N, -L)); // 그림자 지는 영역은 난반사광과 경면광을 제외합니다.
+//                    color += (albedo * df * u_diffuseColor);
+//                    float sf = shadow ? 0.0 : pow(clamp(dot(reflect(-L, N), E), 0.0, 1.0), 24.0);
+//                    color += (sf * u_specularColor);
+//                }
+//                color = clamp(color, 0.0, 1.0);
+//                fragColor = vec4(color, 1.0);
+//            } else {
+//                fragColor = vec4(albedo, 1.0);
 //            }
-//            color = clamp(color, 0.0, 1.0);
-//            fragColor = vec4(color, 1.0);
         }
 );
 

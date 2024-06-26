@@ -257,7 +257,6 @@ void Scene::render() {
 
 void Scene::renderDeferredPBR() {
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL); // set depth function to less than AND equal for skybox depth trick.
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS); // enable seamless cubemap sampling for lower mip levels in the pre-filter map.
 
     glEnable(GL_CULL_FACE);
@@ -270,6 +269,7 @@ void Scene::renderDeferredPBR() {
     const mat4& proj = _camera->projMat();
     const mat4& view = _camera->viewMat();
     const mat4& shadowLightViewProj = shadowLightViewProjection();
+    mat4 identity;
 
     // depth
     {
@@ -296,8 +296,30 @@ void Scene::renderDeferredPBR() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         auto activeShader = shaderManager()->setActiveShader<GBufferShader>(eShaderProgram_GBuffer);
+
+        //skybox
+        glDepthFunc(GL_LEQUAL);
+        glDisable(GL_CULL_FACE);
+
         activeShader->projMatUniformMatrix4fv(proj.pointer());
         activeShader->viewMatUniformMatrix4fv(view.pointer());
+        activeShader->worldMatUniformMatrix4fv(identity.pointer());
+        activeShader->worldNormalMatUniformMatrix4fv(identity.pointer());
+        activeShader->isRenderSkyBokxUniform1f(1.f);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, _iblPreprocessor->envCubemap());
+        _fullCube->render();
+
+        glDepthFunc(GL_LESS);
+        glEnable(GL_CULL_FACE);
+        glFrontFace(GL_CCW);
+        glCullFace(GL_BACK);
+
+        //geometry
+        activeShader->projMatUniformMatrix4fv(proj.pointer());
+        activeShader->viewMatUniformMatrix4fv(view.pointer());
+        activeShader->isRenderSkyBokxUniform1f(0.f);
 
         visitNodes(_rootNode, [wShader = weak_ptr<GBufferShader>(activeShader)](const shared_ptr<Node>& node) {
             if (auto shader = wShader.lock()) {
@@ -345,7 +367,7 @@ void Scene::renderDeferredPBR() {
         _fullQuad->render();
     }
 
-    //Deferred PBR
+    //Deferred PBR(IBL)
     {
         glBindFramebuffer(GL_FRAMEBUFFER, _defaultFBO);
         glViewport(0, 0, _camera->screenSize().x, _camera->screenSize().y);
@@ -390,10 +412,6 @@ void Scene::renderDeferredPBR() {
 
         _fullQuad->render();
     }
-
-//    glDisable(GL_CULL_FACE);
-//    renderSkyBox();
-//    glDepthFunc(GL_LESS); // set depth function back to default
 }
 
 
