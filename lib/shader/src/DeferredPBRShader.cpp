@@ -87,7 +87,7 @@ const char* fragmentDeferredPBR = R(
             shadowDepthUV = shadowDepthUV * 0.5 + 0.5;
             float shadowDepth = texture(u_shadowDepth, shadowDepthUV).x;
             float curDepth = shadowClipPos.z / shadowClipPos.w;
-            return curDepth > shadowDepth + 0.005 ? 0.0 : 1.0;
+            return curDepth > shadowDepth + 0.005 ? 0.01 : 1.0;
         }
 
         vec3 applyIBL(vec3 N, vec3 worldPos, vec3 albedo, float ao) {

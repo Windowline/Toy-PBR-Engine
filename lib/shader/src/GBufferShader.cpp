@@ -10,6 +10,7 @@ const char* vertexGBufferShaderTmp = R(
         uniform mat4 u_projMat;
         uniform mat4 u_worldNormalMat;
         uniform float u_isRenderSkyBox;
+        uniform vec3 u_color;
 
         out vec3 v_color;
         out vec3 v_position;
@@ -18,7 +19,8 @@ const char* vertexGBufferShaderTmp = R(
         void main() {
            vec4 worldPos = u_worldMat * vec4(a_position, 1.0);
            v_normal = normalize((u_worldNormalMat * vec4(a_normal, 0.0)).xyz);
-           v_color = a_color;
+//           v_color = a_color;
+           v_color = u_color;
            v_position = worldPos.xyz;
 
            if (u_isRenderSkyBox > 0.5) {
@@ -65,6 +67,7 @@ GBufferShader::GBufferShader() {
     basicUniformLoc();
 
     _isRenderSkyBoxLoc = glGetUniformLocation(_programID, "u_isRenderSkyBox");
+    _colorLoc = glGetUniformLocation(_programID, "u_color");
     _envCubeMapLoc =  glGetUniformLocation(_programID, "u_environmentMap");
 }
 

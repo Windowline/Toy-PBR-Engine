@@ -14,9 +14,15 @@ public:
         glUniform1f(_isRenderSkyBoxLoc, value);
     }
 
+    void colorUniform3f(GLfloat value1, GLfloat value2, GLfloat value3) {
+        assert(_colorLoc != -1);
+        glUniform3f(_colorLoc, value1, value2, value3);
+    }
+
 private:
 
     GLint _isRenderSkyBoxLoc = -1;
+    GLint _colorLoc = -1;
     GLint _envCubeMapLoc = -1;
 
 };

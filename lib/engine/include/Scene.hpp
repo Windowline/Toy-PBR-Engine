@@ -65,6 +65,7 @@ private:
     mat4 _shadowLightProj;
     mat4 _shadowLightViewProjection;
 
+    vec3 _shadowLightPosition;
     std::vector<vec3> _lightPositions;
     std::vector<vec3> _lightColors;
 

@@ -25,7 +25,6 @@
 #include "IBLPreprocessor.hpp"
 #include "ImageLoader.hpp"
 #include "PathInfo.h"
-
 #include <random>
 
 using namespace std;
@@ -45,12 +44,21 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
     _camera = make_shared<Camera>(vec3(0, 0, 130), vec3(0, 0, 0));
 
     _lightPositions = {
-            vec3(-2.f, 32.f, -2.f)
+            vec3(-2.f, 32.f, -2.f),
+            vec3(10.f, 40.f, 15.f),
+            vec3(40.f, 60.f, 25.f),
+            vec3(0.1, 0.f, 50.f),
     };
 
     _lightColors = {
-        vec3(0.9, 0.8, 0.8)
+            vec3(300.0f, 300.0f, 300.0f),
+            vec3(300.0f, 300.0f, 300.0f),
+            vec3(300.0f, 300.0f, 300.0f),
+            vec3(300.0f, 300.0f, 300.0f)
     };
+
+
+    _shadowLightPosition = _lightPositions.front();
 
     _rootNode = make_shared<Node>(this, make_shared<MeshBasic>(), mat4());
     _rootNode->setEnabled(false);
@@ -58,12 +66,15 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
     auto sphereMesh = make_shared<Sphere>(1, vec3(0.5, 0.2, 1), "Sphere");
     auto modelMesh = make_shared<Model>(RESOURCE_DIR + "/objects/monkey/monkey.obj", vec3(0.75, 0.75, 0.75), "Model");
     mat4 scale = mat4::Scale(8.f);
-    constexpr float spacing = 23.f;
+    constexpr float spacingZ = 23.f;
+    constexpr float spacingX = 23.f;
+    constexpr float spacingY = 6.f;
 
-    for (int x = 0; x < 2; ++x) {
-        for (int z = 0; z < 2; ++z) {
-            mat4 sphereTrans = mat4::Translate(15.f + x * spacing, 10.f, Z_ALIGN + z * spacing);
-            mat4 modelTrans = mat4::Translate(-15.f - x * spacing, 10.f, Z_ALIGN + z * spacing);
+    for (float z = 0; z < 3.f; z += 1.0) {
+        for (float x = 0; x < 3.f; x += 1.0) {
+            float ty = (2.f - z);
+            mat4 sphereTrans = mat4::Translate(15.f + x * spacingX, 6.f + ty * spacingY, Z_ALIGN + z * spacingZ);
+            mat4 modelTrans = mat4::Translate(-15.f - x * spacingX, 6.f + ty * spacingY, Z_ALIGN + z * spacingZ);
             auto sphere = make_shared<Node>(this, sphereMesh, scale * sphereTrans);
             auto model = make_shared<Node>(this, modelMesh, scale * modelTrans);
             _rootNode->addChild(sphere);
@@ -76,11 +87,12 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
     auto plane = make_shared<Node>(this, make_shared<Plane>(1, vec3(0.8, 0.8, 0.8), "Plane"), planeLocalTransform);
     _rootNode->addChild(plane);
 
-    //광원 시각화용
+    //그림자 광원 시각화용
     auto lightSphereMesh = make_shared<Sphere>(1, vec3(1, 1, 1), "LightSphere");
-    mat4 lightSphereLocalTransform = mat4::Scale(2.f) * mat4::Translate(_lightPositions.front().x,
-                                                                           _lightPositions.front().y,
-                                                                           _lightPositions.front().z);
+    mat4 lightSphereLocalTransform = mat4::Scale(2.f) * mat4::Translate(_shadowLightPosition.x,
+                                                                           _shadowLightPosition.y,
+                                                                           _shadowLightPosition.z);
+
     _lightSphere = make_shared<Node>(this, lightSphereMesh, lightSphereLocalTransform);
     _lightSphere->transformUpdate();
     _lightSphere->setEnabled(false);
@@ -90,7 +102,7 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
     _iblPreprocessor = make_unique<IBLPreprocessor>(engine->_shaderManager, RESOURCE_DIR + "/textures/hdr/newport_loft.hdr");
     _iblPreprocessor->build();
 
-    _shadowLightView = Camera::createViewMatrix(vec3(0, 0, 0), _lightPositions.front(), vec3(0, 1, 0)); //라이트가 다수일 경우 shadow용 라이트는 첫번째 라이트로 정했습니다.
+    _shadowLightView = Camera::createViewMatrix(vec3(0, 0, 0), _shadowLightPosition, vec3(0, 1, 0)); //라이트가 다수일 경우 shadow용 라이트는 첫번째 라이트로 정했습니다.
     _shadowLightProj = mat4::Ortho(-100, 100, -100, 100, 0.1f, 60.f);
     _shadowLightViewProjection = _shadowLightView * _shadowLightProj;
     _shadowDepthBuffer = make_shared<FrameBufferObject>(ivec2(1024, 1024), _defaultFBO, FrameBufferObject::Type::Depth);
@@ -133,8 +145,6 @@ void Scene::update() {
         });
         _rootTransformDirty = false;
     }
-
-
 }
 
 
@@ -208,14 +218,22 @@ void Scene::renderDeferredPBR() {
         activeShader->viewMatUniformMatrix4fv(view.pointer());
         activeShader->isRenderSkyBokxUniform1f(0.f);
 
-        visitNodes(_rootNode, [wShader = weak_ptr<GBufferShader>(activeShader)](const shared_ptr<Node>& node) {
+        int colorIndex = 0;
+        visitNodes(_rootNode, [&colorIndex, wShader = weak_ptr<GBufferShader>(activeShader)](const shared_ptr<Node>& node) {
             if (auto shader = wShader.lock()) {
+                colorIndex = (colorIndex + 1) % 3;
+                if (colorIndex == 0)
+                    shader->colorUniform3f(0.9, 0.1, 0.2);
+                else if (colorIndex == 1)
+                    shader->colorUniform3f(0.76, 0.8, 0.95);
+                else
+                    shader->colorUniform3f(0.12, 0.4, 0.9);
+
                 shader->worldMatUniformMatrix4fv(node->worldTransform().pointer());
                 shader->worldNormalMatUniformMatrix4fv(node->worldTransform().invert().transposed().pointer());
                 node->render();
             }
         });
-
     }
 
     // SSAO
