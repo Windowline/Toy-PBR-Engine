@@ -2,7 +2,6 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include "Engine.hpp"
-#include "Vector.hpp"
 
 RenderEngine* engine = nullptr;
 constexpr float ASPECT_RATIO = 0.5625;

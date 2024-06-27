@@ -65,7 +65,7 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
 
     // shpere
     auto sphereMesh = make_shared<Sphere>(1, vec3(0, 0, 1));
-    mat4 sphereLocalTransform = mat4::Scale(16) * mat4::Translate(0.f, 0.f, 0.f);
+    mat4 sphereLocalTransform = mat4::Scale(8) * mat4::Translate(0.f, 3.f, 0.f);
     _sphere = make_shared<Node>(this, sphereMesh, sphereLocalTransform);
 
     // cube
@@ -79,7 +79,7 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
     _model = make_shared<Node>(this, modelMesh, modelLocalTransform);
 
     // plane
-    auto plane = make_shared<Plane>(1, vec3(0, 1, 0));
+    auto plane = make_shared<Plane>(1, vec3(0.8, 0.8, 0.8));
     mat4 planeLocalTransform = mat4::Scale(120.f, 120.f, 1.f) * mat4::RotateX(90.f) * mat4::Translate(0, -20, Z_ALIGN);
     _plane = make_shared<Node>(this, plane, planeLocalTransform);
 
@@ -97,7 +97,7 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
     _rootNode = _room;
     _rootNode->setEnabled(false);
     _rootNode->addChild(_sphere);
-    _rootNode->addChild(_cube);
+//    _rootNode->addChild(_cube);
     _rootNode->addChild(_model);
     _rootNode->addChild(_plane);
 
@@ -398,10 +398,6 @@ void Scene::renderDeferredPBR() {
         glBindTexture(GL_TEXTURE_CUBE_MAP, _iblPreprocessor->prefilterCubeMap());
         glActiveTexture(GL_TEXTURE0 + textureIndex++);
         glBindTexture(GL_TEXTURE_2D, _iblPreprocessor->brdfLUTTexture());
-
-        activeShader->ambientColorUniform3f(ambientColor().x, ambientColor().y, ambientColor().z);
-        activeShader->diffuseColorUniform3f(diffuseColor().x, diffuseColor().y, diffuseColor().z);
-        activeShader->specularColorUniform3f(specularColor().x, specularColor().y, specularColor().z);
 
 //        activeShader->worldLightPosUniform3fVector(lightPositions());
         activeShader->lightUniform3fVector(_lightPositions, true);

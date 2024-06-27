@@ -90,39 +90,6 @@ public:
         glUniform1i(_lightCountUniformLocation, value);
     }
 
-
-    //diffuse color
-    void diffuseColorUniformLocation() {
-        _diffuseColorUniformLocation = glGetUniformLocation(_programID, "u_diffuseColor");
-    }
-
-    void diffuseColorUniform3f(GLfloat value1, GLfloat value2, GLfloat value3) {
-        assert(_diffuseColorUniformLocation != -1);
-        glUniform3f(_diffuseColorUniformLocation, value1, value2, value3);
-    }
-
-    //specular color
-    void specularColorUniformLocation() {
-        _specularColorUniformLocation = glGetUniformLocation(_programID, "u_specularColor");
-    }
-
-    void specularColorUniform3f(GLfloat value1, GLfloat value2, GLfloat value3) {
-        assert(_specularColorUniformLocation != -1);
-        glUniform3f(_specularColorUniformLocation, value1, value2, value3);
-    }
-
-
-    //ambient
-    void ambientColorUniformLocation() {
-        _ambientColorUniformLocation = glGetUniformLocation(_programID, "u_ambientColor");
-    }
-
-    void ambientColorUniform3f(GLfloat value1, GLfloat value2, GLfloat value3) {
-        assert(_ambientColorUniformLocation != -1);
-        glUniform3f(_ambientColorUniformLocation, value1, value2, value3);
-    }
-
-
     //eye pos
     void worldEyePositionUniformLocation() {
         _worldEyePositionUniformLocation = glGetUniformLocation(_programID, "u_worldEyePos");
@@ -177,9 +144,10 @@ private:
     GLint _worldLightPosUniformLocation = -1;
     GLint _lightCountUniformLocation = -1;
 
-    GLint _diffuseColorUniformLocation = -1;
-    GLint _ambientColorUniformLocation = -1;
-    GLint _specularColorUniformLocation = -1;
+//    GLint _diffuseColorUniformLocation = -1;
+//    GLint _ambientColorUniformLocation = -1;
+//    GLint _specularColorUniformLocation = -1;
+
     GLint _worldEyePositionUniformLocation = -1;
 
     GLint _shadowViewProjectionMatLocation = -1;

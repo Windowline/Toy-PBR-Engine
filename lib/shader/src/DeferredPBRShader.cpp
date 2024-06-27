@@ -28,10 +28,6 @@ const char* fragmentDeferredPBR = R(
         uniform vec3 u_worldLightPos[5];
         uniform int u_lightCount;
 
-        uniform vec3 u_ambientColor;
-        uniform vec3 u_diffuseColor;
-        uniform vec3 u_specularColor;
-
         uniform mat4 u_shadowViewProjectionMat;
 
         // ------------------ PBR
@@ -90,19 +86,16 @@ const char* fragmentDeferredPBR = R(
             return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
         }
 
-        vec3 applyIBL(vec3 N, vec3 worldPos, vec3 albedo, float ao) {
-            //shadow
+        float isShadow(vec3 worldPos) {
             vec4 shadowClipPos = u_shadowViewProjectionMat * vec4(worldPos, 1.0);
             vec2 shadowDepthUV = shadowClipPos.xy / shadowClipPos.w;
             shadowDepthUV = shadowDepthUV * 0.5 + 0.5;
             float shadowDepth = texture(u_shadowDepth, shadowDepthUV).x;
             float curDepth = shadowClipPos.z / shadowClipPos.w;
-            bool isShadow = curDepth > shadowDepth + 0.005;
+            return curDepth > shadowDepth + 0.005 ? 0.0 : 1.0;
+        }
 
-            if (isShadow) {
-                return vec3(0.0);
-            }
-
+        vec3 applyIBL(vec3 N, vec3 worldPos, vec3 albedo, float ao) {
             vec3 V = normalize(u_worldEyePos - worldPos);
             vec3 R = reflect(-V, N);
 
@@ -153,14 +146,16 @@ const char* fragmentDeferredPBR = R(
             vec3 kD = 1.0 - kS;
             kD *= 1.0 - u_metallic;
 
+            float shadow = isShadow(worldPos);
+
             vec3 irradiance = texture(u_irradianceMap, N).rgb;
-            vec3 diffuse = irradiance * albedo;
+            vec3 diffuse = irradiance * albedo * shadow;
 
             // sample both the pre-filter map and the BRDF lut and combine them together as per the Split-Sum approximation to get the IBL specular part.
             const float MAX_REFLECTION_LOD = 4.0;
             vec3 prefilteredColor = textureLod(u_prefilterMap, R,  u_roughness * MAX_REFLECTION_LOD).rgb;
             vec2 brdf  = texture(u_brdfLUT, vec2(max(dot(N, V), 0.0), u_roughness)).rg;
-            vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
+            vec3 specular = prefilteredColor * (F * brdf.x + brdf.y) * shadow;
 
             vec3 ambient = (kD * diffuse + specular) * ao;
 
@@ -173,77 +168,39 @@ const char* fragmentDeferredPBR = R(
             return color;
         }
 
+        vec3 applyPhong(vec3 N, vec3 worldPos, vec3 albedo, float ao) {
+            vec3 ambientColor = vec3(0.4);
+            vec3 diffuseColor = vec3(0.5);
+            vec3 specularColor = vec3(0.9);
+
+            vec3 color = albedo * ambientColor * ao;
+            vec3 E = normalize(worldPos - u_worldEyePos);
+
+            float shadow = isShadow(worldPos);
+
+            for (int i = 0; i < u_lightCount; ++i) {
+                vec3 L = normalize(worldPos - u_worldLightPos[i]);
+                float df = max(0.0, dot(N, -L)) * shadow;  // 그림자 지는 영역은 난반사광과 경면광을 제외합니다.
+                float sf = pow(clamp(dot(reflect(-L, N), E), 0.0, 1.0), 24.0) * shadow;
+                color += albedo * df * diffuseColor;
+                color += sf * specularColor;
+            }
+
+            return clamp(color, 0.0, 1.0);
+        }
+
         void main() {
             vec3 albedo = texture(u_albedoTexture, v_texCoord).rgb;
             vec3 worldPos = texture(u_posTexture, v_texCoord).rgb;
             float ao = texture(u_ssaoTexture,  v_texCoord).r;
+            ao = 1.0;
             vec3 N = texture(u_normalTexture, v_texCoord).rgb;
-            vec3 E = normalize(worldPos - u_worldEyePos);
-            vec3 color = albedo * u_ambientColor * ao;
-
-            vec3 colorIBL = applyIBL(N, worldPos, albedo, 1.0);
-//            if (texture(u_albedoTexture, v_texCoord).a > 0.0) {
-//                vec3 colorIBL = applyIBL(N, worldPos, albedo, 1.0);
-//                fragColor = vec4(colorIBL, 1.0);
-//            } else { //skybox
-//                fragColor = vec4(albedo, 1.0);
-//            }
-
-
-            vec4 shadowClipPos = u_shadowViewProjectionMat * vec4(worldPos, 1.0);
-            vec2 shadowDepthUV = shadowClipPos.xy / shadowClipPos.w;
-            shadowDepthUV = shadowDepthUV * 0.5 + 0.5;
-            float shadowDepth = texture(u_shadowDepth, shadowDepthUV).x;
-            float curDepth = shadowClipPos.z / shadowClipPos.w;
-            bool shadow = curDepth > shadowDepth + 0.005;
-
-//            if (texture(u_albedoTexture, v_texCoord).a > 0.0) {
-//                for (int i = 0; i < u_lightCount; ++i) {
-//                    vec3 L = normalize(worldPos - u_worldLightPos[i]);
-//                    float df = shadow ? 0.0 : max(0.0, dot(N, -L)); // 그림자 지는 영역은 난반사광과 경면광을 제외합니다.
-//                    color += (albedo * df * u_diffuseColor);
-//                    float sf = shadow ? 0.0 : pow(clamp(dot(reflect(-L, N), E), 0.0, 1.0), 24.0);
-//                    color += (sf * u_specularColor);
-//                }
-//                color = clamp(color, 0.0, 1.0);
-//                fragColor = vec4(color, 1.0);
-//            } else {
-//                fragColor = vec4(albedo, 1.0);
-//            }
-
-//            if (shadow) {
-//                fragColor = vec4(1.0, 0.0, 0.0, 1.0);
-//            } else {
-//                //Phong
-//                if (texture(u_albedoTexture, v_texCoord).a > 0.0) {
-//                    for (int i = 0; i < u_lightCount; ++i) {
-//                        vec3 L = normalize(worldPos - u_worldLightPos[i]);
-//                        float df = shadow ? 0.0 : max(0.0, dot(N, -L)); // 그림자 지는 영역은 난반사광과 경면광을 제외합니다.
-//                        color += (albedo * df * u_diffuseColor);
-//                        float sf = shadow ? 0.0 : pow(clamp(dot(reflect(-L, N), E), 0.0, 1.0), 24.0);
-//                        color += (sf * u_specularColor);
-//                    }
-//                    color = clamp(color, 0.0, 1.0);
-//                    fragColor = vec4(color, 1.0);
-//                } else {
-//                    fragColor = vec4(albedo, 1.0);
-//                }
-//            }
-            //Phong
             if (texture(u_albedoTexture, v_texCoord).a > 0.0) {
-                for (int i = 0; i < u_lightCount; ++i) {
-                    vec3 L = normalize(worldPos - u_worldLightPos[i]);
-                    float df = shadow ? 0.0 : max(0.0, dot(N, -L)); // 그림자 지는 영역은 난반사광과 경면광을 제외합니다.
-                    color += (albedo * df * u_diffuseColor);
-                    float sf = shadow ? 0.0 : pow(clamp(dot(reflect(-L, N), E), 0.0, 1.0), 24.0);
-                    color += (sf * u_specularColor);
-                }
-                color = clamp(color, 0.0, 1.0);
-                fragColor = vec4(color, 1.0);
+                fragColor = vec4(applyIBL(N, worldPos, albedo, ao), 1.0);
+//                fragColor = vec4(applyPhong(N, worldPos, albedo, ao), 1.0);
             } else {
                 fragColor = vec4(albedo, 1.0);
-            }
-
+            };
         }
 );
 
@@ -257,9 +214,6 @@ DeferredPBRShader::DeferredPBRShader() {
     albedoTextureUniformLocation();
 
     worldLightPosUniformLocation();
-    diffuseColorUniformLocation();
-    specularColorUniformLocation();
-    ambientColorUniformLocation();
     worldEyePositionUniformLocation();
 
     shadowViewProjectionMatUniformLocation();
