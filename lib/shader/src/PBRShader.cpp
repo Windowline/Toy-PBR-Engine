@@ -16,8 +16,7 @@ const char* vertexPBR = R(
         uniform mat4 u_worldMat;
         uniform mat4 u_worldNormalMat;
 
-        void main()
-        {
+        void main() {
             v_worldPos = vec3(u_worldMat * vec4(a_position, 1.0));
             v_normal = normalize((u_worldNormalMat * vec4(a_normal, 0.0)).xyz);
             gl_Position =  u_projMat * u_viewMat * vec4(v_worldPos, 1.0);
@@ -29,27 +28,22 @@ const char* fragmentPBR = R(
         in vec3 v_worldPos;
         in vec3 v_normal;
 
-// material parameters
-        uniform vec3 albedo;
-        uniform float metallic;
-        uniform float roughness;
-        uniform float ao;
+        uniform vec3 u_albedo;
+        uniform float u_metallic;
+        uniform float u_roughness;
+        uniform float u_ao;
 
-// IBL
-        uniform samplerCube irradianceMap;
-        uniform samplerCube prefilterMap;
-        uniform sampler2D brdfLUT;
+        uniform samplerCube u_irradianceMap;
+        uniform samplerCube u_prefilterMap;
+        uniform sampler2D u_brdfLUT;
 
-// lights
-        uniform vec3 lightPositions[4];
-        uniform vec3 lightColors[4];
-
-        uniform vec3 camPos;
+        uniform vec3 u_lightPositions[4];
+        uniform vec3 u_lightColors[4];
+        uniform vec3 u_eyePos;
 
         const float PI = 3.14159265359;
-// ----------------------------------------------------------------------------
-        float DistributionGGX(vec3 N, vec3 H, float roughness)
-        {
+
+        float DistributionGGX(vec3 N, vec3 H, float roughness) {
             float a = roughness*roughness;
             float a2 = a*a;
             float NdotH = max(dot(N, H), 0.0);
@@ -61,9 +55,8 @@ const char* fragmentPBR = R(
 
             return nom / denom;
         }
-// ----------------------------------------------------------------------------
-        float GeometrySchlickGGX(float NdotV, float roughness)
-        {
+
+        float GeometrySchlickGGX(float NdotV, float roughness) {
             float r = (roughness + 1.0);
             float k = (r*r) / 8.0;
 
@@ -72,9 +65,8 @@ const char* fragmentPBR = R(
 
             return nom / denom;
         }
-// ----------------------------------------------------------------------------
-        float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
-        {
+
+        float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
             float NdotV = max(dot(N, V), 0.0);
             float NdotL = max(dot(N, L), 0.0);
             float ggx2 = GeometrySchlickGGX(NdotV, roughness);
@@ -82,42 +74,39 @@ const char* fragmentPBR = R(
 
             return ggx1 * ggx2;
         }
-// ----------------------------------------------------------------------------
-        vec3 fresnelSchlick(float cosTheta, vec3 F0)
-        {
+
+        vec3 fresnelSchlick(float cosTheta, vec3 F0) {
             return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
         }
-// ----------------------------------------------------------------------------
-        vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
-        {
+
+        vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness) {
             return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
         }
-// ----------------------------------------------------------------------------
-        void main()
-        {
+
+        void main() {
             vec3 N = v_normal;
-            vec3 V = normalize(camPos - v_worldPos);
+            vec3 V = normalize(u_eyePos - v_worldPos);
             vec3 R = reflect(-V, N);
 
             // calculate reflectance at normal incidence; if dia-electric (like plastic) use F0
             // of 0.04 and if it's a metal, use the albedo color as F0 (metallic workflow)
             vec3 F0 = vec3(0.04);
-            F0 = mix(F0, albedo, metallic);
+            F0 = mix(F0, u_albedo, u_metallic);
 
             // reflectance equation
             vec3 Lo = vec3(0.0);
             for(int i = 0; i < 4; ++i)
             {
                 // calculate per-light radiance
-                vec3 L = normalize(lightPositions[i] - v_worldPos);
+                vec3 L = normalize(u_lightPositions[i] - v_worldPos);
                 vec3 H = normalize(V + L);
-                float distance = length(lightPositions[i] - v_worldPos);
+                float distance = length(u_lightPositions[i] - v_worldPos);
                 float attenuation = 1.0 / (distance * distance);
-                vec3 radiance = lightColors[i] * attenuation;
+                vec3 radiance = u_lightColors[i] * attenuation;
 
                 // Cook-Torrance BRDF
-                float NDF = DistributionGGX(N, H, roughness);
-                float G   = GeometrySmith(N, V, L, roughness);
+                float NDF = DistributionGGX(N, H, u_roughness);
+                float G   = GeometrySmith(N, V, L, u_roughness);
                 vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);
 
                 vec3 numerator    = NDF * G * F;
@@ -133,32 +122,32 @@ const char* fragmentPBR = R(
                 // multiply kD by the inverse metalness such that only non-metals
                 // have diffuse lighting, or a linear blend if partly metal (pure metals
                 // have no diffuse light).
-                kD *= 1.0 - metallic;
+                kD *= 1.0 - u_metallic;
 
                 // scale light by NdotL
                 float NdotL = max(dot(N, L), 0.0);
 
                 // add to outgoing radiance Lo
-                Lo += (kD * albedo / PI + specular) * radiance * NdotL; // note that we already multiplied the BRDF by the Fresnel (kS) so we won't multiply by kS again
+                Lo += (kD * u_albedo / PI + specular) * radiance * NdotL; // note that we already multiplied the BRDF by the Fresnel (kS) so we won't multiply by kS again
             }
 
             // ambient lighting (we now use IBL as the ambient term)
-            vec3 F = fresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);
+            vec3 F = fresnelSchlickRoughness(max(dot(N, V), 0.0), F0, u_roughness);
 
             vec3 kS = F;
             vec3 kD = 1.0 - kS;
-            kD *= 1.0 - metallic;
+            kD *= 1.0 - u_metallic;
 
-            vec3 irradiance = texture(irradianceMap, N).rgb;
-            vec3 diffuse      = irradiance * albedo;
+            vec3 irradiance = texture(u_irradianceMap, N).rgb;
+            vec3 diffuse      = irradiance * u_albedo;
 
             // sample both the pre-filter map and the BRDF lut and combine them together as per the Split-Sum approximation to get the IBL specular part.
             const float MAX_REFLECTION_LOD = 4.0;
-            vec3 prefilteredColor = textureLod(prefilterMap, R,  roughness * MAX_REFLECTION_LOD).rgb;
-            vec2 brdf  = texture(brdfLUT, vec2(max(dot(N, V), 0.0), roughness)).rg;
+            vec3 prefilteredColor = textureLod(u_prefilterMap, R,  u_roughness * MAX_REFLECTION_LOD).rgb;
+            vec2 brdf  = texture(u_brdfLUT, vec2(max(dot(N, V), 0.0), u_roughness)).rg;
             vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
 
-            vec3 ambient = (kD * diffuse + specular) * ao;
+            vec3 ambient = (kD * diffuse + specular) * u_ao;
 
             vec3 color = ambient + Lo;
 
@@ -175,18 +164,18 @@ PBRShader::PBRShader() {
     this->load();
     basicUniformLoc();
 
-    _albedoLoc = glGetUniformLocation(_programID, "albedo");
-    _metallicLoc = glGetUniformLocation(_programID, "metallic");
-    _roughnessLoc = glGetUniformLocation(_programID, "roughness");
-    _aoLoc = glGetUniformLocation(_programID, "ao");
+    _albedoLoc = glGetUniformLocation(_programID, "u_albedo");
+    _metallicLoc = glGetUniformLocation(_programID, "u_metallic");
+    _roughnessLoc = glGetUniformLocation(_programID, "u_roughness");
+    _aoLoc = glGetUniformLocation(_programID, "u_ao");
 
-    _lightPositionsLoc = glGetUniformLocation(_programID, "lightPositions");
-    _lightColorsLoc = glGetUniformLocation(_programID, "lightColors");
-    _camPosLoc = glGetUniformLocation(_programID, "camPos");
+    _lightPositionsLoc = glGetUniformLocation(_programID, "u_lightPositions");
+    _lightColorsLoc = glGetUniformLocation(_programID, "u_lightColors");
+    _camPosLoc = glGetUniformLocation(_programID, "u_eyePos");
 
-    _irradianceMapLoc = glGetUniformLocation(_programID, "irradianceMap");
-    _prefilterMapLoc = glGetUniformLocation(_programID, "prefilterMap");
-    _brdfLUTLoc = glGetUniformLocation(_programID, "brdfLUT");
+    _irradianceMapLoc = glGetUniformLocation(_programID, "u_irradianceMap");
+    _prefilterMapLoc = glGetUniformLocation(_programID, "u_prefilterMap");
+    _brdfLUTLoc = glGetUniformLocation(_programID, "u_brdfLUT");
 }
 
 bool PBRShader::load() {

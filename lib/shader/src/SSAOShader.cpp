@@ -6,8 +6,7 @@ const char* vertexSSAOTmp = R(
         layout (location = 1) in vec2 a_texCoord;
         out vec2 v_texCoord;
 
-        void main()
-        {
+        void main() {
            v_texCoord = a_texCoord;
            gl_Position = vec4(a_position, 0.0, 1.0);
         }
@@ -26,8 +25,7 @@ const char* fragmentSSAOTmp = R(
         uniform mat4 u_projMat;
 
 
-        void main()
-        {
+        void main() {
             vec2 noiseScale = u_screenSize / 4.0;
             vec3 worldPos = texture(u_posTexture, v_texCoord).xyz;
             vec3 viewPos = (u_viewMat * vec4(worldPos, 1.0)).xyz;

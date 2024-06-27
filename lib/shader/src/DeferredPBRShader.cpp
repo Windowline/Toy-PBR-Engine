@@ -24,25 +24,20 @@ const char* fragmentDeferredPBR = R(
         uniform sampler2D u_shadowDepth;
         uniform sampler2D u_ssaoTexture;
 
-        uniform vec3 u_worldEyePos; // = camPos
+        uniform vec3 u_worldEyePos;
         uniform vec3 u_worldLightPos[5];
+        uniform vec3 u_lightColors[5];
         uniform int u_lightCount;
 
         uniform mat4 u_shadowViewProjectionMat;
 
-        // ------------------ PBR
-//        uniform vec3 albedo; // = u_ambientColor
+        // PBR
         uniform float u_metallic;
         uniform float u_roughness;
-//        uniform float ao; // = ssao
 
         uniform samplerCube u_irradianceMap;
         uniform samplerCube u_prefilterMap;
         uniform sampler2D u_brdfLUT;
-
-//        uniform vec3 lightPositions[4]; // = u_worldLightPos
-        uniform vec3 u_lightColors[5];
-        // ----------------------
 
         const float PI = 3.14159265359;
 
@@ -192,9 +187,10 @@ const char* fragmentDeferredPBR = R(
         void main() {
             vec3 albedo = texture(u_albedoTexture, v_texCoord).rgb;
             vec3 worldPos = texture(u_posTexture, v_texCoord).rgb;
+            vec3 N = texture(u_normalTexture, v_texCoord).rgb;
             float ao = texture(u_ssaoTexture,  v_texCoord).r;
             ao = 1.0;
-            vec3 N = texture(u_normalTexture, v_texCoord).rgb;
+
             if (texture(u_albedoTexture, v_texCoord).a > 0.0) {
                 fragColor = vec4(applyIBL(N, worldPos, albedo, ao), 1.0);
 //                fragColor = vec4(applyPhong(N, worldPos, albedo, ao), 1.0);

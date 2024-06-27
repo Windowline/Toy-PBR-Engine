@@ -3,11 +3,9 @@
 const char* vertexTexturePassShaderTmp = R(
         layout (location = 0) in vec2 a_position;
         layout (location = 1) in vec2 a_texCoord;
-
         out vec2 v_texCoord;
 
-        void main()
-        {
+        void main() {
            v_texCoord = a_texCoord;
            gl_Position = vec4(a_position, 0.0, 1.0);
         }
@@ -18,8 +16,7 @@ const char* fragmentTexturePassShaderTmp = R(
         in vec2 v_texCoord;
         layout (location = 0) out vec4 fragColor;
 
-        void main()
-        {
+        void main() {
             fragColor = vec4(texture(u_texture, v_texCoord).rgb, 1.0);
         }
 );

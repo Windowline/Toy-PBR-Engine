@@ -1,23 +1,23 @@
 #include "IBLPreprocessSpecularShaders.hpp"
 
 const char* vertexCubemap2 = R(
-        layout (location = 0) in vec3 aPos;
-        out vec3 WorldPos;
+        layout (location = 0) in vec3 a_position;
+        out vec3 v_worldPos;
 
         uniform mat4 u_projMat;
         uniform mat4 u_viewMat;
 
         void main()
         {
-            WorldPos = aPos;
-            gl_Position =  u_projMat * u_viewMat * vec4(WorldPos, 1.0);
+            v_worldPos = a_position;
+            gl_Position =  u_projMat * u_viewMat * vec4(v_worldPos, 1.0);
         }
 );
 
 
 const char* fregmentPrefilter = R(
         out vec4 FragColor;
-        in vec3 WorldPos;
+        in vec3 v_worldPos;
 
         uniform samplerCube u_environmentMap;
         uniform float u_roughness;
@@ -73,7 +73,7 @@ const char* fregmentPrefilter = R(
         }
 
         void main() {
-            vec3 N = normalize(WorldPos);
+            vec3 N = normalize(v_worldPos);
 
             // make the simplifying assumption that V equals R equals the normal
             vec3 R = N;
@@ -116,7 +116,7 @@ const char* fregmentPrefilter = R(
 );
 
 const char* vertexBRDF = R(
-        layout (location = 0) in vec3 aPos;
+        layout (location = 0) in vec3 a_position;
         layout (location = 1) in vec2 aTexCoords;
 
         out vec2 TexCoords;
@@ -124,7 +124,7 @@ const char* vertexBRDF = R(
         void main()
         {
             TexCoords = aTexCoords;
-            gl_Position = vec4(aPos, 1.0);
+            gl_Position = vec4(a_position, 1.0);
         }
 );
 
