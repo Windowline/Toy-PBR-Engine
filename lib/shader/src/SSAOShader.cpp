@@ -39,7 +39,7 @@ const char* fragmentSSAOTmp = R(
             float occlusion = 0.0;
 
             for(int i = 0; i < 64; ++i) {
-                vec3 viewSamplePos = viewTBN * u_samples[i]; //sample: tangent-space to view-space
+                vec3 viewSamplePos = viewTBN * u_samples[i]; //노이즈 샘플을 뷰공간으로 반영
                 viewSamplePos = viewPos + viewSamplePos * radius;
 
                 vec4 offset = vec4(viewSamplePos, 1.0);

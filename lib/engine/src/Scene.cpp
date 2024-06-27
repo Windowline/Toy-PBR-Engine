@@ -171,7 +171,7 @@ void Scene::renderDeferredPBR() {
     const mat4& view = _camera->viewMat();
     mat4 identity;
 
-    // depth buffer
+    // shadow depth buffer
     {
         _shadowDepthBuffer->bindWithViewport();
         glClearColor(0.f, 0.f, 1.f, 1.f);
@@ -187,7 +187,7 @@ void Scene::renderDeferredPBR() {
         });
     }
 
-    // gbuffer
+    // G buffer
     {
         _gBuffer->bindWithViewport();
         glClearColor(0.f, 0.f, 0.f, 1.f);
@@ -238,7 +238,7 @@ void Scene::renderDeferredPBR() {
         });
     }
 
-    // SSAO
+    // Screen Space Ambient Occlusion
     {
         _ssaoFBO->bindWithViewport();
         glDisable(GL_CULL_FACE);
@@ -247,15 +247,11 @@ void Scene::renderDeferredPBR() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         auto activeShader = shaderManager()->setActiveShader<SSAOShader>(eShaderProgram_SSAO);
-//        activeShader->viewMatUniformMatrix4fv(view.pointer());
         activeShader->projMatUniformMatrix4fv(proj.pointer());
         activeShader->samplesUniformVector(_ssaoKernel);
         activeShader->screenSizeUniform2f(_camera->screenSize().x, _camera->screenSize().y);
 
         const int COMPONENT_COUNT = 3;
-//        array<GLuint, COMPONENT_COUNT> ssaoInputTextures {_gBuffer->gPositionTexture(),
-//                                                          _gBuffer->gNormalTexture(),
-//                                                          _ssaoNoiseTexture};
         array<GLuint, COMPONENT_COUNT> ssaoInputTextures {_gBuffer->gViewPositionTexture(),
                                                           _gBuffer->gViewNormalTexture(),
                                                           _ssaoNoiseTexture};
@@ -268,7 +264,7 @@ void Scene::renderDeferredPBR() {
         _fullQuad->render();
     }
 
-    //SSAO Blur
+    // Blur On Screen Space Ambient Occlusion
     {
         _ssaoBlurFBO->bindWithViewport();
         auto activeShader = shaderManager()->setActiveShader<SSAOBlurShader>(eShaderProgram_SSAO_BLUR);
@@ -278,7 +274,7 @@ void Scene::renderDeferredPBR() {
         _fullQuad->render();
     }
 
-    //Deferred PBR(IBL)
+    //Deferred PBR
     {
         glBindFramebuffer(GL_FRAMEBUFFER, _defaultFBO);
         glViewport(0, 0, _camera->screenSize().x, _camera->screenSize().y);
@@ -310,8 +306,8 @@ void Scene::renderDeferredPBR() {
         activeShader->lightUniform3fVector(_lightColors, false);
         activeShader->worldEyePositionUniform3f(camera()->eye().x, camera()->eye().y, camera()->eye().z);
         activeShader->shadowViewProjectionMatUniformMatrix4fv(_shadowLightViewProjection.pointer());
-        activeShader->metallicUniform1f(0.9);
-        activeShader->roughnessUniform1f(0.1);
+        activeShader->metallicUniform1f(0.92);
+        activeShader->roughnessUniform1f(0.08);
 
         _fullQuad->render();
     }
