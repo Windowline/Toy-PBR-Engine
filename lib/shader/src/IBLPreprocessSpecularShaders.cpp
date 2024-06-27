@@ -253,8 +253,8 @@ bool PrefilterShader::load() {
     string vShader = string("#version 330 core \n") + string(vertexCubemap2);
     string fShader = string("#version 330 core \n") + string(fregmentPrefilter);
 
-    _programID = loadProgram_tmp(reinterpret_cast<const char *>(vShader.c_str()),
-                                 reinterpret_cast<const char *>(fShader.c_str()));
+    _programID = loadProgram(reinterpret_cast<const char *>(vShader.c_str()),
+                             reinterpret_cast<const char *>(fShader.c_str()));
 
     assert(_programID != 0);
 
@@ -280,8 +280,8 @@ bool BRDFShader::load() {
     string vShader = string("#version 330 core \n") + string(vertexBRDF);
     string fShader = string("#version 330 core \n") + string(fragmentBRDF);
 
-    _programID = loadProgram_tmp(reinterpret_cast<const char *>(vShader.c_str()),
-                                 reinterpret_cast<const char *>(fShader.c_str()));
+    _programID = loadProgram(reinterpret_cast<const char *>(vShader.c_str()),
+                             reinterpret_cast<const char *>(fShader.c_str()));
 
     assert(_programID != 0);
 

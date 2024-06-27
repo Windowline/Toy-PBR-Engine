@@ -67,8 +67,8 @@ protected:
         int asdasd = 10;
     }
 
-    GLuint loadShader_tmp(GLenum type, const char *shaderSrc);
-    GLuint loadProgram_tmp(const char *vertShaderSrc, const char *fragShaderSrc);
+    GLuint loadShader(GLenum type, const char *shaderSrc);
+    GLuint loadProgram(const char *vertShaderSrc, const char *fragShaderSrc);
 
     GLuint _programID;
 

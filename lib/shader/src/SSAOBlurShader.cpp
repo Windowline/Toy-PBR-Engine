@@ -36,16 +36,16 @@ const char* fragmentSSAOBlur = R(
 SSAOBlurShader::SSAOBlurShader() {
     this->load();
     basicUniformLoc();
-    _ssaoTextureUniformLocation = glGetUniformLocation(_programID, "u_ssaoTexture");
-    _textureSizeUniformLocation = glGetUniformLocation(_programID, "u_textureSize");
+    _ssaoTextureUniformLoc = glGetUniformLocation(_programID, "u_ssaoTexture");
+    _textureSizeUniformLoc = glGetUniformLocation(_programID, "u_textureSize");
 }
 
 bool SSAOBlurShader::load() {
     string vShader = string("#version 330 core \n") + string(vertexSSAOBlur);
     string fShader = string("#version 330 core \n") + string(fragmentSSAOBlur);
 
-    _programID = loadProgram_tmp(reinterpret_cast<const char *>(vShader.c_str()),
-                                 reinterpret_cast<const char *>(fShader.c_str()));
+    _programID = loadProgram(reinterpret_cast<const char *>(vShader.c_str()),
+                             reinterpret_cast<const char *>(fShader.c_str()));
 
     assert(_programID != 0);
 
@@ -55,6 +55,6 @@ bool SSAOBlurShader::load() {
 void SSAOBlurShader::useProgram() {
     glUseProgram(_programID);
 
-    assert(_ssaoTextureUniformLocation != -1);
-    glUniform1i(_ssaoTextureUniformLocation, 0);
+    assert(_ssaoTextureUniformLoc != -1);
+    glUniform1i(_ssaoTextureUniformLoc, 0);
 }

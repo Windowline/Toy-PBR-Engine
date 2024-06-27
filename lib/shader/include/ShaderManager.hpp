@@ -11,22 +11,21 @@ class BasicShader;
 
 enum eShaderProgram : int
 {
-    eShaderProgram_Default = 1,
+    eShaderProgram_Basic = 1,
     eShaderProgram_GBuffer = 2,
-    eShaderProgram_DeferredLighting = 3,
-    eShaderProgram_TexturePass = 4,
-    eShaderProgram_ShadowRender = 5,
-    eShaderProgram_ShadowDepth = 6,
-    eShaderProgram_SSAO = 7,
-    eShaderProgram_SSAO_BLUR = 8,
-    eShaderProgram_EquirectangularToCubemap = 9,
-    eShaderProgram_Irradiance = 10,
-    eShaderProgram_Prefilter = 11,
-    eShaderProgram_BRDF = 12,
-    eShaderProgram_BG = 13,
-    eShaderProgram_PBR = 14,
-    eShaderProgram_DeferredPBR = 15,
-    eShaderProgram_Last = 16
+    eShaderProgram_TexturePass = 3,
+    eShaderProgram_ShadowRender = 4,
+    eShaderProgram_ShadowDepth = 5,
+    eShaderProgram_SSAO = 6,
+    eShaderProgram_SSAO_BLUR = 7,
+    eShaderProgram_EquirectangularToCubemap = 8,
+    eShaderProgram_Irradiance = 9,
+    eShaderProgram_Prefilter = 10,
+    eShaderProgram_BRDF = 11,
+    eShaderProgram_BG = 12,
+    eShaderProgram_PBR = 13,
+    eShaderProgram_DeferredPBR = 14,
+    eShaderProgram_Last = 15
 };
 
 

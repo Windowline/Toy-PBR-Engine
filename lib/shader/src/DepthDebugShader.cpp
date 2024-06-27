@@ -44,8 +44,8 @@ bool DepthDebugShader::load() {
     string vShader = string("#version 330 core \n") + string(vertexDepthDebugTmp);
     string fShader = string("#version 330 core \n") + string(fragmentDepthDebugTmp);
 
-    _programID = loadProgram_tmp(reinterpret_cast<const char *>(vShader.c_str()),
-                                 reinterpret_cast<const char *>(fShader.c_str()));
+    _programID = loadProgram(reinterpret_cast<const char *>(vShader.c_str()),
+                             reinterpret_cast<const char *>(fShader.c_str()));
 
     assert(_programID != 0);
 

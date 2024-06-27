@@ -11,19 +11,19 @@ public:
 
 
     void ssaoTextureUniform1i(GLuint value) {
-        assert(_ssaoTextureUniformLocation != -1);
-        glUniform1i(_ssaoTextureUniformLocation, value);
+        assert(_ssaoTextureUniformLoc != -1);
+        glUniform1i(_ssaoTextureUniformLoc, value);
     }
 
     void textureSizeUniform2f(GLfloat value1, GLfloat value2) {
-        assert(_textureSizeUniformLocation != -1);
-        glUniform2f(_textureSizeUniformLocation, value1, value2);
+        assert(_textureSizeUniformLoc != -1);
+        glUniform2f(_textureSizeUniformLoc, value1, value2);
     }
 
 private:
 
-    GLint _ssaoTextureUniformLocation = -1;
-    GLint _textureSizeUniformLocation = -1;
+    GLint _ssaoTextureUniformLoc = -1;
+    GLint _textureSizeUniformLoc = -1;
 
 };
 

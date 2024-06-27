@@ -92,8 +92,8 @@ bool EquirectangularToCubemapShader::load() {
     string vShader = string("#version 330 core \n") + string(vertexCubemap);
     string fShader = string("#version 330 core \n") + string(fragmentE2H);
 
-    _programID = loadProgram_tmp(reinterpret_cast<const char *>(vShader.c_str()),
-                                 reinterpret_cast<const char *>(fShader.c_str()));
+    _programID = loadProgram(reinterpret_cast<const char *>(vShader.c_str()),
+                             reinterpret_cast<const char *>(fShader.c_str()));
 
     assert(_programID != 0);
 
@@ -120,8 +120,8 @@ bool IrradianceShader::load() {
     string vShader = string("#version 330 core \n") + string(vertexCubemap);
     string fShader = string("#version 330 core \n") + string(fragmentIrradianceConv);
 
-    _programID = loadProgram_tmp(reinterpret_cast<const char *>(vShader.c_str()),
-                                 reinterpret_cast<const char *>(fShader.c_str()));
+    _programID = loadProgram(reinterpret_cast<const char *>(vShader.c_str()),
+                             reinterpret_cast<const char *>(fShader.c_str()));
 
     assert(_programID != 0);
 

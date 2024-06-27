@@ -24,9 +24,6 @@ add_library(shader STATIC
         include/SSAOBlurShader.hpp
         src/SSAOBlurShader.cpp
 
-        include/DeferredLightingShader.hpp
-        src/DeferredLightingShader.cpp
-
         include/IBLPreprocessDiffuseShaders.hpp
         src/IBLPreprocessDiffuseShaders.cpp
 

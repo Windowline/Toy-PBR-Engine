@@ -65,25 +65,25 @@ SSAOShader::SSAOShader() {
     this->load();
     basicUniformLoc();
 
-    _posTextureUniformLocation = glGetUniformLocation(_programID, "u_posTexture");
-    _normalTextureUniformLocation = glGetUniformLocation(_programID, "u_normalTexture");
-    _noiseTextureUniformLocation = glGetUniformLocation(_programID, "u_noiseTexture");
-    _samplesUniformLocation = glGetUniformLocation(_programID, "u_samples");
-    _screenSizeUniformLocation = glGetUniformLocation(_programID, "u_screenSize");
+    _posTextureUniformLoc = glGetUniformLocation(_programID, "u_posTexture");
+    _normalTextureUniformLoc = glGetUniformLocation(_programID, "u_normalTexture");
+    _noiseTextureUniformLoc = glGetUniformLocation(_programID, "u_noiseTexture");
+    _samplesUniformLoc = glGetUniformLocation(_programID, "u_samples");
+    _screenSizeUniformLoc = glGetUniformLocation(_programID, "u_screenSize");
 
-    assert(_posTextureUniformLocation != -1);
-    assert(_normalTextureUniformLocation != -1);
-    assert(_noiseTextureUniformLocation != -1);
-    assert(_samplesUniformLocation != -1);
-    assert(_screenSizeUniformLocation != -1);
+    assert(_posTextureUniformLoc != -1);
+    assert(_normalTextureUniformLoc != -1);
+    assert(_noiseTextureUniformLoc != -1);
+    assert(_samplesUniformLoc != -1);
+    assert(_screenSizeUniformLoc != -1);
 }
 
 bool SSAOShader::load() {
     string vShader = string("#version 330 core \n") + string(vertexSSAOTmp);
     string fShader = string("#version 330 core \n") + string(fragmentSSAOTmp);
 
-    _programID = loadProgram_tmp(reinterpret_cast<const char *>(vShader.c_str()),
-                                 reinterpret_cast<const char *>(fShader.c_str()));
+    _programID = loadProgram(reinterpret_cast<const char *>(vShader.c_str()),
+                             reinterpret_cast<const char *>(fShader.c_str()));
 
     assert(_programID != 0);
 
@@ -93,12 +93,12 @@ bool SSAOShader::load() {
 void SSAOShader::useProgram() {
     glUseProgram(_programID);
 
-    glUniform1i(_posTextureUniformLocation, 0);
+    glUniform1i(_posTextureUniformLoc, 0);
     GLUtil::GL_ERROR_LOG();
 
-    glUniform1i(_normalTextureUniformLocation, 1);
+    glUniform1i(_normalTextureUniformLoc, 1);
     GLUtil::GL_ERROR_LOG();
 
-    glUniform1i(_noiseTextureUniformLocation, 2);
+    glUniform1i(_noiseTextureUniformLoc, 2);
     GLUtil::GL_ERROR_LOG();
 }

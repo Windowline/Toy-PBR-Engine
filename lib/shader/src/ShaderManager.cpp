@@ -3,7 +3,6 @@
 #include "BasicShader.hpp"
 #include "GBufferShader.hpp"
 #include "TexturePassShader.hpp"
-#include "DeferredLightingShader.hpp"
 #include "ShadowDepthShader.hpp"
 #include "SSAOShader.hpp"
 #include "SSAOBlurShader.hpp"
@@ -51,23 +50,21 @@ ShaderManager::~ShaderManager() {
 }
 
 void ShaderManager::loadAllPrograms() {
-    
     if (_shaderMap.empty()) {
         _shaderMap = {
-            {eShaderProgram_Default,                        make_shared<BasicShader>()},
-            {eShaderProgram_GBuffer,                        make_shared<GBufferShader>()},
-            {eShaderProgram_DeferredLighting,               make_shared<DeferredLightingShader>()},
-            {eShaderProgram_TexturePass,                    make_shared<TexturePassShader>() },
-            {eShaderProgram_ShadowDepth,                    make_shared<ShadowDepthShader>()},
-            {eShaderProgram_SSAO,                           make_shared<SSAOShader>()},
-            {eShaderProgram_SSAO_BLUR,                      make_shared<SSAOBlurShader>()},
-            {eShaderProgram_EquirectangularToCubemap,       make_shared<EquirectangularToCubemapShader>()},
-            {eShaderProgram_Irradiance,                     make_shared<IrradianceShader>()},
-            {eShaderProgram_Prefilter,                      make_shared<PrefilterShader>()},
-            {eShaderProgram_BRDF,                           make_shared<BRDFShader>()},
-            {eShaderProgram_BG,                             make_shared<BGShader>()},
-            {eShaderProgram_PBR,                            make_shared<PBRShader>()},
-            {eShaderProgram_DeferredPBR,                    make_shared<DeferredPBRShader>()}
+            {eShaderProgram_Basic,                    make_shared<BasicShader>()},
+            {eShaderProgram_GBuffer,                  make_shared<GBufferShader>()},
+            {eShaderProgram_TexturePass,              make_shared<TexturePassShader>() },
+            {eShaderProgram_ShadowDepth,              make_shared<ShadowDepthShader>()},
+            {eShaderProgram_SSAO,                     make_shared<SSAOShader>()},
+            {eShaderProgram_SSAO_BLUR,                make_shared<SSAOBlurShader>()},
+            {eShaderProgram_EquirectangularToCubemap, make_shared<EquirectangularToCubemapShader>()},
+            {eShaderProgram_Irradiance,               make_shared<IrradianceShader>()},
+            {eShaderProgram_Prefilter,                make_shared<PrefilterShader>()},
+            {eShaderProgram_BRDF,                     make_shared<BRDFShader>()},
+            {eShaderProgram_BG,                       make_shared<BGShader>()},
+            {eShaderProgram_PBR,                      make_shared<PBRShader>()},
+            {eShaderProgram_DeferredPBR,              make_shared<DeferredPBRShader>()}
         };
     }
     

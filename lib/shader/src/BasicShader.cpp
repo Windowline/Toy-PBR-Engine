@@ -43,8 +43,8 @@ bool BasicShader::load() {
     string vShader = string("#version 330 core \n") + string(vertexBasicShader);
     string fShader = string("#version 330 core \n") + string(fragmentBasicShader);
 
-    _programID = loadProgram_tmp(reinterpret_cast<const char *>(vShader.c_str()),
-                                 reinterpret_cast<const char *>(fShader.c_str()));
+    _programID = loadProgram(reinterpret_cast<const char *>(vShader.c_str()),
+                             reinterpret_cast<const char *>(fShader.c_str()));
 
     assert(_programID != 0);
 
@@ -55,8 +55,7 @@ void BasicShader::useProgram() {
     glUseProgram(_programID);
 }
 
-GLuint BasicShader::loadShader_tmp(GLenum type, const char *shaderSrc) {
-
+GLuint BasicShader::loadShader(GLenum type, const char *shaderSrc) {
     GLuint shader;
     GLint compiled;
     GLint infoLen = 0;
@@ -95,7 +94,7 @@ GLuint BasicShader::loadShader_tmp(GLenum type, const char *shaderSrc) {
     return shader;
 }
 
-GLuint BasicShader::loadProgram_tmp(const char *vertShaderSrc, const char *fragShaderSrc) {
+GLuint BasicShader::loadProgram(const char *vertShaderSrc, const char *fragShaderSrc) {
     GLuint vertexShader;
     GLuint fragmentShader;
     GLuint programObject;
@@ -107,12 +106,12 @@ GLuint BasicShader::loadProgram_tmp(const char *vertShaderSrc, const char *fragS
     fsCode = fragShaderSrc;
 
     // Load the vertex/fragment shaders
-    vertexShader = loadShader_tmp(GL_VERTEX_SHADER, vsCode.c_str());
+    vertexShader = loadShader(GL_VERTEX_SHADER, vsCode.c_str());
     if (vertexShader == 0) {
         return 0;
     }
 
-    fragmentShader = loadShader_tmp(GL_FRAGMENT_SHADER, fsCode.c_str());
+    fragmentShader = loadShader(GL_FRAGMENT_SHADER, fsCode.c_str());
     if (fragmentShader == 0) {
         glDeleteShader(vertexShader);
         return 0;

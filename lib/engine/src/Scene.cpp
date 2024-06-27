@@ -12,14 +12,12 @@
 #include "TexturePassShader.hpp"
 #include "SSAOShader.hpp"
 #include "SSAOBlurShader.hpp"
-#include "DeferredLightingShader.hpp"
 #include "BGShader.hpp"
 #include "PBRShader.hpp"
 #include "DeferredPBRShader.hpp"
 
 #include "Cube.hpp"
 #include "Sphere.hpp"
-#include "Room.hpp"
 #include "FullQuad.hpp"
 #include "Model.hpp"
 #include "Plane.hpp"
@@ -297,7 +295,7 @@ void Scene::renderDeferredPBR() {
     //빛 구체, 라이팅을 입히지 않고 본연의 색만 입힙니다.
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
-    auto activeShader = shaderManager()->setActiveShader<BasicShader>(eShaderProgram_Default);
+    auto activeShader = shaderManager()->setActiveShader<BasicShader>(eShaderProgram_Basic);
     activeShader->worldMatUniformMatrix4fv(_lightSphere->worldTransform().pointer());
     activeShader->worldNormalMatUniformMatrix4fv(_lightSphere->worldTransform().invert().transposed().pointer());
     activeShader->viewMatUniformMatrix4fv(view.pointer());
