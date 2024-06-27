@@ -14,20 +14,28 @@ const char* vertexGBufferShaderTmp = R(
 
         out vec3 v_color;
         out vec3 v_position;
+        out vec3 v_viewPosition;
         out vec3 v_normal;
+        out vec3 v_viewNormal;
 
         void main() {
+           mat3 viewNormalMat = transpose(inverse(mat3(u_viewMat * u_worldMat)));
+
            vec4 worldPos = u_worldMat * vec4(a_position, 1.0);
-           v_normal = normalize((u_worldNormalMat * vec4(a_normal, 0.0)).xyz);
-//           v_color = a_color;
-           v_color = u_color;
+           vec4 viewPos = u_viewMat * worldPos;
+
            v_position = worldPos.xyz;
+           v_viewPosition = viewPos.xyz;
+           v_normal = (u_worldNormalMat * vec4(a_normal, 0.0)).xyz;
+           v_viewNormal = viewNormalMat * a_normal;
+
+           v_color = u_color; //v_color = a_color;
 
            if (u_isRenderSkyBox > 0.5) {
                vec4 clipPos = u_projMat * mat4(mat3(u_viewMat)) * worldPos;
                gl_Position = clipPos.xyww;
            } else {
-               vec4 clipPos = u_projMat * u_viewMat * worldPos;
+               vec4 clipPos = u_projMat * u_viewMat * worldPos; // TODO: FIX
                gl_Position = clipPos;
            }
 
@@ -36,19 +44,25 @@ const char* vertexGBufferShaderTmp = R(
 
 const char* fragmentGBufferShaderTmp = R(
         in vec3 v_position;
-        in vec3 v_color;
+        in vec3 v_viewPosition;
         in vec3 v_normal;
+        in vec3 v_viewNormal;
+        in vec3 v_color;
 
         layout (location = 0) out vec4 gPosition;
         layout (location = 1) out vec4 gNormal;
         layout (location = 2) out vec4 gAlbedo;
+        layout (location = 3) out vec4 gViewPosition;
+        layout (location = 4) out vec4 gViewNormal;
 
         uniform samplerCube u_environmentMap;
         uniform float u_isRenderSkyBox;
 
         void main() {
             gPosition = vec4(v_position, 1.0);
+            gViewPosition = vec4(v_viewPosition, 1.0);
             gNormal = vec4(normalize(v_normal), 1.0);
+            gViewNormal = vec4(normalize(v_viewNormal), 1.0);
 
             if (u_isRenderSkyBox > 0.5) {
                 vec3 envColor = textureLod(u_environmentMap, v_position, 0.0).rgb;

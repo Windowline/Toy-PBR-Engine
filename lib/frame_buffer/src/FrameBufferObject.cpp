@@ -17,9 +17,15 @@ FrameBufferObject::~FrameBufferObject() {
     
     if (_gPosition != INVALID_GL_ID)
         glDeleteTextures(1, &_gPosition);
-    
+
+    if (_gViewPosition != INVALID_GL_ID)
+        glDeleteTextures(1, &_gViewPosition);
+
     if (_gNormal != INVALID_GL_ID)
         glDeleteTextures(1, &_gNormal);
+
+    if (_gViewNormal != INVALID_GL_ID)
+        glDeleteTextures(1, &_gViewNormal);
     
     if (_gAlbedo != INVALID_GL_ID)
         glDeleteTextures(1, &_gAlbedo);
@@ -46,7 +52,7 @@ void FrameBufferObject::init() {
     //TODO: 포멧 효율
     if (_type == Type::GBuffer) {
         
-        // - position color buffer
+        // GL_COLOR_ATTACHMENT0: world position
         glGenTextures(1, &_gPosition);
         glBindTexture(GL_TEXTURE_2D, _gPosition);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, _size.x, _size.y, 0, GL_RGBA, GL_FLOAT, NULL);
@@ -55,7 +61,7 @@ void FrameBufferObject::init() {
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _gPosition, 0);
         GLUtil::GL_ERROR_LOG();
         
-        // - normal color buffer
+        // GL_COLOR_ATTACHMENT1: world normal
         glGenTextures(1, &_gNormal);
         glBindTexture(GL_TEXTURE_2D, _gNormal);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, _size.x, _size.y, 0, GL_RGBA, GL_FLOAT, NULL);
@@ -64,7 +70,7 @@ void FrameBufferObject::init() {
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, _gNormal, 0);
         GLUtil::GLUtil::GL_ERROR_LOG();
         
-        // - color
+        // GL_COLOR_ATTACHMENT2: color
         glGenTextures(1, &_gAlbedo);
         glBindTexture(GL_TEXTURE_2D, _gAlbedo);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, _size.x, _size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
@@ -73,9 +79,26 @@ void FrameBufferObject::init() {
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, _gAlbedo, 0);
         GLUtil::GL_ERROR_LOG();
 
+        // GL_COLOR_ATTACHMENT3: view position
+        glGenTextures(1, &_gViewPosition);
+        glBindTexture(GL_TEXTURE_2D, _gViewPosition);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, _size.x, _size.y, 0, GL_RGBA, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, _gViewPosition, 0);
+        GLUtil::GL_ERROR_LOG();
+
+        // GL_COLOR_ATTACHMENT4 - view normal
+        glGenTextures(1, &_gViewNormal);
+        glBindTexture(GL_TEXTURE_2D, _gViewNormal);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, _size.x, _size.y, 0, GL_RGBA, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_2D, _gViewNormal, 0);
+        GLUtil::GLUtil::GL_ERROR_LOG();
         
-        unsigned int attachments[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
-        glDrawBuffers(3, attachments);
+        unsigned int attachments[5] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4};
+        glDrawBuffers(5, attachments);
         GLUtil::GL_ERROR_LOG();
         
         // then also add render buffer object as depth buffer and check for completeness.

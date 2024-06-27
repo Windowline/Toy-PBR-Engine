@@ -151,8 +151,8 @@ void Scene::update() {
 
 
 void Scene::render() {
-//    renderForwardPBR();
     renderDeferredPBR();
+    //    renderForwardPBR();
 }
 
 void Scene::renderDeferredPBR() {
@@ -247,23 +247,25 @@ void Scene::renderDeferredPBR() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         auto activeShader = shaderManager()->setActiveShader<SSAOShader>(eShaderProgram_SSAO);
-        activeShader->viewMatUniformMatrix4fv(view.pointer());
+//        activeShader->viewMatUniformMatrix4fv(view.pointer());
         activeShader->projMatUniformMatrix4fv(proj.pointer());
         activeShader->samplesUniformVector(_ssaoKernel);
         activeShader->screenSizeUniform2f(_camera->screenSize().x, _camera->screenSize().y);
 
         const int COMPONENT_COUNT = 3;
-        array<GLuint, COMPONENT_COUNT> ssaoInputTextures {_gBuffer->gPositionTexture(),
-                                                          _gBuffer->gNormalTexture(),
-                                                          _ssaoNoiseTexture };
+//        array<GLuint, COMPONENT_COUNT> ssaoInputTextures {_gBuffer->gPositionTexture(),
+//                                                          _gBuffer->gNormalTexture(),
+//                                                          _ssaoNoiseTexture};
+        array<GLuint, COMPONENT_COUNT> ssaoInputTextures {_gBuffer->gViewPositionTexture(),
+                                                          _gBuffer->gViewNormalTexture(),
+                                                          _ssaoNoiseTexture};
+
         for (int i = 0; i < COMPONENT_COUNT; ++i) {
             glActiveTexture(GL_TEXTURE0 + i);
             glBindTexture(GL_TEXTURE_2D, ssaoInputTextures[i]);
         }
 
         _fullQuad->render();
-//        renderQuad(_ssaoFBO->commonTexture(), _camera->screenSize());
-//        return;
     }
 
     //SSAO Blur

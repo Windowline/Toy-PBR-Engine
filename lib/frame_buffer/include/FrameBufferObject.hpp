@@ -34,7 +34,16 @@ public:
     GLuint gAlbedoTexture() const {
         return _gAlbedo;
     }
-    
+
+    GLuint gViewPositionTexture() const {
+        return _gViewPosition;
+    }
+
+    GLuint gViewNormalTexture() const {
+        return _gViewNormal;
+    }
+
+
     GLuint commonTexture() const {
         return _commonTexture;
     }
@@ -49,7 +58,9 @@ private:
     unsigned int _fboId;
 
     unsigned int _gPosition;
+    unsigned int _gViewPosition;
     unsigned int _gNormal;
+    unsigned int _gViewNormal;
     unsigned int _gAlbedo;
     unsigned int _commonTexture;
 

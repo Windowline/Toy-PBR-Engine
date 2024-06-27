@@ -189,11 +189,10 @@ const char* fragmentDeferredPBR = R(
             vec3 worldPos = texture(u_posTexture, v_texCoord).rgb;
             vec3 N = texture(u_normalTexture, v_texCoord).rgb;
             float ssao = texture(u_ssaoTexture,  v_texCoord).r;
-            ssao = 1.0;
 
             if (texture(u_albedoTexture, v_texCoord).a > 0.0) {
                 fragColor = vec4(applyIBL(N, worldPos, albedo, ssao), 1.0);
-                //fragColor = vec4(applyPhong(N, worldPos, albedo, ssao), 1.0);
+//                fragColor = vec4(applyPhong(N, worldPos, albedo, ssao), 1.0);
             } else {
                 fragColor = vec4(albedo, 1.0);
             };
