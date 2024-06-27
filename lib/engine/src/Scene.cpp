@@ -54,10 +54,6 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
         vec3(0.9, 0.8, 0.8)
     };
 
-    _ambientColor = vec3(0.4f, 0.4f, 0.4f);
-    _specularColor = vec3(0.9f, 0.9f, 0.9f);
-    _diffuseColor = vec3(0.5f, 0.5f, 0.5f);
-
     auto roomMesh = make_shared<Room>(1, vec3(0, 1, 0), vec3(0, 0, 0), vec3(1, 0, 0),
                                            vec3(0, 0, 1), vec3(0.5, 0.5, 0.5));
     mat4 roomLocalTransform;
@@ -67,11 +63,6 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
     auto sphereMesh = make_shared<Sphere>(1, vec3(0, 0, 1));
     mat4 sphereLocalTransform = mat4::Scale(8) * mat4::Translate(0.f, 3.f, 0.f);
     _sphere = make_shared<Node>(this, sphereMesh, sphereLocalTransform);
-
-    // cube
-    auto cubeMesh = make_shared<Cube>(1, vec3(0.7, 0.7, 0.7));
-    mat4 cubeLocalTransform = mat4::Scale(20.f) * mat4::RotateY(45.f) * mat4::Translate(40, 0, Z_ALIGN);
-    _cube = make_shared<Node>(this, cubeMesh, cubeLocalTransform);
 
     // model
     auto modelMesh = make_shared<Model>(RESOURCE_DIR + "/objects/monkey/monkey.obj", vec3(0.7, 0.7, 0.7));
@@ -97,7 +88,6 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
     _rootNode = _room;
     _rootNode->setEnabled(false);
     _rootNode->addChild(_sphere);
-//    _rootNode->addChild(_cube);
     _rootNode->addChild(_model);
     _rootNode->addChild(_plane);
 

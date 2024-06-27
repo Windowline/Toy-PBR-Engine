@@ -22,7 +22,6 @@ class Cube;
 class Scene {
 
 public:
-
     Scene(RenderEngine* engine, unsigned int defaultFBO);
 
     virtual ~Scene();
@@ -33,45 +32,19 @@ public:
 
     void updateViewRotation(float yaw, float pitch);
 
-    void visitNodes(std::shared_ptr<Node> node, std::function<void(std::shared_ptr<Node>)> func);
-
     void update();
 
     void render();
 
     std::shared_ptr<ShaderManager> shaderManager();
-
     std::shared_ptr<Camera> camera();
 
-    std::shared_ptr<FrameBufferObject> gBuffer() const {
-        return _gBuffer;
-    }
-
-    const mat4& shadowLightViewProjection() const {
-        return _shadowLightViewProjection;
-    }
-
-    const vec3& ambientColor() const {
-        return _ambientColor;
-    }
-
-    const vec3& diffuseColor() const {
-        return _diffuseColor;
-    }
-
-    const vec3& specularColor() const {
-        return _specularColor;
-    }
-
-    std::vector<vec3> lightPositions() const {
-        return _lightPositions;
-    }
-
 private:
-    void renderPBR();
-    void renderDeferredPhong();
-    void renderDeferredPBR();
+    void visitNodes(std::shared_ptr<Node> node, std::function<void(std::shared_ptr<Node>)> func);
 
+    void renderPBR();
+
+    void renderDeferredPBR();
 
     void renderSkyBox();
 
@@ -87,7 +60,6 @@ private:
     std::shared_ptr<Camera> _camera;
     std::shared_ptr<Node> _rootNode;
     std::shared_ptr<Node> _room;
-    std::shared_ptr<Node> _cube;
     std::shared_ptr<Node> _plane;
     std::shared_ptr<Node> _sphere;
     std::shared_ptr<Node> _lightSphere;//조명에 위치한 흰색 구
@@ -99,9 +71,6 @@ private:
     mat4 _shadowLightProj;
     mat4 _shadowLightViewProjection;
 
-    vec3 _ambientColor;
-    vec3 _diffuseColor;
-    vec3 _specularColor;
     std::vector<vec3> _lightPositions;
     std::vector<vec3> _lightColors;
 

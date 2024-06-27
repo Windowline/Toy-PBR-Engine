@@ -208,32 +208,20 @@ DeferredPBRShader::DeferredPBRShader() {
     this->load();
     basicUniformLoc();
 
-    //uniform
-    posTextureUniformLocation();
-    normalTextureUniformLocation();
-    albedoTextureUniformLocation();
-
-    worldLightPosUniformLocation();
-    worldEyePositionUniformLocation();
-
-    shadowViewProjectionMatUniformLocation();
-
-    lightCountUniformLocation();
-
-    shadowDepthUniformLocation();
-
-    ssaoTextureUniformLocation();
-
+    _posTextureUniformLocation = glGetUniformLocation(_programID, "u_posTexture");
+    _normalTextureUniformLocation = glGetUniformLocation(_programID, "u_normalTexture");
+    _albedoTextureUniformLocation = glGetUniformLocation(_programID, "u_albedoTexture");
+    _shadowDepthUniformLocation = glGetUniformLocation(_programID, "u_shadowDepth");
+    _worldLightPosUniformLocation = glGetUniformLocation(_programID, "u_worldLightPos");
+    _worldEyePositionUniformLocation = glGetUniformLocation(_programID, "u_worldEyePos");
+    _shadowViewProjectionMatLocation = glGetUniformLocation(_programID, "u_shadowViewProjectionMat");
+    _lightCountUniformLocation = glGetUniformLocation(_programID, "u_lightCount");
+    _ssaoTextureUniformLocation = glGetUniformLocation(_programID, "u_ssaoTexture");
 
     //pbr
-//    _albedoLoc = glGetUniformLocation(_programID, "albedo");
     _metallicLoc = glGetUniformLocation(_programID, "u_metallic");
     _roughnessLoc = glGetUniformLocation(_programID, "u_roughness");
-//    _aoLoc = glGetUniformLocation(_programID, "ao");
-
     _lightColorsLoc = glGetUniformLocation(_programID, "u_lightColors");
-//    _camPosLoc = glGetUniformLocation(_programID, "camPos");
-
     _irradianceMapLoc = glGetUniformLocation(_programID, "u_irradianceMap");
     _prefilterMapLoc = glGetUniformLocation(_programID, "u_prefilterMap");
     _brdfLUTLoc = glGetUniformLocation(_programID, "u_brdfLUT");
