@@ -30,9 +30,9 @@ public:
     }
 
 private:
-    GLint _posTextureUniformLoc = -1;
-    GLint _normalTextureUniformLoc = -1;
-    GLint _noiseTextureUniformLoc = -1;
+    GLint _viewPosMapUniformLoc = -1;
+    GLint _viewNormalMapUniformLoc = -1;
+    GLint _noiseMapUniformLoc = -1;
     GLint _samplesUniformLoc = -1;
     GLint _screenSizeUniformLoc = -1;
 };
