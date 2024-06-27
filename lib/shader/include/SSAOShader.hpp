@@ -10,18 +10,6 @@ public:
     bool load() override;
     void useProgram() override;
 
-    void posTextureUniform1i(GLuint value) {
-        glUniform1i(_posTextureUniformLoc, value);
-    }
-
-    void normalTextureUniform1i(GLuint value) {
-        glUniform1i(_normalTextureUniformLoc, value);
-    }
-
-    void noiseTextureUniform1i(GLuint value) {
-        glUniform1i(_noiseTextureUniformLoc, value);
-    }
-
     void samplesUniform3fv(const GLfloat* v, GLsizei count) {
         glUniform3fv(_samplesUniformLoc, count, v);
     }

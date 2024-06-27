@@ -70,8 +70,8 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
     constexpr float spacingX = 23.f;
     constexpr float spacingY = 6.f;
 
-    for (float z = 0; z < 3.f; z += 1.0) {
-        for (float x = 0; x < 3.f; x += 1.0) {
+    for (float z = 0.f; z < 3.f; z += 1.f) {
+        for (float x = 0.f; x < 3.f; x += 1.f) {
             float ty = (2.f - z);
             mat4 sphereTrans = mat4::Translate(15.f + x * spacingX, 6.f + ty * spacingY, Z_ALIGN + z * spacingZ);
             mat4 modelTrans = mat4::Translate(-15.f - x * spacingX, 6.f + ty * spacingY, Z_ALIGN + z * spacingZ);
@@ -106,6 +106,8 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
     _shadowLightProj = mat4::Ortho(-100, 100, -100, 100, 0.1f, 60.f);
     _shadowLightViewProjection = _shadowLightView * _shadowLightProj;
     _shadowDepthBuffer = make_shared<FrameBufferObject>(ivec2(1024, 1024), _defaultFBO, FrameBufferObject::Type::Depth);
+
+    buildSSAOInfo();
 }
 
 Scene::~Scene() {
@@ -122,8 +124,8 @@ void Scene::setScreenSize(int w, int h) {
     glViewport(0, 0, w, h);
     _camera->setScreenRect(Rect{0, 0, w, h});
     _gBuffer = make_shared<FrameBufferObject>(_camera->screenSize(), _defaultFBO, FrameBufferObject::Type::GBuffer);
-
-    buildSSAOInfo();
+    _ssaoFBO = make_shared<FrameBufferObject>(_camera->screenSize(), _defaultFBO, FrameBufferObject::Type::Common);
+    _ssaoBlurFBO = make_shared<FrameBufferObject>(_camera->screenSize(), _defaultFBO, FrameBufferObject::Type::Common);
 }
 
 void Scene::updateViewPosition(int dir, float delta) {
@@ -260,6 +262,8 @@ void Scene::renderDeferredPBR() {
         }
 
         _fullQuad->render();
+//        renderQuad(_ssaoFBO->commonTexture(), _camera->screenSize());
+//        return;
     }
 
     //SSAO Blur
@@ -331,21 +335,18 @@ void Scene::buildSSAOInfo() {
     std::random_device rd;
     std::mt19937 gen(rd()); // Mersenne Twister 엔진을 사용한 무작위 수 생성기
     std::uniform_real_distribution<float> randomFloats(0.0, 1.0);
-
     std::default_random_engine generator;
-    for (unsigned int i = 0; i < 64; ++i) {
-        vec3 sample(
-            randomFloats(generator) * 2.0 - 1.0,
-            randomFloats(generator) * 2.0 - 1.0,
-            randomFloats(generator) //z:[0, 1] -> 접선공간상 반구 형태로 분포 시키기 위하여 0~1 범위를 갖습니다.
-        );
 
-//        sample.normalize();
-//        sample *= randomFloats(generator);
-//        _ssaoKernel.push_back(sample);
-        float scale = (float)i / 64.f;
-        sample.normalize();
-        sample *= lerp(0.1f, 1.f, scale * scale);
+    for (int i = 0; i < 64; ++i) {
+        vec3 sample = vec3(randomFloats(generator) * 2.0 - 1.0,
+                           randomFloats(generator) * 2.0 - 1.0,
+                           randomFloats(generator) //z:[0, 1] -> 접선공간상 반구 형태로 분포 시키기 위하여 0~1 범위를 갖습니다.
+                            ).normalized();
+
+        sample *= randomFloats(generator);
+        float scale = float(i) / 64.0f;
+        scale = lerp(0.1f, 1.0f, scale * scale);
+        sample *= scale;
         _ssaoKernel.emplace_back(sample);
     }
 
@@ -365,9 +366,6 @@ void Scene::buildSSAOInfo() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-    _ssaoFBO = make_shared<FrameBufferObject>(_camera->screenSize(), _defaultFBO, FrameBufferObject::Type::Common);
-    _ssaoBlurFBO = make_shared<FrameBufferObject>(_camera->screenSize(), _defaultFBO, FrameBufferObject::Type::Common);
 }
 
 
