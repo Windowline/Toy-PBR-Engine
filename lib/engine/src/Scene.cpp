@@ -253,7 +253,7 @@ void Scene::render() {
 
 void Scene::renderDeferredPBR() {
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS); // enable seamless cubemap sampling for lower mip levels in the pre-filter map.
+    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
     glEnable(GL_CULL_FACE);
     glFrontFace(GL_CCW);
@@ -389,20 +389,17 @@ void Scene::renderDeferredPBR() {
         glActiveTexture(GL_TEXTURE0 + textureIndex++);
         glBindTexture(GL_TEXTURE_2D, _iblPreprocessor->brdfLUTTexture());
 
-//        activeShader->worldLightPosUniform3fVector(lightPositions());
         activeShader->lightUniform3fVector(_lightPositions, true);
         activeShader->lightUniform3fVector(_lightColors, false);
-
         activeShader->worldEyePositionUniform3f(camera()->eye().x, camera()->eye().y, camera()->eye().z);
         activeShader->shadowViewProjectionMatUniformMatrix4fv(_shadowLightViewProjection.pointer());
-
         activeShader->metallicUniform1f(0.9);
         activeShader->roughnessUniform1f(0.1);
 
         _fullQuad->render();
     }
 
-    //6 빛 구체 렌더링, 효과를 입히지 않고, 본연의 색만 입힙니다.
+    //빛 구체, 라이팅을 입히지 않고 본연의 색만 입힙니다.
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     auto activeShader = shaderManager()->setActiveShader<BasicShader>(eShaderProgram_Default);

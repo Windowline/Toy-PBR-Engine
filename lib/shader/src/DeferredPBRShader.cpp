@@ -208,14 +208,14 @@ DeferredPBRShader::DeferredPBRShader() {
     this->load();
     basicUniformLoc();
 
-    _posTextureUniformLocation = glGetUniformLocation(_programID, "u_posTexture");
-    _normalTextureUniformLocation = glGetUniformLocation(_programID, "u_normalTexture");
-    _albedoTextureUniformLocation = glGetUniformLocation(_programID, "u_albedoTexture");
-    _shadowDepthUniformLocation = glGetUniformLocation(_programID, "u_shadowDepth");
-    _worldLightPosUniformLocation = glGetUniformLocation(_programID, "u_worldLightPos");
-    _worldEyePositionUniformLocation = glGetUniformLocation(_programID, "u_worldEyePos");
-    _shadowViewProjectionMatLocation = glGetUniformLocation(_programID, "u_shadowViewProjectionMat");
-    _lightCountUniformLocation = glGetUniformLocation(_programID, "u_lightCount");
+    _posTextureUniformLoc = glGetUniformLocation(_programID, "u_posTexture");
+    _normalTextureUniformLoc = glGetUniformLocation(_programID, "u_normalTexture");
+    _albedoTextureUniformLoc = glGetUniformLocation(_programID, "u_albedoTexture");
+    _shadowDepthUniformLoc = glGetUniformLocation(_programID, "u_shadowDepth");
+    _worldLightPosUniformLoc = glGetUniformLocation(_programID, "u_worldLightPos");
+    _worldEyePositionUniformLoc = glGetUniformLocation(_programID, "u_worldEyePos");
+    _shadowViewProjectionMatLoc = glGetUniformLocation(_programID, "u_shadowViewProjectionMat");
+    _lightCountUniformLoc = glGetUniformLocation(_programID, "u_lightCount");
     _ssaoTextureUniformLocation = glGetUniformLocation(_programID, "u_ssaoTexture");
 
     //pbr
@@ -248,10 +248,10 @@ void DeferredPBRShader::useProgram() {
     // Deferred
     std::array<GLint, TEXTURE_COUNT> uniformLocs {
             // Deferred
-            _posTextureUniformLocation,
-            _normalTextureUniformLocation,
-            _albedoTextureUniformLocation,
-            _shadowDepthUniformLocation,
+            _posTextureUniformLoc,
+            _normalTextureUniformLoc,
+            _albedoTextureUniformLoc,
+            _shadowDepthUniformLoc,
             _ssaoTextureUniformLocation,
             //PBR
             _irradianceMapLoc,
