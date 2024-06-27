@@ -3,7 +3,8 @@
 #include "Matrix.hpp"
 #include <memory>
 
-class MeshBasic;
+#include "MeshBasic.h"
+
 class Scene;
 
 class Node {
@@ -31,6 +32,10 @@ public:
 
     std::shared_ptr<MeshBasic> const& mesh() const {
         return _mesh;
+    }
+
+    std::string meshName() const {
+        return _mesh->name();
     }
 
     void setEnabled(bool v) {

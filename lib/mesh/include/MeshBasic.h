@@ -24,6 +24,10 @@ public:
         glBindVertexArray(0);
     };
 
+    std::string name() const {
+        return _name;
+    }
+
     virtual ~MeshBasic() {
         if (_VAO != 0)
             glDeleteVertexArrays(1, &_VAO);

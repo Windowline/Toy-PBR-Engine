@@ -47,56 +47,53 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
     _camera = make_shared<Camera>(vec3(0, 0, 130), vec3(0, 0, 0));
 
     _lightPositions = {
-            vec3(-2.f, 30.f, -2.f)
+            vec3(-2.f, 32.f, -2.f)
     };
 
     _lightColors = {
         vec3(0.9, 0.8, 0.8)
     };
 
-    auto roomMesh = make_shared<Room>(1, vec3(0, 1, 0), vec3(0, 0, 0), vec3(1, 0, 0),
-                                           vec3(0, 0, 1), vec3(0.5, 0.5, 0.5), "Room");
-    mat4 roomLocalTransform;
-    _room = make_shared<Node>(this, roomMesh, roomLocalTransform);
+    _rootNode = make_shared<Node>(this, make_shared<MeshBasic>(), mat4());
+    _rootNode->setEnabled(false);
 
-    // shpere
-    auto sphereMesh = make_shared<Sphere>(1, vec3(0, 0, 1), "Sphere");
-    mat4 sphereLocalTransform = mat4::Scale(8) * mat4::Translate(0.f, 3.f, 0.f);
-    _sphere = make_shared<Node>(this, sphereMesh, sphereLocalTransform);
+    auto sphereMesh = make_shared<Sphere>(1, vec3(0.5, 0.2, 1), "Sphere");
+    auto modelMesh = make_shared<Model>(RESOURCE_DIR + "/objects/monkey/monkey.obj", vec3(0.75, 0.75, 0.75), "Model");
+    mat4 scale = mat4::Scale(8.f);
+    constexpr float spacing = 23.f;
 
-    // model
-    auto modelMesh = make_shared<Model>(RESOURCE_DIR + "/objects/monkey/monkey.obj", vec3(0.7, 0.7, 0.7), "Model");
-    mat4 modelLocalTransform = mat4::Scale(6.f) * mat4::Translate(-40, 10.f, Z_ALIGN - 10);
-    _model = make_shared<Node>(this, modelMesh, modelLocalTransform);
+    for (int x = 0; x < 2; ++x) {
+        for (int z = 0; z < 2; ++z) {
+            mat4 sphereTrans = mat4::Translate(15.f + x * spacing, 10.f, Z_ALIGN + z * spacing);
+            mat4 modelTrans = mat4::Translate(-15.f - x * spacing, 10.f, Z_ALIGN + z * spacing);
+            auto sphere = make_shared<Node>(this, sphereMesh, scale * sphereTrans);
+            auto model = make_shared<Node>(this, modelMesh, scale * modelTrans);
+            _rootNode->addChild(sphere);
+            _rootNode->addChild(model);
+        }
+    }
 
     // plane
-    auto plane = make_shared<Plane>(1, vec3(0.8, 0.8, 0.8), "Plane");
     mat4 planeLocalTransform = mat4::Scale(120.f, 120.f, 1.f) * mat4::RotateX(90.f) * mat4::Translate(0, -20, Z_ALIGN);
-    _plane = make_shared<Node>(this, plane, planeLocalTransform);
+    auto plane = make_shared<Node>(this, make_shared<Plane>(1, vec3(0.8, 0.8, 0.8), "Plane"), planeLocalTransform);
+    _rootNode->addChild(plane);
 
-    //방 천장에 위치할 빛 구체를 생성합니다. 라이팅, 그림자 등의 연산에선 제외됩니다.
+    //광원 시각화용
     auto lightSphereMesh = make_shared<Sphere>(1, vec3(1, 1, 1), "LightSphere");
     mat4 lightSphereLocalTransform = mat4::Scale(2.f) * mat4::Translate(_lightPositions.front().x,
                                                                            _lightPositions.front().y,
                                                                            _lightPositions.front().z);
     _lightSphere = make_shared<Node>(this, lightSphereMesh, lightSphereLocalTransform);
     _lightSphere->transformUpdate();
+    _lightSphere->setEnabled(false);
 
     _rootTransformDirty = true;
-
-    /* 만일 쉐도우 뎁스맵 생성시 뎁스버퍼를 붙일 수 없다면, 광원기준 가까운것부터 그려야한다. */
-    _rootNode = _room;
-    _rootNode->setEnabled(false);
-    _rootNode->addChild(_sphere);
-    _rootNode->addChild(_model);
-    _rootNode->addChild(_plane);
 
     _iblPreprocessor = make_unique<IBLPreprocessor>(engine->_shaderManager, RESOURCE_DIR + "/textures/hdr/newport_loft.hdr");
     _iblPreprocessor->build();
 
     _shadowLightView = Camera::createViewMatrix(vec3(0, 0, 0), _lightPositions.front(), vec3(0, 1, 0)); //라이트가 다수일 경우 shadow용 라이트는 첫번째 라이트로 정했습니다.
     _shadowLightProj = mat4::Ortho(-100, 100, -100, 100, 0.1f, 60.f);
-
     _shadowLightViewProjection = _shadowLightView * _shadowLightProj;
     _shadowDepthBuffer = make_shared<FrameBufferObject>(ivec2(1024, 1024), _defaultFBO, FrameBufferObject::Type::Depth);
 }
@@ -164,7 +161,7 @@ void Scene::renderDeferredPBR() {
     const mat4& view = _camera->viewMat();
     mat4 identity;
 
-    // depth
+    // depth buffer
     {
         _shadowDepthBuffer->bindWithViewport();
         glClearColor(0.f, 0.f, 1.f, 1.f);
@@ -200,6 +197,7 @@ void Scene::renderDeferredPBR() {
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_CUBE_MAP, _iblPreprocessor->envCubemap());
+
         _fullCube->render();
 
         glDepthFunc(GL_LESS);
@@ -448,29 +446,13 @@ void Scene::renderForwardPBR() {
     activeShader->projMatUniformMatrix4fv(proj.pointer());
     activeShader->viewMatUniformMatrix4fv(view.pointer());
 
-    //#### render sample spheres
-    int nrRows = 7;
-    int nrColumns = 7;
-    float spacing = 2.5 * _sphere->worldTransform().getScale().x;
-    for (int row = 0; row < nrRows; ++row) {
-        activeShader->metallicUniform1f((float)row / (float)nrRows);
-        for (int col = 0; col < nrColumns; ++col) {
-            activeShader->roughnessUniform1f(clamp((float)col / (float)nrColumns, 0.05f, 1.0f));
-            mat4 world = mat4::Scale(_sphere->worldTransform().getScale().x) * mat4::Translate((float)(col - (nrColumns / 2)) * spacing, (float)(row - (nrRows / 2)) * spacing, -100.0f);
-            activeShader->worldMatUniformMatrix4fv(world.pointer());
-            activeShader->worldNormalMatUniformMatrix4fv(world.invert().transposed().pointer());
-            _sphere->render();
+    visitNodes(_rootNode, [wShader = weak_ptr<PBRShader>(activeShader)](const shared_ptr<Node>& node) {
+        if (auto shader = wShader.lock()) {
+            shader->worldMatUniformMatrix4fv(node->worldTransform().pointer());
+            shader->worldNormalMatUniformMatrix4fv(node->worldTransform().invert().transposed().pointer());
+            node->render();
         }
-    }
-
-    //#### render models
-//    visitNodes(_rootNode, [wShader = weak_ptr<PBRShader>(activeShader)](const shared_ptr<Node>& node) {
-//        if (auto shader = wShader.lock()) {
-//            shader->worldMatUniformMatrix4fv(node->worldTransform().pointer());
-//            shader->worldNormalMatUniformMatrix4fv(node->worldTransform().invert().transposed().pointer());
-//            node->render();
-//        }
-//    });
+    });
 
     glDisable(GL_CULL_FACE);
     renderSkyBox();

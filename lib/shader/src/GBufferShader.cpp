@@ -9,7 +9,6 @@ const char* vertexGBufferShaderTmp = R(
         uniform mat4 u_viewMat;
         uniform mat4 u_projMat;
         uniform mat4 u_worldNormalMat;
-
         uniform float u_isRenderSkyBox;
 
         out vec3 v_color;
