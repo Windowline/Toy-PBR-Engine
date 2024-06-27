@@ -9,8 +9,8 @@
 #include <array>
 
 IBLPreprocessor::IBLPreprocessor(shared_ptr<ShaderManager> shaderManager, const string& path) : _shaderManager(shaderManager), _path(path) {
-    _fullCube = make_unique<Cube>(2, vec3(1, 1, 1));
-    _fullQuad = make_unique<FullQuad>();
+    _fullCube = make_unique<Cube>(2, vec3(1, 1, 1), "FullCube_IBL");
+    _fullQuad = make_unique<FullQuad>("FullQuad_IBL");
 }
 
 void IBLPreprocessor::build() {

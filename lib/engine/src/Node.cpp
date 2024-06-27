@@ -1,9 +1,9 @@
 #include "Node.hpp"
-#include "BasicMeshInterface.h"
+#include "MeshBasic.h"
 
 using namespace std;
 
-Node::Node(Scene *scene, shared_ptr<BasicMeshInterface> mesh, mat4 localTransform)
+Node::Node(Scene *scene, shared_ptr<MeshBasic> mesh, mat4 localTransform)
         : _scene(scene), _mesh(std::move(mesh)), _localTransform(std::move(localTransform)),
           _parent(nullptr) {
 

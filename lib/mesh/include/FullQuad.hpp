@@ -1,15 +1,12 @@
 #ifndef TOYRENDERER_FULLQUAD_H
 #define TOYRENDERER_FULLQUAD_H
+#include "MeshBasic.h"
 
-class FullQuad {
+class FullQuad : public MeshBasic {
 public:
-    FullQuad();
-    void render() const;
+    FullQuad(std::string name);
+    void render() const override;
 
-private:
-    unsigned int _VAO;
-    unsigned int _VBO;
-    unsigned int _EBO;
 };
 
 

@@ -4,7 +4,9 @@
 using namespace std;
 
 
-Plane::Plane(float size, vec3 color) : _size(size), _color(std::move(color)) {
+Plane::Plane(float size, vec3 color, string name) : _size(size), _color(std::move(color)) {
+    _name = name;
+
     float hSize = _size / 2.f;
 
     vector<vec3> positions = {
@@ -44,42 +46,5 @@ Plane::Plane(float size, vec3 color) : _size(size), _color(std::move(color)) {
          0,  2,  3,
     };
 
-    _indSize = indices.size();
-
-    glGenVertexArrays(1, &_VAO);
-    glGenBuffers(1, &_VBO);
-    glGenBuffers(1, &_EBO);
-
-    glBindVertexArray(_VAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, _VBO);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
-
-    //pos
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    //color
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-    //normal
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(6 * sizeof(float)));
-    glEnableVertexAttribArray(2);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-
-}
-
-void Plane::render() const {
-    glBindVertexArray(_VAO);
-    glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
-    glEnableVertexAttribArray(2);
-
-    glDrawElements(GL_TRIANGLES, _indSize, GL_UNSIGNED_INT, 0);
-
-    glBindVertexArray(0);
+    MeshBasic::buildVAO(positions, colors, normals, indices);
 }

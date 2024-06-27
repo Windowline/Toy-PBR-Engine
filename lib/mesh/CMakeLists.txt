@@ -1,6 +1,4 @@
 add_library(mesh STATIC
-        include/Triangle.hpp
-        src/Triangle.cpp
 
         include/Cube.hpp
         src/Cube.cpp
@@ -12,7 +10,7 @@ add_library(mesh STATIC
         include/Sphere.hpp
 
         src/Sphere.cpp
-        include/BasicMeshInterface.h
+        include/MeshBasic.h
 
         include/Room.hpp
         src/Room.cpp

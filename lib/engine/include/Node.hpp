@@ -3,13 +3,13 @@
 #include "Matrix.hpp"
 #include <memory>
 
-class BasicMeshInterface;
+class MeshBasic;
 class Scene;
 
 class Node {
 
 public:
-    Node(Scene *scene, std::shared_ptr<BasicMeshInterface> mesh, mat4 localTransform);
+    Node(Scene *scene, std::shared_ptr<MeshBasic> mesh, mat4 localTransform);
 
     virtual ~Node() {}
 
@@ -29,7 +29,7 @@ public:
         return _children;
     }
 
-    std::shared_ptr<BasicMeshInterface> const& mesh() const {
+    std::shared_ptr<MeshBasic> const& mesh() const {
         return _mesh;
     }
 
@@ -43,7 +43,7 @@ private:
     Scene* _scene;
     Node* _parent;
 
-    std::shared_ptr<BasicMeshInterface> _mesh;
+    std::shared_ptr<MeshBasic> _mesh;
     std::vector<std::shared_ptr<Node>> _children;
 
     bool _enabled = true;

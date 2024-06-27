@@ -5,7 +5,9 @@
 
 using namespace std;
 
-Sphere::Sphere(float radius, vec3 color) : _radius(radius), _color(color) {
+Sphere::Sphere(float radius, vec3 color, string name) : _radius(radius), _color(color) {
+    _name = name;
+
     constexpr unsigned int X_SEGMENTS = 64;
     constexpr unsigned int Y_SEGMENTS = 64;
     constexpr float PI = 3.14159265359f;
@@ -15,10 +17,12 @@ Sphere::Sphere(float radius, vec3 color) : _radius(radius), _color(color) {
     glGenBuffers(1, &_EBO);
 
     vector<vec3> positions;
+    vector<vec3> colors;
     vector<vec3> normals;
     vector<unsigned int> indices;
 
     positions.reserve((X_SEGMENTS + 1) * (Y_SEGMENTS + 1));
+    colors.reserve((X_SEGMENTS + 1) * (Y_SEGMENTS + 1));
     normals.reserve((X_SEGMENTS + 1) * (Y_SEGMENTS + 1));
     indices.reserve(Y_SEGMENTS * (X_SEGMENTS + 1) * 2);
 
@@ -33,6 +37,7 @@ Sphere::Sphere(float radius, vec3 color) : _radius(radius), _color(color) {
             vec3 p = vec3(xPos, yPos, zPos).normalized() * radius;
 
             positions.push_back(vec3(p.x, p.y, p.z));
+            colors.push_back(_color);
             normals.push_back(vec3(xPos, yPos, zPos));
         }
     }
@@ -53,44 +58,8 @@ Sphere::Sphere(float radius, vec3 color) : _radius(radius), _color(color) {
         oddRow = !oddRow;
     }
 
-    _indSize = static_cast<unsigned int>(indices.size());
-
-    vector<float> vertices;
-    vertices.reserve(3 * positions.size());
-
-    for (unsigned int i = 0; i < positions.size(); ++i) {
-        vertices.push_back(positions[i].x);
-        vertices.push_back(positions[i].y);
-        vertices.push_back(positions[i].z);
-
-        vertices.push_back(_color.x);
-        vertices.push_back(_color.y);
-        vertices.push_back(_color.z);
-
-        vertices.push_back(normals[i].x);
-        vertices.push_back(normals[i].y);
-        vertices.push_back(normals[i].z);
-    }
-
-    glBindVertexArray(_VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, _VBO);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), &vertices[0], GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
-
-    unsigned int stride = (3 + 3 + 3) * sizeof(float);
-
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0);
-
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (void*)(3 * sizeof(float)));
-
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride, (void*)(6 * sizeof(float)));
+    MeshBasic::buildVAO(positions, colors, normals, indices);
 }
-
-
 
 void Sphere::render() const {
     glBindVertexArray(_VAO);

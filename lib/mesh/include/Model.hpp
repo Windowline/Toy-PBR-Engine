@@ -1,7 +1,7 @@
 #ifndef TOYRENDERER_MODEL_HPP
 #define TOYRENDERER_MODEL_HPP
 
-#include "BasicMeshInterface.h"
+#include "MeshBasic.h"
 #include "Vector.hpp"
 
 #include <glad/glad.h>
@@ -199,7 +199,7 @@ private:
 
 
 
-class Model : public BasicMeshInterface
+class Model : public MeshBasic
 {
 public:
     // model data
@@ -216,17 +216,10 @@ public:
         loadModel(path);
     }
 
-    // draws the model, and thus all its meshes
-    void render() const
-    {
+    virtual void render() const override {
         for(unsigned int i = 0; i < meshes.size(); i++)
             meshes[i].render();
     }
-//    void Draw(Shader &shader)
-//    {
-//        for(unsigned int i = 0; i < meshes.size(); i++)
-//            meshes[i].Draw(shader);
-//    }
 
 private:
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.

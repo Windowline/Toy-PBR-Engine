@@ -40,18 +40,15 @@ public:
     std::shared_ptr<Camera> camera();
 
 private:
-    void visitNodes(std::shared_ptr<Node> node, std::function<void(std::shared_ptr<Node>)> func);
-
-    void renderPBR();
-
     void renderDeferredPBR();
-
-    void renderSkyBox();
-
+    void visitNodes(std::shared_ptr<Node> node, std::function<void(std::shared_ptr<Node>)> func);
     void buildSSAOInfo();
 
-    void debugIBL(); //for debug
-    void renderQuad(unsigned int texture, ivec2 screenSize); //for debug
+    //for debug
+    void renderForwardPBR();
+    void renderSkyBox();
+    void debugIBL();
+    void renderQuad(unsigned int texture, ivec2 screenSize);
 
     RenderEngine* _engine;
     unsigned int _defaultFBO;

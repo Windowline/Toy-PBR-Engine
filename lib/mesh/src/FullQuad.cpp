@@ -3,8 +3,10 @@
 #include <glad/glad.h>
 #include <vector>
 
-FullQuad::FullQuad() {
-    std::vector<float> vertices = {
+FullQuad::FullQuad(string name) {
+    _name = name;
+
+    vector<float> vertices = {
             -1.f, -1.f, 0.f, 0.f, // lb
             -1.f, 1.f, 0.f, 1.f, // lt
             1.f, -1.f, 1.f, 0.f, // rb

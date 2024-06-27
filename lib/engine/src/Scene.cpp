@@ -40,8 +40,8 @@ constexpr float Z_ALIGN = 0.f;
 
 Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaultFBO(defaultFBO)
 {
-    _fullCube = make_unique<Cube>(2, vec3(1, 1, 1));
-    _fullQuad = make_unique<FullQuad>();
+    _fullCube = make_unique<Cube>(2, vec3(1, 1, 1), "FullCube");
+    _fullQuad = make_unique<FullQuad>("FullQuad");
     _textureShader = make_unique<TexturePassShader>();
 
     _camera = make_shared<Camera>(vec3(0, 0, 130), vec3(0, 0, 0));
@@ -55,27 +55,27 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
     };
 
     auto roomMesh = make_shared<Room>(1, vec3(0, 1, 0), vec3(0, 0, 0), vec3(1, 0, 0),
-                                           vec3(0, 0, 1), vec3(0.5, 0.5, 0.5));
+                                           vec3(0, 0, 1), vec3(0.5, 0.5, 0.5), "Room");
     mat4 roomLocalTransform;
     _room = make_shared<Node>(this, roomMesh, roomLocalTransform);
 
     // shpere
-    auto sphereMesh = make_shared<Sphere>(1, vec3(0, 0, 1));
+    auto sphereMesh = make_shared<Sphere>(1, vec3(0, 0, 1), "Sphere");
     mat4 sphereLocalTransform = mat4::Scale(8) * mat4::Translate(0.f, 3.f, 0.f);
     _sphere = make_shared<Node>(this, sphereMesh, sphereLocalTransform);
 
     // model
-    auto modelMesh = make_shared<Model>(RESOURCE_DIR + "/objects/monkey/monkey.obj", vec3(0.7, 0.7, 0.7));
+    auto modelMesh = make_shared<Model>(RESOURCE_DIR + "/objects/monkey/monkey.obj", vec3(0.7, 0.7, 0.7), "Model");
     mat4 modelLocalTransform = mat4::Scale(6.f) * mat4::Translate(-40, 10.f, Z_ALIGN - 10);
     _model = make_shared<Node>(this, modelMesh, modelLocalTransform);
 
     // plane
-    auto plane = make_shared<Plane>(1, vec3(0.8, 0.8, 0.8));
+    auto plane = make_shared<Plane>(1, vec3(0.8, 0.8, 0.8), "Plane");
     mat4 planeLocalTransform = mat4::Scale(120.f, 120.f, 1.f) * mat4::RotateX(90.f) * mat4::Translate(0, -20, Z_ALIGN);
     _plane = make_shared<Node>(this, plane, planeLocalTransform);
 
     //방 천장에 위치할 빛 구체를 생성합니다. 라이팅, 그림자 등의 연산에선 제외됩니다.
-    auto lightSphereMesh = make_shared<Sphere>(1, vec3(1, 1, 1));
+    auto lightSphereMesh = make_shared<Sphere>(1, vec3(1, 1, 1), "LightSphere");
     mat4 lightSphereLocalTransform = mat4::Scale(2.f) * mat4::Translate(_lightPositions.front().x,
                                                                            _lightPositions.front().y,
                                                                            _lightPositions.front().z);
@@ -144,112 +144,9 @@ void Scene::update() {
 
 
 void Scene::render() {
-//    renderPBR();
+//    renderForwardPBR();
     renderDeferredPBR();
 }
-
-//void Scene::renderPBR() {
-//    // configure global opengl state
-//    // -----------------------------
-//    glEnable(GL_DEPTH_TEST);
-//    glDepthFunc(GL_LEQUAL); // set depth function to less than AND equal for skybox depth trick.
-//    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS); // enable seamless cubemap sampling for lower mip levels in the pre-filter map.
-//
-//    glEnable(GL_CULL_FACE);
-//    glFrontFace(GL_CCW);
-//    glCullFace(GL_BACK);
-//
-//    // default buffer clear
-//    glClearColor(0.f, 1.f, 0.f, 1.f);
-//    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-//
-//    // renderPBR
-//    constexpr int LIGHT_COUNT = 4;
-//    vec3 lightPositions[] = {
-//            vec3(-10.0f,  10.0f, 10.0f),
-//            vec3( 10.0f,  10.0f, 10.0f),
-//            vec3(-10.0f, -10.0f, 10.0f),
-//            vec3( 10.0f, -10.0f, 10.0f),
-//    };
-//    vec3 lightColors[] = {
-//            vec3(300.0f, 300.0f, 300.0f),
-//            vec3(300.0f, 300.0f, 300.0f),
-//            vec3(300.0f, 300.0f, 300.0f),
-//            vec3(300.0f, 300.0f, 300.0f)
-//    };
-//
-//    float* lightPosArray = new float[LIGHT_COUNT * 3];
-//    float* lightColorArray = new float[LIGHT_COUNT * 3];
-//    int idxPos = 0;
-//    int idxColor = 0;
-//
-//    for (int i = 0; i < 4; ++i) {
-//        auto& lightPos = lightPositions[i];
-//        auto& lightColor = lightColors[i];
-//
-//        lightPosArray[idxPos++] = lightPos.x;
-//        lightPosArray[idxPos++] = lightPos.y;
-//        lightPosArray[idxPos++] = lightPos.z;
-//
-//        lightColorArray[idxColor++] = lightColor.x;
-//        lightColorArray[idxColor++] = lightColor.y;
-//        lightColorArray[idxColor++] = lightColor.z;
-//    }
-//
-//    const mat4& proj = _camera->projMat();
-//    const mat4& view = _camera->viewMat();
-//
-//    auto activeShader = shaderManager()->setActiveShader<PBRShader>(eShaderProgram_PBR);
-//    glActiveTexture(GL_TEXTURE0);
-//    glBindTexture(GL_TEXTURE_CUBE_MAP, _iblPreprocessor->irradianceCubeMap());
-//    glActiveTexture(GL_TEXTURE1);
-//    glBindTexture(GL_TEXTURE_CUBE_MAP, _iblPreprocessor->prefilterCubeMap());
-//    glActiveTexture(GL_TEXTURE2);
-//    glBindTexture(GL_TEXTURE_2D, _iblPreprocessor->brdfLUTTexture());
-//
-//    activeShader->lightPositionsUniformVec3fv(lightPosArray, LIGHT_COUNT);
-//    activeShader->lightColorsUniformVec3fv(lightColorArray, LIGHT_COUNT);
-//
-//    delete[] lightPosArray;
-//    delete[] lightColorArray;
-//
-//    activeShader->camPosUniform3f(_camera->eye().x, _camera->eye().y, _camera->eye().z);
-//    activeShader->metallicUniform1f(0.9);
-//    activeShader->roughnessUniform1f(0.1);
-//    activeShader->albedoUniform3f(0.5, 0.0, 0.0);
-//    activeShader->aoUniform1f(1.f);
-//
-//    activeShader->projMatUniformMatrix4fv(proj.pointer());
-//    activeShader->viewMatUniformMatrix4fv(view.pointer());
-//
-//    //#### render sample spheres
-////    int nrRows = 7;
-////    int nrColumns = 7;
-////    float spacing = 2.5 * _sphere->worldTransform().getScale().x;
-////    for (int row = 0; row < nrRows; ++row) {
-////        activeShader->metallicUniform1f((float)row / (float)nrRows);
-////        for (int col = 0; col < nrColumns; ++col) {
-////            activeShader->roughnessUniform1f(clamp((float)col / (float)nrColumns, 0.05f, 1.0f));
-////            mat4 world = mat4::Scale(_sphere->worldTransform().getScale().x) * mat4::Translate((float)(col - (nrColumns / 2)) * spacing, (float)(row - (nrRows / 2)) * spacing, -100.0f);
-////            activeShader->worldMatUniformMatrix4fv(world.pointer());
-////            activeShader->worldNormalMatUniformMatrix4fv(world.invert().transposed().pointer());
-////            _sphere->render();
-////        }
-////    }
-//
-//    //#### render models
-//    visitNodes(_rootNode, [wShader = weak_ptr<PBRShader>(activeShader)](const shared_ptr<Node>& node) {
-//        if (auto shader = wShader.lock()) {
-//            shader->worldMatUniformMatrix4fv(node->worldTransform().pointer());
-//            shader->worldNormalMatUniformMatrix4fv(node->worldTransform().invert().transposed().pointer());
-//            node->render();
-//        }
-//    });
-//
-//    glDisable(GL_CULL_FACE);
-//    renderSkyBox();
-//    glDepthFunc(GL_LESS); // set depth function back to default
-//}
 
 void Scene::renderDeferredPBR() {
     glEnable(GL_DEPTH_TEST);
@@ -410,20 +307,6 @@ void Scene::renderDeferredPBR() {
     _lightSphere->render();
 }
 
-
-void Scene::renderSkyBox() {
-    const mat4& proj = _camera->projMat();
-    const mat4& viewRot = _camera->viewRotMat();
-
-    auto activeShader = shaderManager()->setActiveShader<BGShader>(eShaderProgram_BG);
-    activeShader->projMatUniformMatrix4fv(proj.pointer());
-    activeShader->viewMatUniformMatrix4fv(viewRot.pointer());
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, _iblPreprocessor->envCubemap());
-    _fullCube->render();
-}
-
 //Screen Space Ambient Occlusion을 위한 정보를 빌드합니다.
 void Scene::buildSSAOInfo() {
     auto lerp = [](float a, float b, float f) -> float {
@@ -492,6 +375,124 @@ shared_ptr<Camera> Scene::camera() {
 }
 
 //////////////////// For Debug ////////////////////////////
+
+void Scene::renderForwardPBR() {
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
+    glEnable(GL_CULL_FACE);
+    glFrontFace(GL_CCW);
+    glCullFace(GL_BACK);
+
+    // default buffer clear
+    glClearColor(0.f, 1.f, 0.f, 1.f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // renderForwardPBR
+    constexpr int LIGHT_COUNT = 4;
+    vec3 lightPositions[] = {
+            vec3(-10.0f,  10.0f, 10.0f),
+            vec3( 10.0f,  10.0f, 10.0f),
+            vec3(-10.0f, -10.0f, 10.0f),
+            vec3( 10.0f, -10.0f, 10.0f),
+    };
+    vec3 lightColors[] = {
+            vec3(300.0f, 300.0f, 300.0f),
+            vec3(300.0f, 300.0f, 300.0f),
+            vec3(300.0f, 300.0f, 300.0f),
+            vec3(300.0f, 300.0f, 300.0f)
+    };
+
+    float* lightPosArray = new float[LIGHT_COUNT * 3];
+    float* lightColorArray = new float[LIGHT_COUNT * 3];
+    int idxPos = 0;
+    int idxColor = 0;
+
+    for (int i = 0; i < 4; ++i) {
+        auto& lightPos = lightPositions[i];
+        auto& lightColor = lightColors[i];
+
+        lightPosArray[idxPos++] = lightPos.x;
+        lightPosArray[idxPos++] = lightPos.y;
+        lightPosArray[idxPos++] = lightPos.z;
+
+        lightColorArray[idxColor++] = lightColor.x;
+        lightColorArray[idxColor++] = lightColor.y;
+        lightColorArray[idxColor++] = lightColor.z;
+    }
+
+    const mat4& proj = _camera->projMat();
+    const mat4& view = _camera->viewMat();
+
+    auto activeShader = shaderManager()->setActiveShader<PBRShader>(eShaderProgram_PBR);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, _iblPreprocessor->irradianceCubeMap());
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, _iblPreprocessor->prefilterCubeMap());
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, _iblPreprocessor->brdfLUTTexture());
+
+    activeShader->lightPositionsUniformVec3fv(lightPosArray, LIGHT_COUNT);
+    activeShader->lightColorsUniformVec3fv(lightColorArray, LIGHT_COUNT);
+
+    delete[] lightPosArray;
+    delete[] lightColorArray;
+
+    activeShader->camPosUniform3f(_camera->eye().x, _camera->eye().y, _camera->eye().z);
+    activeShader->metallicUniform1f(0.9);
+    activeShader->roughnessUniform1f(0.1);
+    activeShader->albedoUniform3f(0.5, 0.0, 0.0);
+    activeShader->aoUniform1f(1.f);
+
+    activeShader->projMatUniformMatrix4fv(proj.pointer());
+    activeShader->viewMatUniformMatrix4fv(view.pointer());
+
+    //#### render sample spheres
+    int nrRows = 7;
+    int nrColumns = 7;
+    float spacing = 2.5 * _sphere->worldTransform().getScale().x;
+    for (int row = 0; row < nrRows; ++row) {
+        activeShader->metallicUniform1f((float)row / (float)nrRows);
+        for (int col = 0; col < nrColumns; ++col) {
+            activeShader->roughnessUniform1f(clamp((float)col / (float)nrColumns, 0.05f, 1.0f));
+            mat4 world = mat4::Scale(_sphere->worldTransform().getScale().x) * mat4::Translate((float)(col - (nrColumns / 2)) * spacing, (float)(row - (nrRows / 2)) * spacing, -100.0f);
+            activeShader->worldMatUniformMatrix4fv(world.pointer());
+            activeShader->worldNormalMatUniformMatrix4fv(world.invert().transposed().pointer());
+            _sphere->render();
+        }
+    }
+
+    //#### render models
+//    visitNodes(_rootNode, [wShader = weak_ptr<PBRShader>(activeShader)](const shared_ptr<Node>& node) {
+//        if (auto shader = wShader.lock()) {
+//            shader->worldMatUniformMatrix4fv(node->worldTransform().pointer());
+//            shader->worldNormalMatUniformMatrix4fv(node->worldTransform().invert().transposed().pointer());
+//            node->render();
+//        }
+//    });
+
+    glDisable(GL_CULL_FACE);
+    renderSkyBox();
+    glDepthFunc(GL_LESS); // set depth function back to default
+}
+
+
+void Scene::renderSkyBox() {
+    const mat4& proj = _camera->projMat();
+    const mat4& viewRot = _camera->viewRotMat();
+
+    auto activeShader = shaderManager()->setActiveShader<BGShader>(eShaderProgram_BG);
+    activeShader->projMatUniformMatrix4fv(proj.pointer());
+    activeShader->viewMatUniformMatrix4fv(viewRot.pointer());
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, _iblPreprocessor->envCubemap());
+    _fullCube->render();
+}
+
+
+
 void Scene::debugIBL() {
 //    renderQuad(_iblPreprocessor->hdrTexture(), _camera->screenSize());
 //    renderQuad(_iblPreprocessor->irradianceCubeMap(), _camera->screenSize()); // ?

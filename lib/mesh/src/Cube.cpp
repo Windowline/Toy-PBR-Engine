@@ -1,7 +1,8 @@
 #include "Cube.hpp"
 #include <glad/glad.h>
 
-Cube::Cube(int size, vec3 color) : _VAO(-1), _VBO(-1), _EBO(-1), _size(size), _color(color) {
+Cube::Cube(int size, vec3 color, string name) : _size(size), _color(color) {
+    _name = name;
     float hSize = _size / 2.f;
 
     std::vector<vec3> positions = {
@@ -80,62 +81,5 @@ Cube::Cube(int size, vec3 color) : _VAO(-1), _VBO(-1), _EBO(-1), _size(size), _c
       20, 21, 22,     20, 22, 23,   // left
     };
 
-    _indSize = indices.size();
-
-    //create vao
-    std::vector<float> vertices;
-
-    for (int i = 0; i < positions.size(); ++i) {
-        auto position = positions[i];
-        auto color = colors[i];
-        auto normal = normals[i];
-
-        vertices.push_back(position.x);
-        vertices.push_back(position.y);
-        vertices.push_back(position.z);
-
-        vertices.push_back(color.x);
-        vertices.push_back(color.y);
-        vertices.push_back(color.z);
-
-        vertices.push_back(normal.x);
-        vertices.push_back(normal.y);
-        vertices.push_back(normal.z);
-    }
-
-    glGenVertexArrays(1, &_VAO);
-    glGenBuffers(1, &_VBO);
-    glGenBuffers(1, &_EBO);
-
-    glBindVertexArray(_VAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, _VBO);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
-
-    //pos
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    //color
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-    //normal
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(6 * sizeof(float)));
-    glEnableVertexAttribArray(2);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-}
-
-void Cube::render() const {
-    glBindVertexArray(_VAO);
-    glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
-    glEnableVertexAttribArray(2);
-
-    glDrawElements(GL_TRIANGLES, _indSize, GL_UNSIGNED_INT, 0);
-
-    glBindVertexArray(0);
+    MeshBasic::buildVAO(positions, colors, normals, indices);
 }
