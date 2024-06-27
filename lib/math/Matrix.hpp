@@ -422,37 +422,6 @@ struct Matrix4 {
         return m;
     }
 
-
-    static Matrix4<T> Perspective(T fovy, T aspect, T zNear, T zFar)
-    {
-        T tanHalfFovy = tan(fovy / static_cast<T>(2));
-        Matrix4<T> ret;
-
-//        Matrix4<T> ret = Matrix4<T>::zero();
-
-        ret.x.x = static_cast<T>(1) / (aspect * tanHalfFovy);
-        ret.y.y = static_cast<T>(1) / (tanHalfFovy);
-        ret.z.z = - (zFar + zNear) / (zFar - zNear);
-
-        ret.z.w = - static_cast<T>(1);
-        ret.w.z = (static_cast<T>(2) * zFar * zNear) / (zFar - zNear);
-
-//        ret.w.z = - static_cast<T>(1);
-//        ret.z.w = (static_cast<T>(2) * zFar * zNear) / (zFar - zNear);
-
-        return ret;
-
-//        assert(abs(aspect - std::numeric_limits<T>::epsilon()) > static_cast<T>(0));
-//        T const tanHalfFovy = tan(fovy / static_cast<T>(2));
-//        mat<4, 4, T, defaultp> Result(static_cast<T>(0));
-//        Result[0][0] = static_cast<T>(1) / (aspect * tanHalfFovy);
-//        Result[1][1] = static_cast<T>(1) / (tanHalfFovy);
-//        Result[2][2] = - (zFar + zNear) / (zFar - zNear);
-//        Result[2][3] = - static_cast<T>(1);
-//        Result[3][2] = - (static_cast<T>(2) * zFar * zNear) / (zFar - zNear);
-//        return Result;
-    }
-
     static void Print(Matrix4<T> mat) {
         std::cout << "========================================================" << std::endl;
         std::cout << std::fixed << std::setprecision(2) << mat.x.x << " ";
