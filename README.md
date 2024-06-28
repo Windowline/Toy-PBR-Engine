@@ -6,10 +6,10 @@
 - Control UX
   - Mouse: Rotate view-space basis 
   - Keybord
-    - W: Move to z-direction of view-space
-    - S: Move to negative z-direction of view-space
-    - A: Move to left of view-space
-    - D: Move to right of view-space
+    - W: Move to Z of view-space
+    - S: Move to -Z of view-space
+    - A: Move to -X of view-space
+    - D: Move to X of view-space
 
 
 
@@ -25,7 +25,7 @@
 ./vcpkg install stb
 ```
 
-## Build && Run
+## Build & Run
 ```
 mkdir build
 cd build
