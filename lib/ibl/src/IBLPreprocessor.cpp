@@ -14,15 +14,10 @@ IBLPreprocessor::IBLPreprocessor(shared_ptr<ShaderManager> shaderManager, const 
 }
 
 void IBLPreprocessor::build() {
-    // configure global opengl state
-    // -----------------------------
     glEnable(GL_DEPTH_TEST);
-    // set depth function to less than AND equal for skybox depth trick.
-    glDepthFunc(GL_LEQUAL);
-    // enable seamless cubemap sampling for lower mip levels in the pre-filter map.
+    glDepthFunc(GL_LEQUAL); // set depth function to less than AND equal for skybox depth trick.
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
-    // pbr: set up projection and view matrices for capturing data onto the 6 cubemap face directions
     array<mat4, 6> captureViews = {
             Camera::createViewMatrix(vec3(1.0f,  0.0f,  0.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f)),
             Camera::createViewMatrix(vec3(-1.0f, 0.0f,  0.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, -1.0f, 0.0f)),
