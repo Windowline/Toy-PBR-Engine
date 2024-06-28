@@ -1,6 +1,16 @@
-# Small 3D Engine(Backend: OpenGL)
+# Toy Real Time PBR Engine
+- Cross Platform Desktop Sample 
+- Backend API: OpenGL
+- Rendering Effects: Shadow, SSAO(Screen-Space Ambient Occlusion), IBL, Deferred Rendering
 
-##
+- Control UX
+  - Mouse: Rotate view-space basis 
+  - Keybord
+    - W: Move to z-direction of view-space
+    - S: Move to negative z-direction of view-space
+    - A: Move to left of view-space
+    - D: Move to right of view-space
+
 
 
 ## Build Tools
