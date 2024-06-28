@@ -4,11 +4,10 @@
 - Rendering Depandancy Graph
   ![image](https://github.com/Windowline/ToyRenderer/assets/17508384/0c099a47-a9aa-44df-b520-35fddf136fc0)
 
-- Output
-  Metalic: 0.9 / Roughness: 0.1
+- [Metalic: 0.9 / Roughness: 0.1]
   ![image](https://github.com/Windowline/ToyRenderer/assets/17508384/28df3a4e-9c4d-4cca-bb7d-85bf422d8151)
 
-  Metalic: 0.6 / Roughness: 0.4
+- [Metalic: 0.6 / Roughness: 0.4]
   ![image](https://github.com/Windowline/ToyRenderer/assets/17508384/9166d4bf-ed49-4649-96b0-6dce5239d380)
 
 
