@@ -1,8 +1,8 @@
 # Toy Real Time PBR Engine
 - Cross Platform Desktop Sample (Backend: OpenGL)
   
-- Rendering Depandancy Graph
-  ![image](https://github.com/Windowline/ToyRenderer/assets/17508384/0c099a47-a9aa-44df-b520-35fddf136fc0)
+- Render Depandancy Graph
+  ![image](https://github.com/Windowline/Toy-PBR-Engine/assets/17508384/ba922aba-9588-434f-92d3-136f4fefdfbf)
 
 - [Metalic: 0.9 / Roughness: 0.1]
   ![image](https://github.com/Windowline/ToyRenderer/assets/17508384/28df3a4e-9c4d-4cca-bb7d-85bf422d8151)
