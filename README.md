@@ -1,7 +1,7 @@
 # Toy Real Time PBR Engine
 - Cross Platform Desktop Sample (Backend: OpenGL)
   
-- Render Depandancy Graph
+- Render Dependency Graph
   ![image](https://github.com/Windowline/Toy-PBR-Engine/assets/17508384/ba922aba-9588-434f-92d3-136f4fefdfbf)
 
 - [Metalic: 0.9 / Roughness: 0.1]
