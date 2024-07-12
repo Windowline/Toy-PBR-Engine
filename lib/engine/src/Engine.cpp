@@ -2,6 +2,8 @@
 #include "ShaderManager.hpp"
 #include "Scene.hpp"
 
+#include "RayTraceScene.hpp"
+
 #include <glad/glad.h>
 
 RenderEngine::RenderEngine() {
@@ -49,7 +51,8 @@ void RenderEngine::initScene() {
     glClearColor(1.0f, 1.0f, 1.0f, 1.f);                // Black Background
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    _scene = std::make_shared<Scene>(this, _defaultFBO);
+//    _scene = std::make_shared<Scene>(this, _defaultFBO);
+    _scene = std::make_shared<RayTraceScene>(this, _defaultFBO);
     _scene->setScreenSize(_screenSize.x, _screenSize.y);
     _init = true;
 }

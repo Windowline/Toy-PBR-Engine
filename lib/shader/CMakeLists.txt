@@ -32,10 +32,15 @@ add_library(shader STATIC
 
         include/BGShader.hpp
         src/BGShader.cpp
+
         include/PBRShader.hpp
         src/PBRShader.cpp
+
         include/DeferredPBRShader.hpp
         src/DeferredPBRShader.cpp
+
+        include/RayTraceShader.hpp
+        src/RayTraceShader.cpp
 )
 
 target_link_libraries(shader

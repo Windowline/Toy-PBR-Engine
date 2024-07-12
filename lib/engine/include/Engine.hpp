@@ -8,11 +8,13 @@
 
 class IBLPreprocessor;
 class Scene;
+class RayTraceScene;
 class ShaderManager;
 
 class RenderEngine {
 
     friend class Scene;
+    friend class RayTraceScene;
     friend class IBLPreprocessor;
 
 public:
@@ -38,7 +40,8 @@ private:
 
     std::shared_ptr<ShaderManager> _shaderManager;
 
-    std::shared_ptr<Scene> _scene;
+//    std::shared_ptr<Scene> _scene;
+    std::shared_ptr<RayTraceScene> _scene;
 
     ivec2 _screenSize;
 
