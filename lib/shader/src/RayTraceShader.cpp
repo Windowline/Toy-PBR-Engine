@@ -25,7 +25,7 @@ const char* fragmentRayTrace = R(
             bool didHit;
             float dst;
             vec3 pos;
-            vec3 normal;
+            vec3 N;
             Material mat;
         };
 
@@ -45,7 +45,7 @@ const char* fragmentRayTrace = R(
             return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
         }
 
-        vec3 randomHemisphereDir(vec3 normal) {
+        vec3 randomHemisphereDir(vec3 N) {
             vec2 randomSeed = gl_FragCoord.xy; // Use fragment coordinates for randomness
             float u = rand(randomSeed);
             float v = rand(randomSeed + vec2(1.0, 1.0));
@@ -59,12 +59,12 @@ const char* fragmentRayTrace = R(
 
             vec3 randomVec = vec3(x, y, z);
 
-            // Ensure the random vector is in the same hemisphere as the normal
-            if (dot(randomVec, normal) < 0.0) {
+            // Ensure the random vector is in the same hemisphere as the N
+            if (dot(randomVec, N) < 0.0) {
                 randomVec = -randomVec;
             }
 
-            return randomVec;
+            return normalize(randomVec);
         }
 
         Hit raySphere(Ray ray, vec3 sphereCenter, float sphereRadius) {
@@ -85,7 +85,7 @@ const char* fragmentRayTrace = R(
                     hitInfo.didHit = true;
                     hitInfo.dst = dst;
                     hitInfo.pos = ray.org + ray.dir * dst;
-                    hitInfo.normal = normalize(hitInfo.pos - sphereCenter);
+                    hitInfo.N = normalize(hitInfo.pos - sphereCenter);
                 }
             }
 
@@ -132,14 +132,16 @@ const char* fragmentRayTrace = R(
                 Hit hit = rayCollision(ray);
 
                 if (hit.didHit) {
+                    float s = dot(hit.N, -ray.dir);
                     ray.org = hit.pos;
-                    ray.dir = randomHemisphereDir(hit.normal);
+                    ray.dir = randomHemisphereDir(hit.N);
 //                    vec3 emittedL = mat.emissionColor * mat.emissionStrength;
                     vec3 emittedL = vec3(1.0);
 
-                    rayColor *= hit.mat.color;
+                    rayColor *= hit.mat.color * s;
                     incomingL += emittedL * rayColor;
                 } else {
+//                    incomingL += getEnvColor(ray) * rayColor; // TODO
                     break;
                 }
             }
@@ -149,7 +151,6 @@ const char* fragmentRayTrace = R(
 
         void main() {
             mat4 tmp2 = u_cameraLocalToWorldMat;
-            vec3 tmp3 = randomHemisphereDir(vec3(0.0));
 
             vec2 uv = v_uv * 2.0 - 1.0;
             float aspect = u_resolution.x / u_resolution.y;
@@ -160,7 +161,7 @@ const char* fragmentRayTrace = R(
             ray.dir = normalize(vec3(uv, -1.0));
 
 //            Hit closestHit = rayCollision(ray);
-//            fragColor = vec4(closestHit.mat.color, 1.0);
+//            fragColor = vec4(closestHit.mat.color * dot(closestHit.N, -ray.dir), 1.0);
 
             float RAY_SAMPLE_CNT = 4.0;
             vec3 total = vec3(0.0);
