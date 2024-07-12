@@ -18,7 +18,7 @@ const char* fragmentRayTrace = R(
         };
 
         struct Material {
-            vec4 color;
+            vec3 color;
         };
 
         struct Hit {
@@ -34,6 +34,38 @@ const char* fragmentRayTrace = R(
             float r;
             Material mat;
         };
+
+        uniform vec2 u_resolution;
+        uniform mat4 u_cameraLocalToWorldMat;
+        uniform vec3 u_worldCameraPos;
+        layout (location = 0) out vec4 fragColor;
+        in vec2 v_uv;
+
+        float rand(vec2 co) {
+            return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
+        }
+
+        vec3 randomHemisphereDir(vec3 normal) {
+            vec2 randomSeed = gl_FragCoord.xy; // Use fragment coordinates for randomness
+            float u = rand(randomSeed);
+            float v = rand(randomSeed + vec2(1.0, 1.0));
+
+            float theta = 2.0 * 3.14159265359 * u;
+            float phi = acos(2.0 * v - 1.0);
+
+            float x = sin(phi) * cos(theta);
+            float y = sin(phi) * sin(theta);
+            float z = cos(phi);
+
+            vec3 randomVec = vec3(x, y, z);
+
+            // Ensure the random vector is in the same hemisphere as the normal
+            if (dot(randomVec, normal) < 0.0) {
+                randomVec = -randomVec;
+            }
+
+            return randomVec;
+        }
 
         Hit raySphere(Ray ray, vec3 sphereCenter, float sphereRadius) {
             Hit hitInfo;
@@ -66,16 +98,16 @@ const char* fragmentRayTrace = R(
 
             spheres[0].pos = vec3(0.0, 0.0, -40.0);
             spheres[0].r = 25.0;
-            spheres[0].mat.color = vec4(1.0, 1.0, 1.0, 1.0);
+            spheres[0].mat.color = vec3(1.0, 1.0, 1.0);
 
             spheres[1].pos = vec3(0.0, 0.0, 0.0);
             spheres[1].r = 5.0;
-            spheres[1].mat.color = vec4(1.0, 0.0, 0.0, 1.0);
+            spheres[1].mat.color = vec3(1.0, 0.0, 0.0);
 
             Hit closestHit;
             closestHit.didHit = false;
-            closestHit.dst = 100.0;
-            closestHit.mat.color = vec4(0.0, 0.0, 0.0, 1.0);
+            closestHit.dst = 9999999.0;
+            closestHit.mat.color = vec3(0.0, 0.0, 0.0);
 
             for (int i = 0; i < numSphere; ++i) {
                 Sphere sphere = spheres[i];
@@ -90,14 +122,34 @@ const char* fragmentRayTrace = R(
             return closestHit;
         }
 
-        uniform vec2 u_resolution;
-        uniform mat4 u_cameraLocalToWorldMat;
-        uniform vec3 u_worldCameraPos;
-        layout (location = 0) out vec4 fragColor;
-        in vec2 v_uv;
+        vec3 trace(Ray ray) {
+            int MAX_BOUNCE = 5;
+
+            vec3 incomingL = vec3(0.0);
+            vec3 rayColor = vec3(1.0);
+
+            for (int i = 0; i < MAX_BOUNCE; ++i) {
+                Hit hit = rayCollision(ray);
+
+                if (hit.didHit) {
+                    ray.org = hit.pos;
+                    ray.dir = randomHemisphereDir(hit.normal);
+//                    vec3 emittedL = mat.emissionColor * mat.emissionStrength;
+                    vec3 emittedL = vec3(1.0);
+
+                    rayColor *= hit.mat.color;
+                    incomingL += emittedL * rayColor;
+                } else {
+                    break;
+                }
+            }
+
+            return incomingL;
+        }
 
         void main() {
             mat4 tmp2 = u_cameraLocalToWorldMat;
+            vec3 tmp3 = randomHemisphereDir(vec3(0.0));
 
             vec2 uv = v_uv * 2.0 - 1.0;
             float aspect = u_resolution.x / u_resolution.y;
@@ -107,8 +159,15 @@ const char* fragmentRayTrace = R(
             ray.org = u_worldCameraPos;
             ray.dir = normalize(vec3(uv, -1.0));
 
-            Hit closestHit = rayCollision(ray);
-            fragColor = closestHit.mat.color;
+//            Hit closestHit = rayCollision(ray);
+//            fragColor = vec4(closestHit.mat.color, 1.0);
+
+            float RAY_SAMPLE_CNT = 4.0;
+            vec3 total = vec3(0.0);
+            for (float i = 0; i < RAY_SAMPLE_CNT; i += 1.0) {
+                total += trace(ray);
+            }
+            fragColor = vec4(total / RAY_SAMPLE_CNT, 1.0);
         }
 );
 
