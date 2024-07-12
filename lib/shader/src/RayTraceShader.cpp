@@ -12,11 +12,6 @@ const char* vertexRayTrace = R(
 );
 
 const char* fragmentRayTrace = R(
-        uniform vec2 u_resolution;
-        uniform mat4 u_cameraLocalToWorldMat;
-        uniform vec3 u_worldCameraPos;
-
-
         struct Ray {
             vec3 org;
             vec3 dir;
@@ -54,23 +49,21 @@ const char* fragmentRayTrace = R(
             return hitInfo;
         }
 
-
+        uniform vec2 u_resolution;
+        uniform mat4 u_cameraLocalToWorldMat;
+        uniform vec3 u_worldCameraPos;
         layout (location = 0) out vec4 fragColor;
         in vec2 v_uv;
 
         void main() {
-            vec3 tmp = u_worldCameraPos;
             mat4 tmp2 = u_cameraLocalToWorldMat;
-            vec2 tmp3 = u_resolution;
 
             vec2 uv = v_uv * 2.0 - 1.0;
             float aspect = u_resolution.x / u_resolution.y;
             uv.x *= aspect;
 
             Ray ray;
-//            ray.org = u_worldCameraPos;
-//            ray.dir = normalize(vec3(uv, -1.0));
-            ray.org = vec3(0.0, 0.0, 50.0);
+            ray.org = u_worldCameraPos;
             ray.dir = normalize(vec3(uv, -1.0));
 
             Hit hitInfo = RaySphere(ray, vec3(0.0), 25.0);
@@ -80,43 +73,6 @@ const char* fragmentRayTrace = R(
             } else {
                 fragColor = vec4(0.0, 0.0, 0.0, 1.0);
             }
-
-
-//            vec2 uv = (gl_FragCoord.xy / vec2(800, 600)) * 2.0 - 1.0;
-//            uv.x *= 800.0 / 600.0;
-//
-//            vec3 rayOrigin = cameraPosition;
-//            vec3 rayDirection = normalize(vec3(uv, -1.0));
-//
-//            vec3 color = traceRay(rayOrigin, rayDirection, maxReflections);
-//
-//            FragColor = vec4(color, 1.0);
-
-
-
-//            vec3 tmp = u_worldCameraPos;
-//            mat4 tmp2 = u_cameraLocalToWorldMat;
-//
-//            vec3 viewParams = vec3(1.0);
-//            vec3 viewPosLocal = vec3(uv - vec2(0.5), 1.0) * viewParams;
-////            vec3 viewPos = (u_cameraLocalToWorldMat * vec4(viewPosLocal, 1.0)).xyz;
-////            vec3 viewPos = u_worldCameraPos;
-//            vec3 viewPos = vec3(0.0);
-//
-//            Ray ray;
-//            ray.org = u_worldCameraPos;
-//            ray.dir = normalize(viewPos - ray.org);
-//
-//            Hit hitInfo = RaySphere(ray, vec3(0.0), 1000.0);
-//
-////            fragColor = vec4(viewPosLocal, 1.0);
-//
-//
-//            if (hitInfo.didHit) {
-//                fragColor = vec4(0.0, 1.0, 0.0, 1.0);
-//            } else {
-//                fragColor = vec4(0.0, 0.0, 0.0, 1.0);
-//            }
         }
 );
 
