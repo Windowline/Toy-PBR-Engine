@@ -17,14 +17,25 @@ const char* fragmentRayTrace = R(
             vec3 dir;
         };
 
+        struct Material {
+            vec4 color;
+        };
+
         struct Hit {
             bool didHit;
             float dst;
             vec3 pos;
             vec3 normal;
+            Material mat;
         };
 
-        Hit RaySphere(Ray ray, vec3 sphereCenter, float sphereRadius) {
+        struct Sphere {
+            vec3 pos;
+            float r;
+            Material mat;
+        };
+
+        Hit raySphere(Ray ray, vec3 sphereCenter, float sphereRadius) {
             Hit hitInfo;
             hitInfo.didHit = false;
 
@@ -49,6 +60,36 @@ const char* fragmentRayTrace = R(
             return hitInfo;
         }
 
+        Hit rayCollision(Ray ray) {
+            int numSphere = 2;
+            Sphere spheres[2];
+
+            spheres[0].pos = vec3(0.0, 0.0, -40.0);
+            spheres[0].r = 25.0;
+            spheres[0].mat.color = vec4(1.0, 1.0, 1.0, 1.0);
+
+            spheres[1].pos = vec3(0.0, 0.0, 0.0);
+            spheres[1].r = 5.0;
+            spheres[1].mat.color = vec4(1.0, 0.0, 0.0, 1.0);
+
+            Hit closestHit;
+            closestHit.didHit = false;
+            closestHit.dst = 100.0;
+            closestHit.mat.color = vec4(0.0, 0.0, 0.0, 1.0);
+
+            for (int i = 0; i < numSphere; ++i) {
+                Sphere sphere = spheres[i];
+                Hit hit = raySphere(ray, sphere.pos, sphere.r);
+
+                if (hit.didHit && hit.dst < closestHit.dst) {
+                    closestHit = hit;
+                    closestHit.mat = sphere.mat;
+                }
+            }
+
+            return closestHit;
+        }
+
         uniform vec2 u_resolution;
         uniform mat4 u_cameraLocalToWorldMat;
         uniform vec3 u_worldCameraPos;
@@ -66,13 +107,8 @@ const char* fragmentRayTrace = R(
             ray.org = u_worldCameraPos;
             ray.dir = normalize(vec3(uv, -1.0));
 
-            Hit hitInfo = RaySphere(ray, vec3(0.0), 25.0);
-
-            if (hitInfo.didHit) {
-                fragColor = vec4(0.0, 1.0, 0.0, 1.0);
-            } else {
-                fragColor = vec4(0.0, 0.0, 0.0, 1.0);
-            }
+            Hit closestHit = rayCollision(ray);
+            fragColor = closestHit.mat.color;
         }
 );
 
