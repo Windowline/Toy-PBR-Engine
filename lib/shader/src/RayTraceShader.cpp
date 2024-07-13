@@ -54,6 +54,8 @@ const char* fragmentRayTrace = R(
         uniform vec2 u_resolution;
         uniform mat4 u_cameraLocalToWorldMat;
         uniform vec3 u_worldCameraPos;
+        uniform mat4 u_projMat;
+        uniform mat4 u_viewMat;
 
         uniform samplerBuffer u_normalTBO;
         uniform samplerBuffer u_posTBO;
@@ -276,9 +278,19 @@ const char* fragmentRayTrace = R(
             float aspect = u_resolution.x / u_resolution.y;
             uv.x *= aspect;
 
+            //ray 1
+//            Ray ray;
+//            ray.org = u_worldCameraPos;
+//            ray.dir = normalize(vec3(uv, -1.0));
+
+            //ray 2
+            vec4 rayClip = vec4(uv, -1.0, 1.0);
+            vec4 rayEye = inverse(u_projMat) * rayClip;
+            rayEye = vec4(rayEye.xy, -1.0, 0.0);
+            vec3 rayWorld = normalize((inverse(u_viewMat) * rayEye).xyz);
             Ray ray;
             ray.org = u_worldCameraPos;
-            ray.dir = normalize(vec3(uv, -1.0));
+            ray.dir = rayWorld;
 
             //1 sphere 1 bounce
 //            Hit closestHit = rayCollisionSphere(ray);

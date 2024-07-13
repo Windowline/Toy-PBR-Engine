@@ -29,6 +29,16 @@ class Camera {
 public:
     Camera(vec3 eye, vec3 target, vec3 up=vec3(0, 1, 0));
 
+    vec2 viewportSize() {
+        updateMat();
+        auto focalLen = (_eye - _target).length();
+        auto theta = _fovy * PI / 180.0;
+        auto h = tan(theta / 2.0);
+        auto vpHeight = 2.0 * h * focalLen;
+        auto vpWidth = vpHeight * (static_cast<double>(_screenRect.w)/_screenRect.h);
+        return vec2(vpWidth, vpHeight);
+    }
+
     const mat4& viewRotMat() {
         updateMat();
         return _viewRotMat;
@@ -100,6 +110,7 @@ public:
     void updateViewRotation(float yaw, float pitch);
     
     static mat4 createViewMatrix(vec3 target, vec3 eye, vec3 up);
+
 
 private:
     static Basis3 CreateBasis(vec3 target, vec3 eye, vec3 up);

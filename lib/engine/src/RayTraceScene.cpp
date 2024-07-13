@@ -22,14 +22,14 @@ RayTraceScene::RayTraceScene(RenderEngine* engine, GLuint defaultFBO) : _engine(
     _rootNode = make_shared<Node>(nullptr, make_shared<MeshBasic>(), mat4());
     _rootNode->setEnabled(false);
 
-    _modelMesh = make_shared<Model>(RESOURCE_DIR + "/objects/monkey/monkey.obj", vec3(0.75, 0.75, 0.75), "Model");
+    _modelMesh = make_shared<Model>(RESOURCE_DIR + "/objects/cyborg/cyborg.obj", vec3(0.75, 0.75, 0.75), "Model");
     _modelNode = make_shared<Node>(nullptr, _modelMesh, mat4());
     _rootNode->addChild(_modelNode);
 
     auto shader = shaderManager()->setActiveShader<RayTraceShader>(eShaderProgram_RayTrace);
 
-//    buildMeshTBO();
-    buildTestTri();
+    buildMeshTBO();
+//    buildTestTri();
 }
 
 void RayTraceScene::buildMeshTBO() {
@@ -109,7 +109,11 @@ void RayTraceScene::render() {
     glClearColor(0.f, 0.f, 0.f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+//    vec2 vpSize = _camera->viewportSize();
+//    glViewport(0, 0, vpSize.x, vpSize.y);
     mat4 camLocal;
+    const mat4& proj = _camera->projMat();
+    const mat4& view = _camera->viewMat();
 
     auto shader = shaderManager()->setActiveShader<RayTraceShader>(eShaderProgram_RayTrace);
     shader->cameraPosUniform3f(_camera->eye().x, _camera->eye().y, _camera->eye().z);
@@ -118,6 +122,8 @@ void RayTraceScene::render() {
     shader->triangleSizeUniform1i(_modelTriangleSize);
     shader->boundsMinUniform3f(_boundsMin.x, _boundsMin.y, _boundsMin.z);
     shader->boundsMaxUniform3f(_boundsMax.x, _boundsMax.y, _boundsMax.z);
+    shader->viewMatUniformMatrix4fv(view.pointer());
+    shader->projMatUniformMatrix4fv(proj.pointer());
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_BUFFER, _posTBOTexture);
