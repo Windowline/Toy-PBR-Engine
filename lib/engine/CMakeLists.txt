@@ -11,6 +11,9 @@ add_library(engine STATIC
 
         include/Node.hpp
         src/Node.cpp
+
+        include/BVH.hpp
+        src/BVH.cpp
 )
 
 configure_file(${CMAKE_SOURCE_DIR}/config/PathInfo.h.in ${CMAKE_BINARY_DIR}/config/PathInfo.h)

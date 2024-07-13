@@ -11,7 +11,7 @@
 #include "MeshBasic.h"
 #include "Model.hpp"
 #include "Node.hpp"
-
+#include "BVH.hpp"
 
 using namespace std;
 
@@ -39,6 +39,8 @@ void RayTraceScene::buildMeshTBO() {
     const vector<ModelMesh>& meshs = _modelMesh->meshes;
 
     for (const ModelMesh& mesh : meshs) {
+        vector<vec3> vertices; // for bvh
+
         for (const Vertex& vertex : mesh.vertices) {
             posBufferData.push_back(vertex.Position.x);
             posBufferData.push_back(vertex.Position.y);
@@ -55,7 +57,11 @@ void RayTraceScene::buildMeshTBO() {
             _boundsMax.x = max(vertex.Position.x, _boundsMax.x);
             _boundsMax.y = max(vertex.Position.y, _boundsMax.y);
             _boundsMax.z = max(vertex.Position.z, _boundsMax.z);
+
+            vertices.push_back(vertex.Position);
         }
+
+        _bvhRoots.push_back(buildBVH(vertices, ref(mesh.indices)));
     }
 
     _modelTriangleSize = posBufferData.size() / (3 * 3);
@@ -75,6 +81,7 @@ void RayTraceScene::buildMeshTBO() {
     glGenTextures(1, &_normalTBOTexture);
     glBindTexture(GL_TEXTURE_BUFFER, _normalTBOTexture);
     glTexBuffer(GL_TEXTURE_BUFFER, GL_RGB32F, _normalTBO);
+
 }
 
 RayTraceScene::~RayTraceScene() {

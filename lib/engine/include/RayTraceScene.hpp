@@ -13,6 +13,7 @@ class FrameBufferObject;
 class FullQuad;
 class Node;
 class Model;
+struct BVHNode;
 
 class RayTraceScene {
 public:
@@ -54,6 +55,8 @@ private:
 
     vec3 _boundsMin = vec3(-1e9, -1e9, -1e9);
     vec3 _boundsMax = vec3(1e9, 1e9, 1e9);
+
+    std::vector<std::shared_ptr<BVHNode>> _bvhRoots;
 };
 
 

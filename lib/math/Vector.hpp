@@ -3,7 +3,9 @@
 
 #include <cmath>
 #include <vector>
+#include <algorithm>
 
+using namespace std;
 
 template<typename T>
 struct Vector2 {
@@ -185,6 +187,15 @@ struct Vector3 {
     Vector3(const Vector2<T>& v, T z) : x(v.x), y(v.y), z(z) {}
 
     Vector3(const Vector3<T>& v) : x(v.x), y(v.y), z(v.z) {}
+
+    T& operator[](int i) {
+        if (i == 0)
+            return x;
+        else if (i == 1)
+            return y;
+        else
+            return z;
+    }
 
     T lengthSquared() const {
         return x * x + y * y + z * z;
@@ -446,6 +457,34 @@ private:
 
     vec3 _origin;
     vec3 _direction;
+};
+
+struct AABB {
+    vec3 boundsMin = vec3(-1e9, -1e9, -1e9);
+    vec3 boundsMax = vec3(1e9, 1e9, 1e9);
+
+    void extend(const vec3& p) {
+        boundsMin.x = min(p.x, boundsMin.x);
+        boundsMin.y = min(p.y, boundsMin.y);
+        boundsMin.z = min(p.z, boundsMin.z);
+
+        boundsMax.x = max(p.x, boundsMax.x);
+        boundsMax.y = max(p.y, boundsMax.y);
+        boundsMax.z = max(p.z, boundsMax.z);
+    }
+
+    vec3 size() const {
+        return vec3(boundsMax.x - boundsMin.x,
+                    boundsMax.y - boundsMin.y,
+                    boundsMax.z - boundsMin.z);
+    }
+
+    vec3 center() const {
+        return (boundsMax + boundsMin) / 2.0;
+    }
+
+
+
 };
 
 //#endif /* Ray_hpp */
