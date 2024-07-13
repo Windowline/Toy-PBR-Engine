@@ -33,26 +33,45 @@ RayTraceScene::RayTraceScene(RenderEngine* engine, GLuint defaultFBO) : _engine(
 
     //TBO
     // 정점 데이터 (예: 2개의 삼각형)
-    vector<float> posBufferData = {
+//    vector<float> posBufferData = {
 //            -0.5f, -0.5f, 0.0f,
-            0.0f, 1.0f, 0.0f,
-            0.5f, -0.5f, 0.0f,
-            0.0f,  0.5f, 0.0f,
-            0.5f,  0.5f, 0.0f,
-            -0.5f,  0.5f, 0.0f,
-            0.0f, -0.5f, 0.0f
+//            0.5f, -0.5f, 0.0f,
+//            0.0f,  0.5f, 0.0f,
+//            0.5f,  0.5f, 0.0f,
+//            -0.5f,  0.5f, 0.0f,
+//            0.0f, -0.5f, 0.0f
+//    };
+//
+//    vector<float> normalBufferData = {
+//            -0.5f, -0.5f, 0.0f,
+//            0.5f, -0.5f, 0.0f,
+//            0.0f,  0.5f, 0.0f,
+//            0.5f,  0.5f, 0.0f,
+//            -0.5f,  0.5f, 0.0f,
+//            0.0f, -0.5f, 0.0f
+//    };
+
+    //must be ccw
+    vector<float> posBufferData = {
+            0.0,  25.f, -40.f,
+            -25.0,  0.f,  -40.f,
+            25.0,  0.f,  -40.f,
+
+            0.f,    0.0f,  -20.0f,
+            -5.f,   -10.f,  -20.0f,
+            5.f,   -10.f,  -20.0f,
     };
 
     vector<float> normalBufferData = {
-//            -0.5f, -0.5f, 0.0f,
-            0.0f, 1.0f, 0.0f,
+            0.0,  25.f, -40.f,
+            25.0,  0.f,  -40.f,
+            -25.0,  0.f, -40.f,
 
-            0.5f, -0.5f, 0.0f,
-            0.0f,  0.5f, 0.0f,
-            0.5f,  0.5f, 0.0f,
-            -0.5f,  0.5f, 0.0f,
-            0.0f, -0.5f, 0.0f
+            0.f,    0.0f,  -20.0f,
+            5.f,   -10.f,  -20.0f,
+            -5.f,   -10.f,  -20.0f
     };
+
 
     glGenBuffers(1, &_posTBO);
     glBindBuffer(GL_TEXTURE_BUFFER, _posTBO);
@@ -100,7 +119,7 @@ void RayTraceScene::update() {}
 
 void RayTraceScene::render() {
     glBindFramebuffer(GL_FRAMEBUFFER, _defaultFBO);
-    glClearColor(1.f, 0.f, 0.f, 1.f);
+    glClearColor(0.f, 0.f, 0.f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     mat4 camLocal;

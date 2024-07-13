@@ -113,6 +113,11 @@ const char* fragmentRayTrace = R(
         }
 
         Hit rayTriangle(Ray ray, Triangle tri) {
+//            Hit hit2;
+//            hit2.didHit = false;
+//            hit2.dst = 9999.0;
+//            return hit2;
+
             vec3 edgeAB = tri.posB - tri.posA;
             vec3 edgeAC = tri.posC - tri.posA;
             vec3 N = cross(edgeAB, edgeAC);
@@ -139,11 +144,11 @@ const char* fragmentRayTrace = R(
         Hit rayMesh(Ray ray) { // 1 mesh
             Hit closestHit;
             closestHit.didHit = false;
-            closestHit.dst = 99999.0;
+            closestHit.dst = 9999999.0;
+            closestHit.mat.color = vec3(0.0);
+            
+            for (int triIdx = 0; triIdx < 2; ++triIdx) {
 
-            int numTriangles = 2;
-
-            for (int triIdx = 0; triIdx < numTriangles; triIdx) {
                 int idxA = triIdx * 3 + 0;
                 int idxB = triIdx * 3 + 1;
                 int idxC = triIdx * 3 + 2;
@@ -152,21 +157,22 @@ const char* fragmentRayTrace = R(
                 tri.posA = texelFetch(u_posTBO, idxA).xyz;
                 tri.posB = texelFetch(u_posTBO, idxB).xyz;
                 tri.posC = texelFetch(u_posTBO, idxC).xyz;
-                tri.NA   = texelFetch(u_normalTBO, idxA).xyz;
-                tri.NB   = texelFetch(u_normalTBO, idxB).xyz;
-                tri.NC   = texelFetch(u_normalTBO, idxC).xyz;
+                tri.NA = texelFetch(u_normalTBO, idxA).xyz;
+                tri.NB = texelFetch(u_normalTBO, idxB).xyz;
+                tri.NC = texelFetch(u_normalTBO, idxC).xyz;
 
                 Hit hit = rayTriangle(ray, tri);
 
                 if (hit.didHit && hit.dst < closestHit.dst) {
                     closestHit = hit;
-//                    closestHit.mat = tri.mat;
-                    closestHit.mat.color = vec3(1.0, 0.0, 0.0);
+                    closestHit.mat.color = vec3(1.0, 1.0, 1.0);
                 }
             }
 
             return closestHit;
         }
+
+
 
 //        Hit rayMesh(Ray ray) {
 //            for (int meshIdx = 0; meshIdx < numMeshes; ++meshIdx) {
@@ -205,7 +211,7 @@ const char* fragmentRayTrace = R(
             Hit closestHit;
             closestHit.didHit = false;
             closestHit.dst = 9999999.0;
-            closestHit.mat.color = vec3(0.0, 0.0, 0.0);
+            closestHit.mat.color = vec3(0.0);
 
             for (int i = 0; i < numSphere; ++i) {
                 Sphere sphere = spheres[i];
@@ -249,6 +255,8 @@ const char* fragmentRayTrace = R(
 
         void main() {
             mat4 tmp2 = u_cameraLocalToWorldMat;
+            vec4 tmp3 = vec4(texelFetch(u_posTBO, 0).xyz, 1.0);
+            vec4 tmp4 = vec4(texelFetch(u_normalTBO, 0).xyz, 1.0);
 
             vec2 uv = v_uv * 2.0 - 1.0;
             float aspect = u_resolution.x / u_resolution.y;
@@ -269,14 +277,9 @@ const char* fragmentRayTrace = R(
 //                total += trace(ray);
 //            }
 //            fragColor = vec4(total / RAY_SAMPLE_CNT, 1.0);
-//
 
-//            for (int i = 0; i < 2; ++i) {
-//                fragColor = vec4(texelFetch(u_posTBO, i).xyz, 1.0);
-//            }
-
-            fragColor = vec4(texelFetch(u_posTBO, 0).xyz, 1.0);
-            fragColor = vec4(texelFetch(u_normalTBO, 0).xyz, 1.0);
+              Hit hit = rayMesh(ray);
+              fragColor = vec4(hit.mat.color, 1.0);
         }
 );
 
