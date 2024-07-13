@@ -17,7 +17,7 @@ using namespace std;
 
 RayTraceScene::RayTraceScene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaultFBO(defaultFBO) {
     _fullQuad = make_unique<FullQuad>("FullQuad");
-    _camera = make_shared<Camera>(vec3(0, 0, 50), vec3(0, 0, 0));
+    _camera = make_shared<Camera>(vec3(0, 0, 20), vec3(0, 0, 0));
 
     _rootNode = make_shared<Node>(nullptr, make_shared<MeshBasic>(), mat4());
     _rootNode->setEnabled(false);
@@ -47,6 +47,14 @@ void RayTraceScene::buildMeshTBO() {
             normalBufferData.push_back(vertex.Normal.x);
             normalBufferData.push_back(vertex.Normal.y);
             normalBufferData.push_back(vertex.Normal.z);
+
+            _boundsMin.x = min(vertex.Position.x, _boundsMin.x);
+            _boundsMin.y = min(vertex.Position.y, _boundsMin.y);
+            _boundsMin.z = min(vertex.Position.z, _boundsMin.z);
+
+            _boundsMax.x = max(vertex.Position.x, _boundsMax.x);
+            _boundsMax.y = max(vertex.Position.y, _boundsMax.y);
+            _boundsMax.z = max(vertex.Position.z, _boundsMax.z);
         }
     }
 
@@ -108,6 +116,8 @@ void RayTraceScene::render() {
     shader->cameraLocalToWorldMatUniformMatrix4fv(camLocal.pointer());
     shader->resolutionUniform2f((float)_camera->screenSize().x, (float)_camera->screenSize().y);
     shader->triangleSizeUniform1i(_modelTriangleSize);
+    shader->boundsMinUniform3f(_boundsMin.x, _boundsMin.y, _boundsMin.z);
+    shader->boundsMaxUniform3f(_boundsMax.x, _boundsMax.y, _boundsMax.z);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_BUFFER, _posTBOTexture);
@@ -164,4 +174,17 @@ void RayTraceScene::buildTestTri() {
     glTexBuffer(GL_TEXTURE_BUFFER, GL_RGB32F, _normalTBO);
 
     _modelTriangleSize = posBufferData.size() / (3 * 3);
+
+    //build boundig box
+    for (int i = 0; i < posBufferData.size(); i += 3) {
+        vec3 p = vec3(posBufferData[i + 0], posBufferData[i + 1], posBufferData[i + 2]);
+
+        _boundsMin.x = min(p.x, _boundsMin.x);
+        _boundsMin.y = min(p.y, _boundsMin.y);
+        _boundsMin.z = min(p.z, _boundsMin.z);
+
+        _boundsMax.x = max(p.x, _boundsMax.x);
+        _boundsMax.y = max(p.y, _boundsMax.y);
+        _boundsMax.z = max(p.z, _boundsMax.z);
+    }
 }

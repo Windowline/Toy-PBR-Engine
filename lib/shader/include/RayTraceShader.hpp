@@ -29,14 +29,28 @@ public:
         glUniform1i(_triangleSizeLoc, value);
     }
 
+    void boundsMinUniform3f(GLfloat value1, GLfloat value2, GLfloat value3) {
+        assert(_boundsMinLoc != -1);
+        glUniform3f(_boundsMinLoc, value1, value2, value3);
+    }
+
+    void boundsMaxUniform3f(GLfloat value1, GLfloat value2, GLfloat value3) {
+        assert(_boundsMaxLoc != -1);
+        glUniform3f(_boundsMaxLoc, value1, value2, value3);
+    }
+
 
 private:
     GLint _cameraPosUniformLoc = -1;
     GLint _cameraLocalToWorldMatUniformLoc = -1;
     GLint _resolutionUnifromLoc = -1;
+
     GLint _triangleSizeLoc = -1;
     GLint _posTBOLoc = -1;
     GLint _normalTBOLoc = -1;
+
+    GLint _boundsMinLoc = -1;
+    GLint _boundsMaxLoc = -1;
 };
 
 #endif //TOYRENDERER_RAYTRACESHADER_HPP

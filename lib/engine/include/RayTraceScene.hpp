@@ -51,6 +51,9 @@ private:
     unsigned int _normalTBO = 0;
     unsigned int _normalTBOTexture = 0;
     unsigned int _modelTriangleSize = 0;
+
+    vec3 _boundsMin = vec3(-1e9, -1e9, -1e9);
+    vec3 _boundsMax = vec3(1e9, 1e9, 1e9);
 };
 
 

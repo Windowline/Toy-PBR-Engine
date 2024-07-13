@@ -57,7 +57,10 @@ const char* fragmentRayTrace = R(
 
         uniform samplerBuffer u_normalTBO;
         uniform samplerBuffer u_posTBO;
+
         uniform int u_triangleSize;
+        uniform vec3 u_boundsMin;
+        uniform vec3 u_boundsMax;
 
         layout (location = 0) out vec4 fragColor;
         in vec2 v_uv;
@@ -137,11 +140,27 @@ const char* fragmentRayTrace = R(
             return hit;
         }
 
+        bool rayBoundingBox(Ray ray, vec3 boundsMin, vec3 boundsMax) {
+            vec3 invDir = 1.0 / ray.dir;
+            vec3 t0s = (boundsMin - ray.org) * invDir;
+            vec3 t1s = (boundsMax - ray.org) * invDir;
+            vec3 tsmaller = min(t0s, t1s);
+            vec3 tbigger = max(t0s, t1s);
+
+            float tmin = max(max(tsmaller.x, tsmaller.y), tsmaller.z);
+            float tmax = min(min(tbigger.x, tbigger.y), tbigger.z);
+            return tmax >= max(tmin, 0.0);
+        }
+
         Hit rayMesh(Ray ray) { // 1 mesh
             Hit closestHit;
             closestHit.didHit = false;
             closestHit.dst = 9999999.0;
             closestHit.mat.color = vec3(0.0);
+
+            if (!rayBoundingBox(ray, u_boundsMin, u_boundsMax)) {
+                return closestHit;
+            }
 
             for (int triIdx = 0; triIdx < u_triangleSize; ++triIdx) {
                 int idxA = triIdx * 3 + 0;
@@ -289,6 +308,9 @@ RayTraceShader::RayTraceShader() {
     _cameraLocalToWorldMatUniformLoc = glGetUniformLocation(_programID, "u_cameraLocalToWorldMat");
     _resolutionUnifromLoc = glGetUniformLocation(_programID, "u_resolution");
     _triangleSizeLoc = glGetUniformLocation(_programID, "u_triangleSize");
+
+    _boundsMinLoc = glGetUniformLocation(_programID, "u_boundsMin");
+    _boundsMaxLoc = glGetUniformLocation(_programID, "u_boundsMax");
 }
 
 bool RayTraceShader::load() {
