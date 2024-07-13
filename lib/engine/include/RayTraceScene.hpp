@@ -31,12 +31,11 @@ public:
     void render();
 
     std::shared_ptr<ShaderManager> shaderManager();
-//
-//    std::shared_ptr<Camera> camera() {
-//        return _camera;
-//    }
 
 private:
+    void buildMeshTBO();
+    void buildTestTri();
+
     RenderEngine* _engine;
     unsigned int _defaultFBO;
     std::shared_ptr<Camera> _camera;
@@ -51,6 +50,7 @@ private:
     unsigned int _posTBOTexture = 0;
     unsigned int _normalTBO = 0;
     unsigned int _normalTBOTexture = 0;
+    unsigned int _modelTriangleSize = 0;
 };
 
 

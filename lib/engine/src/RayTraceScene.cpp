@@ -5,7 +5,6 @@
 #include "FullQuad.hpp"
 
 #include "ShaderManager.hpp"
-#include "BasicShader.hpp"
 #include "RayTraceShader.hpp"
 #include "PathInfo.h"
 
@@ -27,51 +26,31 @@ RayTraceScene::RayTraceScene(RenderEngine* engine, GLuint defaultFBO) : _engine(
     _modelNode = make_shared<Node>(nullptr, _modelMesh, mat4());
     _rootNode->addChild(_modelNode);
 
-
-
     auto shader = shaderManager()->setActiveShader<RayTraceShader>(eShaderProgram_RayTrace);
 
-    //TBO
-    // 정점 데이터 (예: 2개의 삼각형)
-//    vector<float> posBufferData = {
-//            -0.5f, -0.5f, 0.0f,
-//            0.5f, -0.5f, 0.0f,
-//            0.0f,  0.5f, 0.0f,
-//            0.5f,  0.5f, 0.0f,
-//            -0.5f,  0.5f, 0.0f,
-//            0.0f, -0.5f, 0.0f
-//    };
-//
-//    vector<float> normalBufferData = {
-//            -0.5f, -0.5f, 0.0f,
-//            0.5f, -0.5f, 0.0f,
-//            0.0f,  0.5f, 0.0f,
-//            0.5f,  0.5f, 0.0f,
-//            -0.5f,  0.5f, 0.0f,
-//            0.0f, -0.5f, 0.0f
-//    };
+//    buildMeshTBO();
+    buildTestTri();
+}
 
-    //must be ccw
-    vector<float> posBufferData = {
-            0.0,  25.f, -40.f,
-            -25.0,  0.f,  -40.f,
-            25.0,  0.f,  -40.f,
+void RayTraceScene::buildMeshTBO() {
+    vector<float> posBufferData;
+    vector<float> normalBufferData;
 
-            0.f,    0.0f,  -20.0f,
-            -5.f,   -10.f,  -20.0f,
-            5.f,   -10.f,  -20.0f,
-    };
+    const vector<ModelMesh>& meshs = _modelMesh->meshes;
 
-    vector<float> normalBufferData = {
-            0.0,  25.f, -40.f,
-            25.0,  0.f,  -40.f,
-            -25.0,  0.f, -40.f,
+    for (const ModelMesh& mesh : meshs) {
+        for (const Vertex& vertex : mesh.vertices) {
+            posBufferData.push_back(vertex.Position.x);
+            posBufferData.push_back(vertex.Position.y);
+            posBufferData.push_back(vertex.Position.z);
 
-            0.f,    0.0f,  -20.0f,
-            5.f,   -10.f,  -20.0f,
-            -5.f,   -10.f,  -20.0f
-    };
+            normalBufferData.push_back(vertex.Normal.x);
+            normalBufferData.push_back(vertex.Normal.y);
+            normalBufferData.push_back(vertex.Normal.z);
+        }
+    }
 
+    _modelTriangleSize = posBufferData.size() / (3 * 3);
 
     glGenBuffers(1, &_posTBO);
     glBindBuffer(GL_TEXTURE_BUFFER, _posTBO);
@@ -128,6 +107,7 @@ void RayTraceScene::render() {
     shader->cameraPosUniform3f(_camera->eye().x, _camera->eye().y, _camera->eye().z);
     shader->cameraLocalToWorldMatUniformMatrix4fv(camLocal.pointer());
     shader->resolutionUniform2f((float)_camera->screenSize().x, (float)_camera->screenSize().y);
+    shader->triangleSizeUniform1i(_modelTriangleSize);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_BUFFER, _posTBOTexture);
@@ -140,4 +120,48 @@ void RayTraceScene::render() {
 
 shared_ptr<ShaderManager> RayTraceScene::shaderManager() {
     return _engine->_shaderManager;
+}
+
+
+void RayTraceScene::buildTestTri() {
+    //TBO
+    //must be ccw
+    vector<float> posBufferData = {
+            0.0,  25.f, -40.f,
+            -25.0,  0.f,  -40.f,
+            25.0,  0.f,  -40.f,
+
+            0.f,    0.0f,  -20.0f,
+            -5.f,   -10.f,  -20.0f,
+            5.f,   -10.f,  -20.0f,
+    };
+
+    vector<float> normalBufferData = {
+            0.0,  25.f, -40.f,
+            25.0,  0.f,  -40.f,
+            -25.0,  0.f, -40.f,
+
+            0.f,    0.0f,  -20.0f,
+            5.f,   -10.f,  -20.0f,
+            -5.f,   -10.f,  -20.0f
+    };
+
+
+    glGenBuffers(1, &_posTBO);
+    glBindBuffer(GL_TEXTURE_BUFFER, _posTBO);
+    glBufferData(GL_TEXTURE_BUFFER, posBufferData.size() * sizeof(float), posBufferData.data(), GL_STATIC_DRAW);
+
+    glGenTextures(1, &_posTBOTexture);
+    glBindTexture(GL_TEXTURE_BUFFER, _posTBOTexture);
+    glTexBuffer(GL_TEXTURE_BUFFER, GL_RGB32F, _posTBO);
+
+    glGenBuffers(1, &_normalTBO);
+    glBindBuffer(GL_TEXTURE_BUFFER, _normalTBO);
+    glBufferData(GL_TEXTURE_BUFFER, normalBufferData.size() * sizeof(float), normalBufferData.data(), GL_STATIC_DRAW);
+
+    glGenTextures(1, &_normalTBOTexture);
+    glBindTexture(GL_TEXTURE_BUFFER, _normalTBOTexture);
+    glTexBuffer(GL_TEXTURE_BUFFER, GL_RGB32F, _normalTBO);
+
+    _modelTriangleSize = posBufferData.size() / (3 * 3);
 }

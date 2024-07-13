@@ -24,12 +24,17 @@ public:
         glUniform2f(_resolutionUnifromLoc, value1, value2);
     }
 
+    void triangleSizeUniform1i(int value) {
+        assert(_triangleSizeLoc != -1);
+        glUniform1i(_triangleSizeLoc, value);
+    }
+
 
 private:
     GLint _cameraPosUniformLoc = -1;
     GLint _cameraLocalToWorldMatUniformLoc = -1;
     GLint _resolutionUnifromLoc = -1;
-
+    GLint _triangleSizeLoc = -1;
     GLint _posTBOLoc = -1;
     GLint _normalTBOLoc = -1;
 };

@@ -57,6 +57,7 @@ const char* fragmentRayTrace = R(
 
         uniform samplerBuffer u_normalTBO;
         uniform samplerBuffer u_posTBO;
+        uniform int u_triangleSize;
 
         layout (location = 0) out vec4 fragColor;
         in vec2 v_uv;
@@ -113,11 +114,6 @@ const char* fragmentRayTrace = R(
         }
 
         Hit rayTriangle(Ray ray, Triangle tri) {
-//            Hit hit2;
-//            hit2.didHit = false;
-//            hit2.dst = 9999.0;
-//            return hit2;
-
             vec3 edgeAB = tri.posB - tri.posA;
             vec3 edgeAC = tri.posC - tri.posA;
             vec3 N = cross(edgeAB, edgeAC);
@@ -146,9 +142,8 @@ const char* fragmentRayTrace = R(
             closestHit.didHit = false;
             closestHit.dst = 9999999.0;
             closestHit.mat.color = vec3(0.0);
-            
-            for (int triIdx = 0; triIdx < 2; ++triIdx) {
 
+            for (int triIdx = 0; triIdx < u_triangleSize; ++triIdx) {
                 int idxA = triIdx * 3 + 0;
                 int idxB = triIdx * 3 + 1;
                 int idxC = triIdx * 3 + 2;
@@ -293,7 +288,7 @@ RayTraceShader::RayTraceShader() {
     _cameraPosUniformLoc = glGetUniformLocation(_programID, "u_worldCameraPos");
     _cameraLocalToWorldMatUniformLoc = glGetUniformLocation(_programID, "u_cameraLocalToWorldMat");
     _resolutionUnifromLoc = glGetUniformLocation(_programID, "u_resolution");
-
+    _triangleSizeLoc = glGetUniformLocation(_programID, "u_triangleSize");
 }
 
 bool RayTraceShader::load() {
