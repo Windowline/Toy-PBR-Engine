@@ -29,7 +29,9 @@ private:
     GLint _cameraPosUniformLoc = -1;
     GLint _cameraLocalToWorldMatUniformLoc = -1;
     GLint _resolutionUnifromLoc = -1;
-    GLint _textureBufferLoc = -1;
+
+    GLint _posTBOLoc = -1;
+    GLint _normalTBOLoc = -1;
 };
 
 #endif //TOYRENDERER_RAYTRACESHADER_HPP

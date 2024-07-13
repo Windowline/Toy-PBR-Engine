@@ -54,7 +54,9 @@ const char* fragmentRayTrace = R(
         uniform vec2 u_resolution;
         uniform mat4 u_cameraLocalToWorldMat;
         uniform vec3 u_worldCameraPos;
-        uniform samplerBuffer u_tbo;
+
+        uniform samplerBuffer u_normalTBO;
+        uniform samplerBuffer u_posTBO;
 
         layout (location = 0) out vec4 fragColor;
         in vec2 v_uv;
@@ -132,6 +134,38 @@ const char* fragmentRayTrace = R(
             hit.N = normalize(tri.NA * w + tri.NB * u + tri.NC * v);
             hit.dst = dst;
             return hit;
+        }
+
+        Hit rayMesh(Ray ray) { // 1 mesh
+            Hit closestHit;
+            closestHit.didHit = false;
+            closestHit.dst = 99999.0;
+
+            int numTriangles = 2;
+
+            for (int triIdx = 0; triIdx < numTriangles; triIdx) {
+                int idxA = triIdx * 3 + 0;
+                int idxB = triIdx * 3 + 1;
+                int idxC = triIdx * 3 + 2;
+
+                Triangle tri;
+                tri.posA = texelFetch(u_posTBO, idxA).xyz;
+                tri.posB = texelFetch(u_posTBO, idxB).xyz;
+                tri.posC = texelFetch(u_posTBO, idxC).xyz;
+                tri.NA   = texelFetch(u_normalTBO, idxA).xyz;
+                tri.NB   = texelFetch(u_normalTBO, idxB).xyz;
+                tri.NC   = texelFetch(u_normalTBO, idxC).xyz;
+
+                Hit hit = rayTriangle(ray, tri);
+
+                if (hit.didHit && hit.dst < closestHit.dst) {
+                    closestHit = hit;
+//                    closestHit.mat = tri.mat;
+                    closestHit.mat.color = vec3(1.0, 0.0, 0.0);
+                }
+            }
+
+            return closestHit;
         }
 
 //        Hit rayMesh(Ray ray) {
@@ -238,9 +272,11 @@ const char* fragmentRayTrace = R(
 //
 
 //            for (int i = 0; i < 2; ++i) {
-//                fragColor = vec4(texelFetch(u_tbo, i).xyz, 1.0);
+//                fragColor = vec4(texelFetch(u_posTBO, i).xyz, 1.0);
 //            }
-             fragColor = vec4(texelFetch(u_tbo, 3).xyz, 1.0);
+
+            fragColor = vec4(texelFetch(u_posTBO, 0).xyz, 1.0);
+            fragColor = vec4(texelFetch(u_normalTBO, 0).xyz, 1.0);
         }
 );
 
@@ -248,15 +284,18 @@ RayTraceShader::RayTraceShader() {
     this->load();
     basicUniformLoc();
 
+    _posTBOLoc = glGetUniformLocation(_programID, "u_posTBO");
+    _normalTBOLoc = glGetUniformLocation(_programID, "u_normalTBO");
+
     _cameraPosUniformLoc = glGetUniformLocation(_programID, "u_worldCameraPos");
     _cameraLocalToWorldMatUniformLoc = glGetUniformLocation(_programID, "u_cameraLocalToWorldMat");
     _resolutionUnifromLoc = glGetUniformLocation(_programID, "u_resolution");
-    _textureBufferLoc = glGetUniformLocation(_programID, "u_tbo");
+
 }
 
 bool RayTraceShader::load() {
-    string vShader = string("#version 400 core \n") + string(vertexRayTrace);
-    string fShader = string("#version 400 core \n") + string(fragmentRayTrace);
+    string vShader = string("#version 330 core \n") + string(vertexRayTrace);
+    string fShader = string("#version 330 core \n") + string(fragmentRayTrace);
 
     _programID = loadProgram(reinterpret_cast<const char *>(vShader.c_str()),
                              reinterpret_cast<const char *>(fShader.c_str()));
@@ -268,6 +307,9 @@ bool RayTraceShader::load() {
 void RayTraceShader::useProgram() {
     glUseProgram(_programID);
 
-    assert(_textureBufferLoc != -1);
-    glUniform1i(_textureBufferLoc, 0);
+    assert(_posTBOLoc != -1);
+    glUniform1i(_posTBOLoc, 0);
+
+    assert(_normalTBOLoc != -1);
+    glUniform1i(_normalTBOLoc, 1);
 }

@@ -32,10 +32,10 @@ RayTraceScene::RayTraceScene(RenderEngine* engine, GLuint defaultFBO) : _engine(
     auto shader = shaderManager()->setActiveShader<RayTraceShader>(eShaderProgram_RayTrace);
 
     //TBO
-//    vector<float> bufferData = { 0.0f, 0.5f, 1.0f, 0.6};
     // 정점 데이터 (예: 2개의 삼각형)
-    std::vector<float> bufferData = {
-            -0.5f, -0.5f, 0.0f,
+    vector<float> posBufferData = {
+//            -0.5f, -0.5f, 0.0f,
+            0.0f, 1.0f, 0.0f,
             0.5f, -0.5f, 0.0f,
             0.0f,  0.5f, 0.0f,
             0.5f,  0.5f, 0.0f,
@@ -43,15 +43,32 @@ RayTraceScene::RayTraceScene(RenderEngine* engine, GLuint defaultFBO) : _engine(
             0.0f, -0.5f, 0.0f
     };
 
-    GLuint TBO;
-    glGenBuffers(1, &TBO);
-    glBindBuffer(GL_TEXTURE_BUFFER, TBO);
-    glBufferData(GL_TEXTURE_BUFFER, bufferData.size() * sizeof(float), bufferData.data(), GL_STATIC_DRAW);
+    vector<float> normalBufferData = {
+//            -0.5f, -0.5f, 0.0f,
+            0.0f, 1.0f, 0.0f,
 
-    GLuint texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_BUFFER, texture);
-    glTexBuffer(GL_TEXTURE_BUFFER, GL_R32F, TBO);
+            0.5f, -0.5f, 0.0f,
+            0.0f,  0.5f, 0.0f,
+            0.5f,  0.5f, 0.0f,
+            -0.5f,  0.5f, 0.0f,
+            0.0f, -0.5f, 0.0f
+    };
+
+    glGenBuffers(1, &_posTBO);
+    glBindBuffer(GL_TEXTURE_BUFFER, _posTBO);
+    glBufferData(GL_TEXTURE_BUFFER, posBufferData.size() * sizeof(float), posBufferData.data(), GL_STATIC_DRAW);
+
+    glGenTextures(1, &_posTBOTexture);
+    glBindTexture(GL_TEXTURE_BUFFER, _posTBOTexture);
+    glTexBuffer(GL_TEXTURE_BUFFER, GL_RGB32F, _posTBO);
+
+    glGenBuffers(1, &_normalTBO);
+    glBindBuffer(GL_TEXTURE_BUFFER, _normalTBO);
+    glBufferData(GL_TEXTURE_BUFFER, normalBufferData.size() * sizeof(float), normalBufferData.data(), GL_STATIC_DRAW);
+
+    glGenTextures(1, &_normalTBOTexture);
+    glBindTexture(GL_TEXTURE_BUFFER, _normalTBOTexture);
+    glTexBuffer(GL_TEXTURE_BUFFER, GL_RGB32F, _normalTBO);
 }
 
 RayTraceScene::~RayTraceScene() {
@@ -92,6 +109,11 @@ void RayTraceScene::render() {
     shader->cameraPosUniform3f(_camera->eye().x, _camera->eye().y, _camera->eye().z);
     shader->cameraLocalToWorldMatUniformMatrix4fv(camLocal.pointer());
     shader->resolutionUniform2f((float)_camera->screenSize().x, (float)_camera->screenSize().y);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_BUFFER, _posTBOTexture);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_BUFFER, _normalTBOTexture);
 
     _fullQuad->render();
 }

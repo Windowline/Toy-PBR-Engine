@@ -46,6 +46,11 @@ private:
     std::shared_ptr<Node> _rootNode;
     std::shared_ptr<Node> _modelNode;
     std::shared_ptr<Model> _modelMesh;
+
+    unsigned int _posTBO = 0;
+    unsigned int _posTBOTexture = 0;
+    unsigned int _normalTBO = 0;
+    unsigned int _normalTBOTexture = 0;
 };
 
 
