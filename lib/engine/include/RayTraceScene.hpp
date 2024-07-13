@@ -11,6 +11,8 @@ class Camera;
 class ShaderManager;
 class FrameBufferObject;
 class FullQuad;
+class Node;
+class Model;
 
 class RayTraceScene {
 public:
@@ -40,6 +42,10 @@ private:
     std::shared_ptr<Camera> _camera;
 
     std::unique_ptr<FullQuad> _fullQuad;
+
+    std::shared_ptr<Node> _rootNode;
+    std::shared_ptr<Node> _modelNode;
+    std::shared_ptr<Model> _modelMesh;
 };
 
 

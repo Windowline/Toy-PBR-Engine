@@ -3,9 +3,12 @@
 const char* vertexRayTrace = R(
         layout (location = 0) in vec2 a_position;
         layout (location = 1) in vec2 a_texCoord;
+
         out vec2 v_uv;
+//        out float v_shaderData;
 
         void main() {
+//            v_shaderData = texelFetch(myTextureBuffer, 2).r;
             v_uv = a_texCoord;
             gl_Position = vec4(a_position, 0.0, 1.0);
         }
@@ -35,9 +38,24 @@ const char* fragmentRayTrace = R(
             Material mat;
         };
 
+        struct Triangle {
+            vec3 posA, posB, posC;
+            vec3 NA, NB, NC;
+        };
+
+        struct MeshInfo {
+            uint firstTriangleIndex;
+            uint numTriangles;
+            vec3 boundsMin;
+            vec3 boundsMax;
+            Material mat;
+        };
+
         uniform vec2 u_resolution;
         uniform mat4 u_cameraLocalToWorldMat;
         uniform vec3 u_worldCameraPos;
+        uniform samplerBuffer u_tbo;
+
         layout (location = 0) out vec4 fragColor;
         in vec2 v_uv;
 
@@ -92,7 +110,53 @@ const char* fragmentRayTrace = R(
             return hitInfo;
         }
 
-        Hit rayCollision(Ray ray) {
+        Hit rayTriangle(Ray ray, Triangle tri) {
+            vec3 edgeAB = tri.posB - tri.posA;
+            vec3 edgeAC = tri.posC - tri.posA;
+            vec3 N = cross(edgeAB, edgeAC);
+            vec3 ao = ray.org - tri.posA;
+            vec3 dao = cross(ao, ray.dir);
+
+            float determinant = -dot(ray.dir, N);
+            float invDet = 1.0 / determinant;
+
+            //Calculate dst to triangle & barycentric coord of intersection point
+            float dst = dot(ao, N) * invDet;
+            float u = dot(edgeAC, dao) * invDet;
+            float v = -dot(edgeAB, dao) * invDet;
+            float w = 1.0 - u - v;
+
+            Hit hit;
+            hit.didHit = determinant >= 0.0000001 && dst >= 0 && u >= 0 && v >= 0 && w >= 0;
+            hit.pos = ray.org + ray.dir * dst;
+            hit.N = normalize(tri.NA * w + tri.NB * u + tri.NC * v);
+            hit.dst = dst;
+            return hit;
+        }
+
+//        Hit rayMesh(Ray ray) {
+//            for (int meshIdx = 0; meshIdx < numMeshes; ++meshIdx) {
+//                MeshInfo meshInfo = AllMeshInfo[meshIdx];
+//
+//                if (!rayBoundingBox(ray, meshInfo.boundsMin, meshInfo.boundsMax)) {
+//                    continue;
+//                }
+//
+//                for (int i = 0; i < meshInfo.numTriangles; ++i) {
+//                    int triIdx = meshInfo.firstTriangleIndex + i;
+//                    Triangle tri = Triangles[triIdx];
+//                    Hit hit = rayTriangle(ray, tri);
+//
+//                    if (hit.didHit && hit.dst < closestHit.dst) {
+//                        closestHit = hit;
+//                        closestHit.meshInfo.mat;
+//                    }
+//
+//                }
+//            }
+//        }
+
+        Hit rayCollisionSphere(Ray ray) {
             int numSphere = 2;
             Sphere spheres[2];
 
@@ -129,7 +193,7 @@ const char* fragmentRayTrace = R(
             vec3 rayColor = vec3(1.0);
 
             for (int i = 0; i < MAX_BOUNCE; ++i) {
-                Hit hit = rayCollision(ray);
+                Hit hit = rayCollisionSphere(ray);
 
                 if (hit.didHit) {
                     float s = dot(hit.N, -ray.dir);
@@ -160,15 +224,23 @@ const char* fragmentRayTrace = R(
             ray.org = u_worldCameraPos;
             ray.dir = normalize(vec3(uv, -1.0));
 
-//            Hit closestHit = rayCollision(ray);
+            //1 sphere 1 bounce
+//            Hit closestHit = rayCollisionSphere(ray);
 //            fragColor = vec4(closestHit.mat.color * dot(closestHit.N, -ray.dir), 1.0);
 
-            float RAY_SAMPLE_CNT = 4.0;
-            vec3 total = vec3(0.0);
-            for (float i = 0; i < RAY_SAMPLE_CNT; i += 1.0) {
-                total += trace(ray);
-            }
-            fragColor = vec4(total / RAY_SAMPLE_CNT, 1.0);
+            //2 sphere multi bounce
+//            float RAY_SAMPLE_CNT = 4.0;
+//            vec3 total = vec3(0.0);
+//            for (float i = 0; i < RAY_SAMPLE_CNT; i += 1.0) {
+//                total += trace(ray);
+//            }
+//            fragColor = vec4(total / RAY_SAMPLE_CNT, 1.0);
+//
+
+//            for (int i = 0; i < 2; ++i) {
+//                fragColor = vec4(texelFetch(u_tbo, i).xyz, 1.0);
+//            }
+             fragColor = vec4(texelFetch(u_tbo, 3).xyz, 1.0);
         }
 );
 
@@ -179,11 +251,12 @@ RayTraceShader::RayTraceShader() {
     _cameraPosUniformLoc = glGetUniformLocation(_programID, "u_worldCameraPos");
     _cameraLocalToWorldMatUniformLoc = glGetUniformLocation(_programID, "u_cameraLocalToWorldMat");
     _resolutionUnifromLoc = glGetUniformLocation(_programID, "u_resolution");
+    _textureBufferLoc = glGetUniformLocation(_programID, "u_tbo");
 }
 
 bool RayTraceShader::load() {
-    string vShader = string("#version 330 core \n") + string(vertexRayTrace);
-    string fShader = string("#version 330 core \n") + string(fragmentRayTrace);
+    string vShader = string("#version 400 core \n") + string(vertexRayTrace);
+    string fShader = string("#version 400 core \n") + string(fragmentRayTrace);
 
     _programID = loadProgram(reinterpret_cast<const char *>(vShader.c_str()),
                              reinterpret_cast<const char *>(fShader.c_str()));
@@ -194,4 +267,7 @@ bool RayTraceShader::load() {
 
 void RayTraceShader::useProgram() {
     glUseProgram(_programID);
+
+    assert(_textureBufferLoc != -1);
+    glUniform1i(_textureBufferLoc, 0);
 }

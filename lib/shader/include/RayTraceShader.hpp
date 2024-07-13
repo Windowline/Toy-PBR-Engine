@@ -24,11 +24,12 @@ public:
         glUniform2f(_resolutionUnifromLoc, value1, value2);
     }
 
+
 private:
     GLint _cameraPosUniformLoc = -1;
     GLint _cameraLocalToWorldMatUniformLoc = -1;
     GLint _resolutionUnifromLoc = -1;
-
+    GLint _textureBufferLoc = -1;
 };
 
 #endif //TOYRENDERER_RAYTRACESHADER_HPP
