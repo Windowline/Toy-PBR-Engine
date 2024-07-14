@@ -37,6 +37,8 @@ private:
     void buildMeshTBO(bool bvh);
     void buildTestTri();
 
+    bool _applyBVH = true;
+
     RenderEngine* _engine;
     unsigned int _defaultFBO;
     std::shared_ptr<Camera> _camera;

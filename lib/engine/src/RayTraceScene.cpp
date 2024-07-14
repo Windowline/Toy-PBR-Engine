@@ -6,6 +6,7 @@
 
 #include "ShaderManager.hpp"
 #include "RayTraceShader.hpp"
+#include "BVHRayTraceShader.hpp"
 #include "PathInfo.h"
 
 #include "MeshBasic.h"
@@ -28,7 +29,7 @@ RayTraceScene::RayTraceScene(RenderEngine* engine, GLuint defaultFBO) : _engine(
 
     auto shader = shaderManager()->setActiveShader<RayTraceShader>(eShaderProgram_RayTrace);
 
-    buildMeshTBO(false);
+    buildMeshTBO(_applyBVH);
 }
 
 void RayTraceScene::buildMeshTBO(bool bvh=false) {
@@ -190,26 +191,49 @@ void RayTraceScene::render() {
 
 //    vec2 vpSize = _camera->viewportSize();
 //    glViewport(0, 0, vpSize.x, vpSize.y);
-    mat4 camLocal;
+
     const mat4& proj = _camera->projMat();
     const mat4& view = _camera->viewMat();
 
-    auto shader = shaderManager()->setActiveShader<RayTraceShader>(eShaderProgram_RayTrace);
-    shader->cameraPosUniform3f(_camera->eye().x, _camera->eye().y, _camera->eye().z);
-    shader->cameraLocalToWorldMatUniformMatrix4fv(camLocal.pointer());
-    shader->resolutionUniform2f((float)_camera->screenSize().x, (float)_camera->screenSize().y);
-    shader->triangleSizeUniform1i(_modelTriangleSize);
-    shader->boundsMinUniform3f(_boundsMin.x, _boundsMin.y, _boundsMin.z);
-    shader->boundsMaxUniform3f(_boundsMax.x, _boundsMax.y, _boundsMax.z);
-    shader->viewMatUniformMatrix4fv(view.pointer());
-    shader->projMatUniformMatrix4fv(proj.pointer());
+    if (_applyBVH) {
+        auto shader = shaderManager()->setActiveShader<BVHRayTraceShader>(eShaderProgram_BVHRayTrace);
+        shader->cameraPosUniform3f(_camera->eye().x, _camera->eye().y, _camera->eye().z);
+        shader->resolutionUniform2f((float)_camera->screenSize().x, (float)_camera->screenSize().y);
+        shader->triangleSizeUniform1i(_modelTriangleSize);
+        shader->viewMatUniformMatrix4fv(view.pointer());
+        shader->projMatUniformMatrix4fv(proj.pointer());
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_BUFFER, _posTBOTexture);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_BUFFER, _normalTBOTexture);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_BUFFER, _bvhNodeTBOTexture);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_BUFFER, _bvhMinBoundsTBOTexture);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_BUFFER, _bvhMaxBoundsTBOTexture);
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_BUFFER, _bvhTriangleTBOTexture);
 
-    _fullQuad->render();
+        _fullQuad->render();
+
+    } else {
+
+        mat4 camLocal;
+        auto shader = shaderManager()->setActiveShader<RayTraceShader>(eShaderProgram_RayTrace);
+        shader->cameraPosUniform3f(_camera->eye().x, _camera->eye().y, _camera->eye().z);
+        shader->cameraLocalToWorldMatUniformMatrix4fv(camLocal.pointer());
+        shader->resolutionUniform2f((float)_camera->screenSize().x, (float)_camera->screenSize().y);
+        shader->triangleSizeUniform1i(_modelTriangleSize);
+        shader->boundsMinUniform3f(_boundsMin.x, _boundsMin.y, _boundsMin.z);
+        shader->boundsMaxUniform3f(_boundsMax.x, _boundsMax.y, _boundsMax.z);
+        shader->viewMatUniformMatrix4fv(view.pointer());
+        shader->projMatUniformMatrix4fv(proj.pointer());
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_BUFFER, _posTBOTexture);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_BUFFER, _normalTBOTexture);
+
+        _fullQuad->render();
+    }
 }
 
 
