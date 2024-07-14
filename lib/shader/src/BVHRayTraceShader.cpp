@@ -168,13 +168,12 @@ const char* fragmentBVHRayTrace = R(
             nodeStack[idx++] = getBVHNode(0);
 
             Hit result = lastHit;
-
             while (idx > 0) {
                 BVHNode node = nodeStack[--idx];
                 if (rayBoundingBox(ray, node.minBounds, node.maxBounds)) {
                     if (node.childIndex == 0) { //leaf
-                        for (int i = node.triangleIndex; i < node.triangleIndex + node.triangleCount; ++i) {
-                            Hit triHit = rayTriangle(ray, getTriangle(i));
+                        for (int triIdx = node.triangleIndex; triIdx < node.triangleIndex + node.triangleCount; ++triIdx) {
+                            Hit triHit = rayTriangle(ray, getTriangle(triIdx));
                             if (triHit.didHit && triHit.dst < result.dst)
                                 result = triHit;
                         }
@@ -199,7 +198,7 @@ const char* fragmentBVHRayTrace = R(
         Hit rayMesh(Ray ray) { // 1 mesh
             Hit closestHit;
             closestHit.didHit = false;
-            closestHit.dst = 9999999.0;
+            closestHit.dst = INF;
             closestHit.mat.color = vec3(0.0);
 
             for (int triIdx = 0; triIdx < u_triangleSize; ++triIdx) {
@@ -233,15 +232,15 @@ const char* fragmentBVHRayTrace = R(
             ray.dir = worldRay;
             ray.invDir = 1.0 / worldRay;
 
-//            Hit hit = rayCollision(ray);
-//            if (hit.dst < INF) {
-//                fragColor = vec4(0.0, 1.0, 0.0, 1.0);
-//            } else {
-//                fragColor = vec4(1.0, 0.0, 0.0, 1.0);
-//            }
+            Hit hit = rayCollision(ray);
+            if (hit.dst < INF) {
+                fragColor = vec4(0.0, 0.0, 1.0, 1.0);
+            } else {
+                fragColor = vec4(1.0, 0.0, 0.0, 1.0);
+            }
 
-            Hit hit = rayMesh(ray);
-            fragColor = vec4(hit.mat.color, 1.0);
+//            Hit hit = rayMesh(ray);
+//            fragColor = vec4(hit.mat.color, 1.0);
         }
 );
 

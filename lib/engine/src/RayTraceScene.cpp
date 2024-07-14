@@ -60,16 +60,14 @@ void RayTraceScene::buildMeshTBO(bool bvh=false) {
         break; //handle only one mesh
     }
 
-
     if (bvh) {
-        int nodeCount = bvhNodes.size();
-        vector<int> bvhNodeIndices; // [triIndex, triCount, childIndex]
+        vector<float> bvhNodeIndices; // [triIndex, triCount, childIndex]
         vector<float> bvhMinBounds;
         vector<float> bvhMaxBounds;
 
-        bvhNodeIndices.reserve(nodeCount * 3);
-        bvhMinBounds.reserve(nodeCount * 3);
-        bvhMaxBounds.reserve(nodeCount * 3);
+        bvhNodeIndices.reserve(bvhNodes.size() * 3);
+        bvhMinBounds.reserve(bvhNodes.size() * 3);
+        bvhMaxBounds.reserve(bvhNodes.size() * 3);
 
         for (const auto& node : bvhNodes) {
             bvhNodeIndices.push_back(node.triangleIndex);
@@ -135,7 +133,7 @@ void RayTraceScene::buildMeshTBO(bool bvh=false) {
 
         glGenBuffers(1, &_bvhNodeTBO);
         glBindBuffer(GL_TEXTURE_BUFFER, _bvhNodeTBO);
-        glBufferData(GL_TEXTURE_BUFFER, bvhNodeIndices.size() * sizeof(int), bvhNodeIndices.data(), GL_STATIC_DRAW);
+        glBufferData(GL_TEXTURE_BUFFER, bvhNodeIndices.size() * sizeof(float), bvhNodeIndices.data(), GL_STATIC_DRAW);
         glGenTextures(1, &_bvhNodeTBOTexture);
         glBindTexture(GL_TEXTURE_BUFFER, _bvhNodeTBOTexture);
         glTexBuffer(GL_TEXTURE_BUFFER, GL_RGB32F, _bvhNodeTBO); //GL_RGB16I : 안돼..

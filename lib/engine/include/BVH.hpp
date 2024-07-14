@@ -12,7 +12,7 @@
 
 using namespace std;
 
-constexpr int BVH_MAX_DEPTH = 10;
+constexpr int BVH_MAX_DEPTH = 14;
 
 struct Triangle {
     Triangle(vec3 pa, vec3 pb, vec3 pc, vec3 na, vec3 nb, vec3 nc) {
