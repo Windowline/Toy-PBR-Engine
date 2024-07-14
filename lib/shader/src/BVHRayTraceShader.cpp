@@ -58,7 +58,10 @@ const char* fragmentBVHRayTrace = R(
         uniform samplerBuffer u_bvhNodeTBO;
         uniform samplerBuffer u_bvhMinBoundsTBO;
         uniform samplerBuffer u_bvhMaxBoundsTBO;
-        uniform samplerBuffer u_bvhTriangleTBO;
+//        uniform samplerBuffer u_bvhTriangleTBO;
+        uniform samplerBuffer u_posTBO;
+        uniform samplerBuffer u_normalTBO;
+
         uniform int u_triangleSize;
 
         float INF = 9999999.0;
@@ -144,26 +147,27 @@ const char* fragmentBVHRayTrace = R(
         }
 
         Triangle getTriangle(int i) {
-            const int STRIDE = 6;
+            const int STRIDE = 3;
             Triangle tri;
-            tri.posA = texelFetch(u_bvhTriangleTBO, i * STRIDE + 0).xyz;
-            tri.posB = texelFetch(u_bvhTriangleTBO, i * STRIDE + 1).xyz;
-            tri.posC = texelFetch(u_bvhTriangleTBO, i * STRIDE + 2).xyz;
-            tri.NA   = texelFetch(u_bvhTriangleTBO, i * STRIDE + 3).xyz;
-            tri.NB   = texelFetch(u_bvhTriangleTBO, i * STRIDE + 4).xyz;
-            tri.NC   = texelFetch(u_bvhTriangleTBO, i * STRIDE + 5).xyz;
+
+            tri.posA = texelFetch(u_posTBO, i * STRIDE + 0).xyz;
+            tri.posB = texelFetch(u_posTBO, i * STRIDE + 1).xyz;
+            tri.posC = texelFetch(u_posTBO, i * STRIDE + 2).xyz;
+
+            tri.NA   = texelFetch(u_normalTBO, i * STRIDE + 0).xyz;
+            tri.NB   = texelFetch(u_normalTBO, i * STRIDE + 1).xyz;
+            tri.NC   = texelFetch(u_normalTBO, i * STRIDE + 2).xyz;
+
             return tri;
         }
 
         // RayTriangleTestBVH의 스택+반복버전이 필요함(쉐이더에서 리커전 지원X)
-        Hit rayTriangleTestBVH(Ray ray) {
+        Hit rayTriangleTestBVH(Ray ray, Hit lastHit) {
             int idx = 0;
             BVHNode nodeStack[20];
             nodeStack[idx++] = getBVHNode(0);
 
-            Hit result;
-            result.didHit = false;
-            result.dst = INF;
+            Hit result = lastHit;
 
             while (idx > 0) {
                 BVHNode node = nodeStack[--idx];
@@ -171,12 +175,12 @@ const char* fragmentBVHRayTrace = R(
                     if (node.childIndex == 0) { //leaf
                         for (int i = node.triangleIndex; i < node.triangleIndex + node.triangleCount; ++i) {
                             Hit triHit = rayTriangle(ray, getTriangle(i));
-                            if (triHit.dst < result.dst)
+                            if (triHit.didHit && triHit.dst < result.dst)
                                 result = triHit;
                         }
                     } else {
-                        nodeStack[idx++] = getBVHNode(node.childIndex + 1);
                         nodeStack[idx++] = getBVHNode(node.childIndex + 0);
+                        nodeStack[idx++] = getBVHNode(node.childIndex + 1);
                     }
                 }
             }
@@ -184,11 +188,37 @@ const char* fragmentBVHRayTrace = R(
             return result;
         }
 
+        Hit rayCollision(Ray worldRay) {
+            Hit result;
+            result.didHit = false;
+            result.dst = INF;
+
+            return rayTriangleTestBVH(worldRay, result);
+        }
+
+        Hit rayMesh(Ray ray) { // 1 mesh
+            Hit closestHit;
+            closestHit.didHit = false;
+            closestHit.dst = 9999999.0;
+            closestHit.mat.color = vec3(0.0);
+
+            for (int triIdx = 0; triIdx < u_triangleSize; ++triIdx) {
+                Triangle tri = getTriangle(triIdx);
+                Hit hit = rayTriangle(ray, tri);
+
+                if (hit.didHit && hit.dst < closestHit.dst) {
+                    closestHit = hit;
+                    closestHit.mat.color = vec3(1.0, 1.0, 1.0);
+                }
+            }
+
+            return closestHit;
+        }
+
         void main() {
             ivec3 tmp1 = ivec3(texelFetch(u_bvhNodeTBO, 0).xyz);
             vec3 tmp2 = texelFetch(u_bvhMinBoundsTBO, 0).xyz;
             vec3 tmp3 = texelFetch(u_bvhMaxBoundsTBO, 0).xyz;
-            vec3 tmp4 = texelFetch(u_bvhTriangleTBO, 0).xyz;
             int tmp5 = u_triangleSize;
 
             vec2 uv = v_uv * 2.0 - 1.0;
@@ -197,12 +227,21 @@ const char* fragmentBVHRayTrace = R(
             vec4 rayClip = vec4(uv, -1.0, 1.0);
             vec4 rayEye = inverse(u_projMat) * rayClip;
             rayEye = vec4(rayEye.xy, -1.0, 0.0);
-            vec3 rayWorld = normalize((inverse(u_viewMat) * rayEye).xyz);
+            vec3 worldRay = normalize((inverse(u_viewMat) * rayEye).xyz);
             Ray ray;
             ray.org = u_worldCameraPos;
-            ray.dir = rayWorld;
+            ray.dir = worldRay;
+            ray.invDir = 1.0 / worldRay;
 
-            fragColor = vec4(1.0);
+//            Hit hit = rayCollision(ray);
+//            if (hit.dst < INF) {
+//                fragColor = vec4(0.0, 1.0, 0.0, 1.0);
+//            } else {
+//                fragColor = vec4(1.0, 0.0, 0.0, 1.0);
+//            }
+
+            Hit hit = rayMesh(ray);
+            fragColor = vec4(hit.mat.color, 1.0);
         }
 );
 
@@ -214,7 +253,10 @@ BVHRayTraceShader::BVHRayTraceShader() {
     _bvhNodeTBOLoc = glGetUniformLocation(_programID, "u_bvhNodeTBO");
     _bvhMinBoundsTBOLoc = glGetUniformLocation(_programID, "u_bvhMinBoundsTBO");
     _bvhMaxBoundsTBOLoc = glGetUniformLocation(_programID, "u_bvhMaxBoundsTBO");
-    _bvhTriangleTBOLoc = glGetUniformLocation(_programID, "u_bvhTriangleTBO");
+//    _bvhTriangleTBOLoc = glGetUniformLocation(_programID, "u_bvhTriangleTBO");
+    _posTBOLoc = glGetUniformLocation(_programID, "u_posTBO");
+    _normalTBOLoc = glGetUniformLocation(_programID, "u_normalTBO");
+
 
     _cameraPosUniformLoc = glGetUniformLocation(_programID, "u_worldCameraPos");
     _resolutionUnifromLoc = glGetUniformLocation(_programID, "u_resolution");
@@ -245,6 +287,13 @@ void BVHRayTraceShader::useProgram() {
     assert(_bvhMaxBoundsTBOLoc != -1);
     glUniform1i(_bvhMaxBoundsTBOLoc, 2);
 
-    assert(_bvhTriangleTBOLoc != -1);
-    glUniform1i(_bvhTriangleTBOLoc, 3);
+    assert(_posTBOLoc != -1);
+    glUniform1i(_posTBOLoc, 3);
+
+    assert(_normalTBOLoc != -1);
+    glUniform1i(_normalTBOLoc, 4);
+
+
+//    assert(_bvhTriangleTBOLoc != -1);
+//    glUniform1i(_bvhTriangleTBOLoc, 3);
 }

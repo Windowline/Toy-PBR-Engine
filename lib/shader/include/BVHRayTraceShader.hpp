@@ -33,7 +33,10 @@ private:
     GLint _bvhNodeTBOLoc = -1;
     GLint _bvhMinBoundsTBOLoc = -1;
     GLint _bvhMaxBoundsTBOLoc = -1;
-    GLint _bvhTriangleTBOLoc = -1;
+//    GLint _bvhTriangleTBOLoc = -1;
+
+    GLint _posTBOLoc = -1;
+    GLint _normalTBOLoc = -1;
 
 };
 

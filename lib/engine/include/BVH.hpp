@@ -1,42 +1,50 @@
 #ifndef TOYRENDERER_BVH_HPP
 #define TOYRENDERER_BVH_HPP
 
+#include "Model.hpp"
 #include "Vector.hpp"
 #include <vector>
 #include <memory>
 #include <iostream>
 
+
+#define ULL unsigned long long
+
 using namespace std;
 
-constexpr int BVH_MAX_DEPTH = 12;
+constexpr int BVH_MAX_DEPTH = 10;
 
 struct Triangle {
-    Triangle(vec3 a, vec3 b, vec3 c) {
-        posA = a;
-        posB = b;
-        posC = c;
-        center = (a + b + c) / 3.0;
+    Triangle(vec3 pa, vec3 pb, vec3 pc, vec3 na, vec3 nb, vec3 nc) {
+        posA = pa;
+        posB = pb;
+        posC = pc;
+
+        NA = na;
+        NB = nb;
+        NC = nc;
+
+        center = (pa + pb + pc) / 3.0;
     }
 
     vec3 center;
     vec3 posA;
     vec3 posB;
     vec3 posC;
-//    vec3 NA;
-//    vec3 NB;
-//    vec3 NC;
+    vec3 NA;
+    vec3 NB;
+    vec3 NC;
 };
 
 struct BVHNode {
-    BVHNode(int triangleIndex_, AABB aabb_) {
+    BVHNode(int triangleIndex_) {
         triangleIndex = triangleIndex_;
-        aabb = aabb_;
     }
 
     AABB aabb;
-    int triangleIndex;
-    int triangleCount;
-    int childIndex;
+    ULL triangleIndex = 0;
+    ULL triangleCount = 0;
+    ULL childIndex = 0;
 };
 
 
@@ -59,15 +67,16 @@ void split(BVHNode& parent,
     auto [splitAxis, splitPos] = chooseSplit(parent);
     parent.childIndex = outAllNodes.size();
 
-    auto childA = BVHNode(parent.triangleIndex, parent.aabb);
-    auto childB = BVHNode(parent.triangleIndex, parent.aabb);
+    auto childA = BVHNode(parent.triangleIndex);
+    auto childB = BVHNode(parent.triangleIndex);
     outAllNodes.push_back(childA);
     outAllNodes.push_back(childB);
 
-    for (int i = parent.triangleIndex; i < parent.triangleIndex + parent.triangleCount; ++i) {
+    for (ULL i = parent.triangleIndex; i < parent.triangleIndex + parent.triangleCount; ++i) {
         bool isSideA = outAllTriangles[i].center[splitAxis] < splitPos;
         auto child = isSideA ? childA : childB;
 
+        //Add Triangle
         child.aabb.extend(outAllTriangles[i].posA);
         child.aabb.extend(outAllTriangles[i].posB);
         child.aabb.extend(outAllTriangles[i].posC);
@@ -76,7 +85,7 @@ void split(BVHNode& parent,
         if (isSideA) {
             // Ensure that the triangles of each child node are grouped together.
             // This allows the node to 'store' the triangles with an index and count.
-            int swapIdx = child.triangleIndex + child.triangleCount - 1;
+            ULL swapIdx = child.triangleIndex + child.triangleCount - 1;
             swap(outAllTriangles[i], outAllTriangles[swapIdx]);
             childB.triangleIndex++; //triIndex of childB increases each time we add to childA
         }
@@ -87,24 +96,30 @@ void split(BVHNode& parent,
 }
 
 
-void buildBVH(const vector<vec3>& vertices, const vector<unsigned int>& indices,
+void buildBVH(const vector<Vertex>& vertices, const vector<unsigned int>& indices,
               vector<BVHNode>& outAllNodes, vector<Triangle>& outAllTriangles) {
 
     AABB aabb;
     outAllTriangles.reserve(indices.size() / 3);
 
     for (int i = 0; i < indices.size(); i += 3) {
-        vec3 a = vertices[indices[i + 0]];
-        vec3 b = vertices[indices[i + 1]];
-        vec3 c = vertices[indices[i + 2]];
+        vec3 posA = vertices[indices[i + 0]].Position;
+        vec3 posB = vertices[indices[i + 1]].Position;
+        vec3 posC = vertices[indices[i + 2]].Position;
 
-        outAllTriangles.push_back(Triangle(a, b, c));
-        aabb.extend(a);
-        aabb.extend(b);
-        aabb.extend(c);
+        vec3 NA = vertices[indices[i + 0]].Normal;
+        vec3 NB = vertices[indices[i + 1]].Normal;
+        vec3 NC = vertices[indices[i + 2]].Normal;
+
+        outAllTriangles.push_back(Triangle(posA, posB, posC, NA, NB, NC));
+        aabb.extend(posA);
+        aabb.extend(posB);
+        aabb.extend(posC);
     }
 
-    auto root = BVHNode(0, aabb);
+    auto root = BVHNode(0);
+    root.aabb = aabb;
+    root.triangleCount = outAllTriangles.size();
 
     outAllNodes.push_back(root);
 
