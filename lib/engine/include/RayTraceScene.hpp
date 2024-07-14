@@ -13,6 +13,7 @@ class FrameBufferObject;
 class FullQuad;
 class Node;
 class Model;
+class BVHRayTraceShader;
 struct BVHNode;
 
 class RayTraceScene {
@@ -46,6 +47,8 @@ private:
     std::shared_ptr<Node> _rootNode;
     std::shared_ptr<Node> _modelNode;
     std::shared_ptr<Model> _modelMesh;
+
+    std::shared_ptr<BVHRayTraceShader> _bvhRayTraceShader;
 
     //no BVH
     unsigned int _posTBO = 0;

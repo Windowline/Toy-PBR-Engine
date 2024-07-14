@@ -28,6 +28,20 @@ RayTraceScene::RayTraceScene(RenderEngine* engine, GLuint defaultFBO) : _engine(
     _rootNode->addChild(_modelNode);
 
     buildMeshTBO(_applyBVH);
+
+
+    //setup shader
+    _bvhRayTraceShader = shaderManager()->setActiveShader<BVHRayTraceShader>(eShaderProgram_BVHRayTrace);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_BUFFER, _bvhNodeTBOTexture);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_BUFFER, _bvhMinBoundsTBOTexture);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_BUFFER, _bvhMaxBoundsTBOTexture);
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_BUFFER, _posTBOTexture);
+    glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_BUFFER, _normalTBOTexture);
 }
 
 void RayTraceScene::buildMeshTBO(bool bvh=false) {
@@ -37,7 +51,6 @@ void RayTraceScene::buildMeshTBO(bool bvh=false) {
     vector<Triangle> bvhTriangles;
 
     for (const ModelMesh& mesh : _modelMesh->meshes) {
-
         for (const Vertex& vertex : mesh.vertices) {
             posBufferData.push_back(vertex.Position.x);
             posBufferData.push_back(vertex.Position.y);
@@ -83,49 +96,6 @@ void RayTraceScene::buildMeshTBO(bool bvh=false) {
             bvhMaxBounds.push_back(node.aabb.boundsMax.z);
         }
 
-        vector<float> bvhTrianglesInput;
-        bvhTrianglesInput.reserve(bvhTriangles.size() * 6 * 3);
-
-        for (const auto& tri : bvhTriangles) {
-            //position
-//            bvhTrianglesInput.push_back(tri.posA.x);
-//            bvhTrianglesInput.push_back(tri.posA.y);
-//            bvhTrianglesInput.push_back(tri.posA.z);
-//
-//            bvhTrianglesInput.push_back(tri.posB.x);
-//            bvhTrianglesInput.push_back(tri.posB.y);
-//            bvhTrianglesInput.push_back(tri.posB.z);
-//
-//            bvhTrianglesInput.push_back(tri.posC.x);
-//            bvhTrianglesInput.push_back(tri.posC.y);
-//            bvhTrianglesInput.push_back(tri.posC.z);
-//
-//            //normal
-//            bvhTrianglesInput.push_back(tri.NA.x);
-//            bvhTrianglesInput.push_back(tri.NA.y);
-//            bvhTrianglesInput.push_back(tri.NA.z);
-//
-//            bvhTrianglesInput.push_back(tri.NB.x);
-//            bvhTrianglesInput.push_back(tri.NB.y);
-//            bvhTrianglesInput.push_back(tri.NB.z);
-//
-//            bvhTrianglesInput.push_back(tri.NC.x);
-//            bvhTrianglesInput.push_back(tri.NC.y);
-//            bvhTrianglesInput.push_back(tri.NC.z);
-        }
-
-        //test
-        bvhTrianglesInput.clear();
-        for (auto& v : _modelMesh->meshes[0].vertices) {
-            bvhTrianglesInput.push_back(v.Position.x);
-            bvhTrianglesInput.push_back(v.Position.y);
-            bvhTrianglesInput.push_back(v.Position.z);
-
-            bvhTrianglesInput.push_back(v.Normal.x);
-            bvhTrianglesInput.push_back(v.Normal.y);
-            bvhTrianglesInput.push_back(v.Normal.z);
-        }
-
         cout << "bvhNodes.size(): " << bvhNodes.size() << endl;
         cout << "bvhNodeIndices.size(): " << bvhNodeIndices.size()  << endl;
         cout << "bvhMinBounds.size(): " << bvhNodeIndices.size()  << endl;
@@ -169,15 +139,6 @@ void RayTraceScene::buildMeshTBO(bool bvh=false) {
         glTexBuffer(GL_TEXTURE_BUFFER, GL_RGB32F, _normalTBO);
 
         _modelTriangleSize = posBufferData.size() / (3 * 3);
-//        glGenBuffers(1, &_bvhTriangleTBO);
-//        glBindBuffer(GL_TEXTURE_BUFFER, _bvhTriangleTBO);
-//        glBufferData(GL_TEXTURE_BUFFER, bvhTrianglesInput.size() * sizeof(float), bvhTrianglesInput.data(), GL_STATIC_DRAW);
-//        glGenTextures(1, &_bvhTriangleTBOTexture);
-//        glBindTexture(GL_TEXTURE_BUFFER, _bvhTriangleTBOTexture);
-//        glTexBuffer(GL_TEXTURE_BUFFER, GL_RGB32F, _bvhTriangleTBO);
-//        _modelTriangleSize = bvhTrianglesInput.size() / (6 * 3);
-
-
 
     } else {
         glGenBuffers(1, &_posTBO);
@@ -241,24 +202,11 @@ void RayTraceScene::render() {
     const mat4& view = _camera->viewMat();
 
     if (_applyBVH) {
-        auto shader = shaderManager()->setActiveShader<BVHRayTraceShader>(eShaderProgram_BVHRayTrace);
-        shader->cameraPosUniform3f(_camera->eye().x, _camera->eye().y, _camera->eye().z);
-        shader->resolutionUniform2f((float)_camera->screenSize().x, (float)_camera->screenSize().y);
-        shader->viewMatUniformMatrix4fv(view.pointer());
-        shader->projMatUniformMatrix4fv(proj.pointer());
-        shader->triangleSizeUniform1i(_modelTriangleSize);
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_BUFFER, _bvhNodeTBOTexture);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_BUFFER, _bvhMinBoundsTBOTexture);
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_BUFFER, _bvhMaxBoundsTBOTexture);
-        glActiveTexture(GL_TEXTURE3);
-        glBindTexture(GL_TEXTURE_BUFFER, _posTBOTexture);
-        glActiveTexture(GL_TEXTURE4);
-        glBindTexture(GL_TEXTURE_BUFFER, _normalTBOTexture);
-
+        _bvhRayTraceShader->cameraPosUniform3f(_camera->eye().x, _camera->eye().y, _camera->eye().z);
+        _bvhRayTraceShader->resolutionUniform2f((float)_camera->screenSize().x, (float)_camera->screenSize().y);
+        _bvhRayTraceShader->viewMatUniformMatrix4fv(view.pointer());
+        _bvhRayTraceShader->projMatUniformMatrix4fv(proj.pointer());
+        _bvhRayTraceShader->triangleSizeUniform1i(_modelTriangleSize);
         _fullQuad->render();
 
     } else {
