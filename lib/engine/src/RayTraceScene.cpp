@@ -71,7 +71,7 @@ void RayTraceScene::buildMeshTBO(bool bvh=false) {
 
     if (bvh) {
         int nodeCount = bvhNodes.size();
-        vector<float> bvhNodeIndices; // [triIndex, triCount, childIndex]
+        vector<int> bvhNodeIndices; // [triIndex, triCount, childIndex]
         vector<float> bvhMinBounds;
         vector<float> bvhMaxBounds;
 
@@ -112,10 +112,10 @@ void RayTraceScene::buildMeshTBO(bool bvh=false) {
 
         glGenBuffers(1, &_bvhNodeTBO);
         glBindBuffer(GL_TEXTURE_BUFFER, _bvhNodeTBO);
-        glBufferData(GL_TEXTURE_BUFFER, bvhNodeIndices.size() * sizeof(float), bvhNodeIndices.data(), GL_STATIC_DRAW);
+        glBufferData(GL_TEXTURE_BUFFER, bvhNodeIndices.size() * sizeof(int), bvhNodeIndices.data(), GL_STATIC_DRAW);
         glGenTextures(1, &_bvhNodeTBOTexture);
         glBindTexture(GL_TEXTURE_BUFFER, _bvhNodeTBOTexture);
-        glTexBuffer(GL_TEXTURE_BUFFER, GL_RGB32F, _bvhNodeTBO);
+        glTexBuffer(GL_TEXTURE_BUFFER, GL_RGB16I, _bvhNodeTBO);
 
         glGenBuffers(1, &_bvhMinBoundsTBO);
         glBindBuffer(GL_TEXTURE_BUFFER, _bvhMinBoundsTBO);

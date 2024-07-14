@@ -15,10 +15,18 @@ const char* fragmentBVHRayTrace = R(
         struct Ray {
             vec3 org;
             vec3 dir;
+            vec3 invDir;
         };
 
         struct Material {
             vec3 color;
+        };
+
+        struct Mesh {
+            int nodeOffset;
+            int triangleOffset;
+            mat4 worldToLocalMatrix;
+            Material mat;
         };
 
         struct Hit {
@@ -29,23 +37,17 @@ const char* fragmentBVHRayTrace = R(
             Material mat;
         };
 
-        struct Sphere {
-            vec3 pos;
-            float r;
-            Material mat;
-        };
-
         struct Triangle {
             vec3 posA, posB, posC;
             vec3 NA, NB, NC;
         };
 
-        struct MeshInfo {
-            uint firstTriangleIndex;
-            uint numTriangles;
-            vec3 boundsMin;
-            vec3 boundsMax;
-            Material mat;
+        struct BVHNode {
+            int triangleIndex;
+            int triangleCount;
+            int childIndex;
+            vec3 minBounds;
+            vec3 maxBounds;
         };
 
         uniform vec2 u_resolution;
@@ -58,6 +60,8 @@ const char* fragmentBVHRayTrace = R(
         uniform samplerBuffer u_bvhMaxBoundsTBO;
         uniform samplerBuffer u_bvhTriangleTBO;
         uniform int u_triangleSize;
+
+        float INF = 9999999.0;
 
         layout (location = 0) out vec4 fragColor;
         in vec2 v_uv;
@@ -124,11 +128,67 @@ const char* fragmentBVHRayTrace = R(
             return tmax >= max(tmin, 0.0);
         }
 
+        BVHNode getBVHNode(int i) {
+            ivec3 indexInfo = ivec3(texelFetch(u_bvhNodeTBO, i).xyz);
+            vec3 minBounds = texelFetch(u_bvhMinBoundsTBO, i).xyz;
+            vec3 maxBounds = texelFetch(u_bvhMaxBoundsTBO, i).xyz;
+
+            BVHNode node;
+            node.minBounds = minBounds;
+            node.maxBounds = maxBounds;
+            node.triangleIndex = indexInfo.x;
+            node.triangleCount = indexInfo.y;
+            node.childIndex = indexInfo.z;
+
+            return node;
+        }
+
+        Triangle getTriangle(int i) {
+            const int STRIDE = 6;
+            Triangle tri;
+            tri.posA = texelFetch(u_bvhTriangleTBO, i * STRIDE + 0).xyz;
+            tri.posB = texelFetch(u_bvhTriangleTBO, i * STRIDE + 1).xyz;
+            tri.posC = texelFetch(u_bvhTriangleTBO, i * STRIDE + 2).xyz;
+            tri.NA   = texelFetch(u_bvhTriangleTBO, i * STRIDE + 3).xyz;
+            tri.NB   = texelFetch(u_bvhTriangleTBO, i * STRIDE + 4).xyz;
+            tri.NC   = texelFetch(u_bvhTriangleTBO, i * STRIDE + 5).xyz;
+            return tri;
+        }
+
+        // RayTriangleTestBVH의 스택+반복버전이 필요함(쉐이더에서 리커전 지원X)
+        Hit rayTriangleTestBVH(Ray ray) {
+            int idx = 0;
+            BVHNode nodeStack[20];
+            nodeStack[idx++] = getBVHNode(0);
+
+            Hit result;
+            result.didHit = false;
+            result.dst = INF;
+
+            while (idx > 0) {
+                BVHNode node = nodeStack[--idx];
+                if (rayBoundingBox(ray, node.minBounds, node.maxBounds)) {
+                    if (node.childIndex == 0) { //leaf
+                        for (int i = node.triangleIndex; i < node.triangleIndex + node.triangleCount; ++i) {
+                            Hit triHit = rayTriangle(ray, getTriangle(i));
+                            if (triHit.dst < result.dst)
+                                result = triHit;
+                        }
+                    } else {
+                        nodeStack[idx++] = getBVHNode(node.childIndex + 1);
+                        nodeStack[idx++] = getBVHNode(node.childIndex + 0);
+                    }
+                }
+            }
+
+            return result;
+        }
+
         void main() {
-            vec4 tmp1 = vec4(texelFetch(u_bvhNodeTBO, 0).xyz, 1.0);
-            vec4 tmp2 = vec4(texelFetch(u_bvhMinBoundsTBO, 0).xyz, 1.0);
-            vec4 tmp3 = vec4(texelFetch(u_bvhMaxBoundsTBO, 0).xyz, 1.0);
-            vec4 tmp4 = vec4(texelFetch(u_bvhTriangleTBO, 0).xyz, 1.0);
+            ivec3 tmp1 = ivec3(texelFetch(u_bvhNodeTBO, 0).xyz);
+            vec3 tmp2 = texelFetch(u_bvhMinBoundsTBO, 0).xyz;
+            vec3 tmp3 = texelFetch(u_bvhMaxBoundsTBO, 0).xyz;
+            vec3 tmp4 = texelFetch(u_bvhTriangleTBO, 0).xyz;
             int tmp5 = u_triangleSize;
 
             vec2 uv = v_uv * 2.0 - 1.0;
