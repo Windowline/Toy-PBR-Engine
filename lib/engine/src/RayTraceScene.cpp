@@ -28,18 +28,18 @@ RayTraceScene::RayTraceScene(RenderEngine* engine, GLuint defaultFBO) : _engine(
 
     auto shader = shaderManager()->setActiveShader<RayTraceShader>(eShaderProgram_RayTrace);
 
-    buildMeshTBO();
-//    buildTestTri();
+    buildMeshTBO(false);
 }
 
-void RayTraceScene::buildMeshTBO() {
+void RayTraceScene::buildMeshTBO(bool bvh=false) {
     vector<float> posBufferData;
     vector<float> normalBufferData;
+    vector<BVHNode> bvhNodes;
+    vector<Triangle> bvhTriangles;
 
-    const vector<ModelMesh>& meshs = _modelMesh->meshes;
-
-    for (const ModelMesh& mesh : meshs) {
-        vector<vec3> vertices; // for bvh
+    for (const ModelMesh& mesh : _modelMesh->meshes) {
+        vector<vec3> vertices;
+        vertices.reserve(mesh.vertices.size());
 
         for (const Vertex& vertex : mesh.vertices) {
             posBufferData.push_back(vertex.Position.x);
@@ -61,27 +61,99 @@ void RayTraceScene::buildMeshTBO() {
             vertices.push_back(vertex.Position);
         }
 
-        _bvhRoots.push_back(buildBVH(vertices, ref(mesh.indices)));
+        buildBVH(vertices, mesh.indices, bvhNodes, bvhTriangles);
+        break; //handle only one mesh
     }
 
     _modelTriangleSize = posBufferData.size() / (3 * 3);
 
-    glGenBuffers(1, &_posTBO);
-    glBindBuffer(GL_TEXTURE_BUFFER, _posTBO);
-    glBufferData(GL_TEXTURE_BUFFER, posBufferData.size() * sizeof(float), posBufferData.data(), GL_STATIC_DRAW);
 
-    glGenTextures(1, &_posTBOTexture);
-    glBindTexture(GL_TEXTURE_BUFFER, _posTBOTexture);
-    glTexBuffer(GL_TEXTURE_BUFFER, GL_RGB32F, _posTBO);
+    if (bvh) {
+        int nodeCount = bvhNodes.size();
+        vector<float> bvhNodeIndices; // [triIndex, triCount, childIndex]
+        vector<float> bvhMinBounds;
+        vector<float> bvhMaxBounds;
 
-    glGenBuffers(1, &_normalTBO);
-    glBindBuffer(GL_TEXTURE_BUFFER, _normalTBO);
-    glBufferData(GL_TEXTURE_BUFFER, normalBufferData.size() * sizeof(float), normalBufferData.data(), GL_STATIC_DRAW);
+        bvhNodeIndices.reserve(nodeCount * 3);
+        bvhMinBounds.reserve(nodeCount * 3);
+        bvhMaxBounds.reserve(nodeCount * 3);
 
-    glGenTextures(1, &_normalTBOTexture);
-    glBindTexture(GL_TEXTURE_BUFFER, _normalTBOTexture);
-    glTexBuffer(GL_TEXTURE_BUFFER, GL_RGB32F, _normalTBO);
+        for (const auto& node : bvhNodes) {
+            bvhNodeIndices.push_back(node.triangleIndex);
+            bvhNodeIndices.push_back(node.triangleCount);
+            bvhNodeIndices.push_back(node.childIndex);
 
+            bvhMinBounds.push_back(node.aabb.boundsMin.x);
+            bvhMinBounds.push_back(node.aabb.boundsMin.y);
+            bvhMinBounds.push_back(node.aabb.boundsMin.z);
+
+            bvhMaxBounds.push_back(node.aabb.boundsMax.x);
+            bvhMaxBounds.push_back(node.aabb.boundsMax.y);
+            bvhMaxBounds.push_back(node.aabb.boundsMax.z);
+        }
+
+        vector<float> bvhTrianglesInput;
+        bvhTrianglesInput.reserve(bvhTriangles.size() * 3 * 3);
+
+        for (const auto& tri : bvhTriangles) {
+            bvhTrianglesInput.push_back(tri.posA.x);
+            bvhTrianglesInput.push_back(tri.posA.y);
+            bvhTrianglesInput.push_back(tri.posA.z);
+
+            bvhTrianglesInput.push_back(tri.posB.x);
+            bvhTrianglesInput.push_back(tri.posB.y);
+            bvhTrianglesInput.push_back(tri.posB.z);
+
+            bvhTrianglesInput.push_back(tri.posC.x);
+            bvhTrianglesInput.push_back(tri.posC.y);
+            bvhTrianglesInput.push_back(tri.posC.z);
+        }
+
+        glGenBuffers(1, &_bvhNodeTBO);
+        glBindBuffer(GL_TEXTURE_BUFFER, _bvhNodeTBO);
+        glBufferData(GL_TEXTURE_BUFFER, bvhNodeIndices.size() * sizeof(float), bvhNodeIndices.data(), GL_STATIC_DRAW);
+        glGenTextures(1, &_bvhNodeTBOTexture);
+        glBindTexture(GL_TEXTURE_BUFFER, _bvhNodeTBOTexture);
+        glTexBuffer(GL_TEXTURE_BUFFER, GL_RGB32F, _bvhNodeTBO);
+
+        glGenBuffers(1, &_bvhMinBoundsTBO);
+        glBindBuffer(GL_TEXTURE_BUFFER, _bvhMinBoundsTBO);
+        glBufferData(GL_TEXTURE_BUFFER, bvhMinBounds.size() * sizeof(float), bvhMinBounds.data(), GL_STATIC_DRAW);
+        glGenTextures(1, &_bvhMinBoundsTBOTexture);
+        glBindTexture(GL_TEXTURE_BUFFER, _bvhMinBoundsTBOTexture);
+        glTexBuffer(GL_TEXTURE_BUFFER, GL_RGB32F, _bvhMinBoundsTBO);
+
+        glGenBuffers(1, &_bvhMaxBoundsTBO);
+        glBindBuffer(GL_TEXTURE_BUFFER, _bvhMaxBoundsTBO);
+        glBufferData(GL_TEXTURE_BUFFER, bvhMaxBounds.size() * sizeof(float), bvhMaxBounds.data(), GL_STATIC_DRAW);
+        glGenTextures(1, &_bvhMaxBoundsTBOTexture);
+        glBindTexture(GL_TEXTURE_BUFFER, _bvhMaxBoundsTBOTexture);
+        glTexBuffer(GL_TEXTURE_BUFFER, GL_RGB32F, _bvhMaxBoundsTBO);
+
+        glGenBuffers(1, &_bvhTriangleTBO);
+        glBindBuffer(GL_TEXTURE_BUFFER, _bvhTriangleTBO);
+        glBufferData(GL_TEXTURE_BUFFER, bvhTrianglesInput.size() * sizeof(float), bvhTrianglesInput.data(), GL_STATIC_DRAW);
+        glGenTextures(1, &_bvhTriangleTBOTexture);
+        glBindTexture(GL_TEXTURE_BUFFER, _bvhTriangleTBOTexture);
+        glTexBuffer(GL_TEXTURE_BUFFER, GL_RGB32F, _bvhTriangleTBO);
+
+    } else {
+        glGenBuffers(1, &_posTBO);
+        glBindBuffer(GL_TEXTURE_BUFFER, _posTBO);
+        glBufferData(GL_TEXTURE_BUFFER, posBufferData.size() * sizeof(float), posBufferData.data(), GL_STATIC_DRAW);
+
+        glGenTextures(1, &_posTBOTexture);
+        glBindTexture(GL_TEXTURE_BUFFER, _posTBOTexture);
+        glTexBuffer(GL_TEXTURE_BUFFER, GL_RGB32F, _posTBO);
+
+        glGenBuffers(1, &_normalTBO);
+        glBindBuffer(GL_TEXTURE_BUFFER, _normalTBO);
+        glBufferData(GL_TEXTURE_BUFFER, normalBufferData.size() * sizeof(float), normalBufferData.data(), GL_STATIC_DRAW);
+
+        glGenTextures(1, &_normalTBOTexture);
+        glBindTexture(GL_TEXTURE_BUFFER, _normalTBOTexture);
+        glTexBuffer(GL_TEXTURE_BUFFER, GL_RGB32F, _normalTBO);
+    }
 }
 
 RayTraceScene::~RayTraceScene() {
@@ -146,6 +218,7 @@ shared_ptr<ShaderManager> RayTraceScene::shaderManager() {
 }
 
 
+//for debug
 void RayTraceScene::buildTestTri() {
     //TBO
     //must be ccw

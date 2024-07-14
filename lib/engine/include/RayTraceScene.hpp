@@ -34,29 +34,42 @@ public:
     std::shared_ptr<ShaderManager> shaderManager();
 
 private:
-    void buildMeshTBO();
+    void buildMeshTBO(bool bvh);
     void buildTestTri();
 
     RenderEngine* _engine;
     unsigned int _defaultFBO;
     std::shared_ptr<Camera> _camera;
-
     std::unique_ptr<FullQuad> _fullQuad;
-
     std::shared_ptr<Node> _rootNode;
     std::shared_ptr<Node> _modelNode;
     std::shared_ptr<Model> _modelMesh;
 
+    //no BVH
     unsigned int _posTBO = 0;
     unsigned int _posTBOTexture = 0;
     unsigned int _normalTBO = 0;
     unsigned int _normalTBOTexture = 0;
     unsigned int _modelTriangleSize = 0;
 
+    // BVH index
+    unsigned int _bvhNodeTBO = 0; // [triIndex, triCount, childIndex]
+    unsigned int _bvhNodeTBOTexture = 0;
+
+    // BVH aabb-min
+    unsigned int _bvhMinBoundsTBO = 0;
+    unsigned int _bvhMinBoundsTBOTexture = 0;
+
+    // BVH aabb-max
+    unsigned int _bvhMaxBoundsTBO = 0;
+    unsigned int _bvhMaxBoundsTBOTexture = 0;
+
+    // BVH triangle
+    unsigned int _bvhTriangleTBO = 0;
+    unsigned int _bvhTriangleTBOTexture = 0;
+
     vec3 _boundsMin = vec3(-1e9, -1e9, -1e9);
     vec3 _boundsMax = vec3(1e9, 1e9, 1e9);
-
-    std::vector<std::shared_ptr<BVHNode>> _bvhRoots;
 };
 
 

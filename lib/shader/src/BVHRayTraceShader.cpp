@@ -1,6 +1,6 @@
-#include "RayTraceShader.hpp"
+#include "BVHRayTraceShader.hpp"
 
-const char* vertexRayTrace = R(
+const char* vertexBVHRayTrace = R(
         layout (location = 0) in vec2 a_position;
         layout (location = 1) in vec2 a_texCoord;
         out vec2 v_uv;
@@ -11,7 +11,7 @@ const char* vertexRayTrace = R(
         }
 );
 
-const char* fragmentRayTrace = R(
+const char* fragmentBVHRayTrace = R(
         struct Ray {
             vec3 org;
             vec3 dir;
@@ -185,6 +185,30 @@ const char* fragmentRayTrace = R(
             return closestHit;
         }
 
+
+
+//        Hit rayMesh(Ray ray) {
+//            for (int meshIdx = 0; meshIdx < numMeshes; ++meshIdx) {
+//                MeshInfo meshInfo = AllMeshInfo[meshIdx];
+//
+//                if (!rayBoundingBox(ray, meshInfo.boundsMin, meshInfo.boundsMax)) {
+//                    continue;
+//                }
+//
+//                for (int i = 0; i < meshInfo.numTriangles; ++i) {
+//                    int triIdx = meshInfo.firstTriangleIndex + i;
+//                    Triangle tri = Triangles[triIdx];
+//                    Hit hit = rayTriangle(ray, tri);
+//
+//                    if (hit.didHit && hit.dst < closestHit.dst) {
+//                        closestHit = hit;
+//                        closestHit.meshInfo.mat;
+//                    }
+//
+//                }
+//            }
+//        }
+
         Hit rayCollisionSphere(Ray ray) {
             int numSphere = 2;
             Sphere spheres[2];
@@ -255,6 +279,7 @@ const char* fragmentRayTrace = R(
 //            Ray ray;
 //            ray.org = u_worldCameraPos;
 //            ray.dir = normalize(vec3(uv, -1.0));
+
             //ray 2
             vec4 rayClip = vec4(uv, -1.0, 1.0);
             vec4 rayEye = inverse(u_projMat) * rayClip;
@@ -276,12 +301,12 @@ const char* fragmentRayTrace = R(
 //            }
 //            fragColor = vec4(total / RAY_SAMPLE_CNT, 1.0);
 
-              Hit hit = rayMesh(ray);
-              fragColor = vec4(hit.mat.color, 1.0);
+            Hit hit = rayMesh(ray);
+            fragColor = vec4(hit.mat.color, 1.0);
         }
 );
 
-RayTraceShader::RayTraceShader() {
+BVHRayTraceShader::BVHRayTraceShader() {
     this->load();
     basicUniformLoc();
 
@@ -297,9 +322,9 @@ RayTraceShader::RayTraceShader() {
     _boundsMaxLoc = glGetUniformLocation(_programID, "u_boundsMax");
 }
 
-bool RayTraceShader::load() {
-    string vShader = string("#version 330 core \n") + string(vertexRayTrace);
-    string fShader = string("#version 330 core \n") + string(fragmentRayTrace);
+bool BVHRayTraceShader::load() {
+    string vShader = string("#version 330 core \n") + string(vertexBVHRayTrace);
+    string fShader = string("#version 330 core \n") + string(fragmentBVHRayTrace);
 
     _programID = loadProgram(reinterpret_cast<const char *>(vShader.c_str()),
                              reinterpret_cast<const char *>(fShader.c_str()));
@@ -308,7 +333,7 @@ bool RayTraceShader::load() {
     return true;
 }
 
-void RayTraceShader::useProgram() {
+void BVHRayTraceShader::useProgram() {
     glUseProgram(_programID);
 
     assert(_posTBOLoc != -1);

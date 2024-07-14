@@ -41,6 +41,9 @@ add_library(shader STATIC
 
         include/RayTraceShader.hpp
         src/RayTraceShader.cpp
+
+        include/BVHRayTraceShader.hpp
+        src/BVHRayTraceShader.cpp
 )
 
 target_link_libraries(shader
