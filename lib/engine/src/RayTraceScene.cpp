@@ -16,7 +16,10 @@
 
 using namespace std;
 
-RayTraceScene::RayTraceScene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaultFBO(defaultFBO) {
+RayTraceScene::RayTraceScene(RenderEngine* engine, GLuint defaultFBO) {
+    _engine = engine;
+    _defaultFBO = defaultFBO;
+
     _fullQuad = make_unique<FullQuad>("FullQuad");
     _camera = make_shared<Camera>(vec3(0, 0, 20), vec3(0, 0, 0));
 

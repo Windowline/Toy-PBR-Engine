@@ -5,6 +5,7 @@
 #include <memory>
 #include "Vector.hpp"
 #include "Matrix.hpp"
+#include "Scene.hpp"
 
 class RenderEngine;
 class Camera;
@@ -16,21 +17,21 @@ class Model;
 class BVHRayTraceShader;
 struct BVHNode;
 
-class RayTraceScene {
+class RayTraceScene : public Scene {
 public:
     RayTraceScene(RenderEngine* engine, unsigned int defaultFBO);
 
     virtual ~RayTraceScene();
 
-    void setScreenSize(int w, int h);
+    void setScreenSize(int w, int h) override;
 
-    void updateViewPosition(int dir, float delta);
+    void updateViewPosition(int dir, float delta) override;
 
-    void updateViewRotation(float yaw, float pitch);
+    void updateViewRotation(float yaw, float pitch) override;
 
-    void update();
+    void update() override;
 
-    void render();
+    void render() override;
 
     std::shared_ptr<ShaderManager> shaderManager();
 

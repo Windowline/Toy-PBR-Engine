@@ -5,12 +5,12 @@
 
 #include "MeshBasic.h"
 
-class Scene;
+class PBRScene;
 
 class Node {
 
 public:
-    Node(Scene *scene, std::shared_ptr<MeshBasic> mesh, mat4 localTransform);
+    Node(PBRScene *scene, std::shared_ptr<MeshBasic> mesh, mat4 localTransform);
 
     virtual ~Node() {}
 
@@ -45,7 +45,7 @@ public:
 private:
     mat4 _localTransform;
     mat4 _worldTransform;
-    Scene* _scene;
+    PBRScene* _scene;
     Node* _parent;
 
     std::shared_ptr<MeshBasic> _mesh;

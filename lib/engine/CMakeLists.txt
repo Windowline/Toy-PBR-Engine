@@ -3,8 +3,8 @@ add_library(engine STATIC
         include/Engine.hpp
         src/Engine.cpp
 
-        include/Scene.hpp
-        src/Scene.cpp
+        include/PBRScene.hpp
+        src/PBRScene.cpp
 
         include/RayTraceScene.hpp
         src/RayTraceScene.cpp
@@ -13,7 +13,8 @@ add_library(engine STATIC
         src/Node.cpp
 
         include/BVH.hpp
-        src/BVH.cpp
+#        src/BVH.cpp
+        include/Scene.hpp
 )
 
 configure_file(${CMAKE_SOURCE_DIR}/config/PathInfo.h.in ${CMAKE_BINARY_DIR}/config/PathInfo.h)

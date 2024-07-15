@@ -8,17 +8,21 @@
 
 class IBLPreprocessor;
 class Scene;
-class RayTraceScene;
 class ShaderManager;
 
-class RenderEngine {
+enum class SceneType : int {
+    SampleScene0 = 0,
+    SampleScene1 = 1
+};
 
-    friend class Scene;
+class RenderEngine {
+    friend class PBRScene;
     friend class RayTraceScene;
     friend class IBLPreprocessor;
 
 public:
-    RenderEngine();
+    RenderEngine(SceneType sceneType);
+    ~RenderEngine();
 
     void prepare();
 
@@ -38,14 +42,15 @@ private:
 
     bool _init = false;
 
-    std::shared_ptr<ShaderManager> _shaderManager;
-
-//    std::shared_ptr<Scene> _scene;
-    std::shared_ptr<RayTraceScene> _scene;
+    SceneType _sceneType = SceneType::SampleScene0;
 
     ivec2 _screenSize;
 
     std::mutex _sceneMutex;
+
+    Scene* _scene = nullptr;
+
+    std::shared_ptr<ShaderManager> _shaderManager;
 };
 
 #endif /* RenderEngine_hpp */

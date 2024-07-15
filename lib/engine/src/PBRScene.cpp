@@ -1,10 +1,9 @@
-#include "Scene.hpp"
-#include "Engine.hpp"
+#include "PBRScene.hpp"
 #include "ShaderManager.hpp"
 #include "Node.hpp"
-#include "Camera.hpp"
 #include "FrameBufferObject.hpp"
 #include "GLUtilGeometry.hpp"
+#include "Engine.hpp"
 
 #include "BasicShader.hpp"
 #include "ShadowDepthShader.hpp"
@@ -35,8 +34,10 @@ unsigned int ___loadSkyboxForDebug___();
 
 constexpr float Z_ALIGN = 0.f;
 
-Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaultFBO(defaultFBO)
-{
+PBRScene::PBRScene(RenderEngine* engine, GLuint defaultFBO) {
+    _engine = engine;
+    _defaultFBO = defaultFBO;
+
     _fullCube = make_unique<Cube>(2, vec3(1, 1, 1), "FullCube");
     _fullQuad = make_unique<FullQuad>("FullQuad");
     _textureShader = make_unique<TexturePassShader>();
@@ -99,7 +100,7 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
 
     _rootTransformDirty = true;
 
-    _iblPreprocessor = make_unique<IBLPreprocessor>(engine->_shaderManager, RESOURCE_DIR + "/textures/hdr/newport_loft.hdr");
+    _iblPreprocessor = make_unique<IBLPreprocessor>(shaderManager(), RESOURCE_DIR + "/textures/hdr/newport_loft.hdr");
     _iblPreprocessor->build();
 
     _shadowLightView = Camera::createViewMatrix(vec3(0, 0, 0), _shadowLightPosition, vec3(0, 1, 0)); //라이트가 다수일 경우 shadow용 라이트는 첫번째 라이트로 정했습니다.
@@ -110,13 +111,13 @@ Scene::Scene(RenderEngine* engine, GLuint defaultFBO) : _engine(engine), _defaul
     buildSSAOInfo();
 }
 
-Scene::~Scene() {
+PBRScene::~PBRScene() {
     if (_ssaoNoiseTexture != 0)
         glDeleteTextures(1, &_ssaoNoiseTexture);
 }
 
 //스크린 사이즈 변경에 의해 다시 만들어져야 할 것들을 업데이트합니다.
-void Scene::setScreenSize(int w, int h) {
+void PBRScene::setScreenSize(int w, int h) {
     if (!_camera) {
         return;
     }
@@ -128,19 +129,19 @@ void Scene::setScreenSize(int w, int h) {
     _ssaoBlurFBO = make_shared<FrameBufferObject>(_camera->screenSize(), _defaultFBO, FrameBufferObject::Type::Common);
 }
 
-void Scene::updateViewPosition(int dir, float delta) {
+void PBRScene::updateViewPosition(int dir, float delta) {
     if (_camera) {
         _camera->updateViewPosition(dir, delta);
     }
 }
 
-void Scene::updateViewRotation(float yaw, float pitch) {
+void PBRScene::updateViewRotation(float yaw, float pitch) {
     if (_camera) {
         _camera->updateViewRotation(yaw, pitch);
     }
 }
 
-void Scene::update() {
+void PBRScene::update() {
     if (_rootTransformDirty) {
         visitNodes(_rootNode, [](const shared_ptr<Node>& node) {
             node->transformUpdate();
@@ -150,12 +151,12 @@ void Scene::update() {
 }
 
 
-void Scene::render() {
+void PBRScene::render() {
     renderDeferredPBR();
     //    renderForwardPBR();
 }
 
-void Scene::renderDeferredPBR() {
+void PBRScene::renderDeferredPBR() {
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
@@ -324,7 +325,7 @@ void Scene::renderDeferredPBR() {
 }
 
 //Screen Space Ambient Occlusion을 위한 정보를 빌드합니다.
-void Scene::buildSSAOInfo() {
+void PBRScene::buildSSAOInfo() {
     auto lerp = [](float a, float b, float f) -> float {
         return a + f * (b - a);
     };
@@ -368,7 +369,7 @@ void Scene::buildSSAOInfo() {
 
 
 
-void Scene::visitNodes(shared_ptr<Node> node, function<void(shared_ptr<Node>)> func) {
+void PBRScene::visitNodes(shared_ptr<Node> node, function<void(shared_ptr<Node>)> func) {
     func(node);
     for (auto child : node->children()) {
         visitNodes(child, func);
@@ -376,17 +377,17 @@ void Scene::visitNodes(shared_ptr<Node> node, function<void(shared_ptr<Node>)> f
 }
 
 
-shared_ptr<ShaderManager> Scene::shaderManager() {
+shared_ptr<ShaderManager> PBRScene::shaderManager() {
     return _engine->_shaderManager;
 }
 
-shared_ptr<Camera> Scene::camera() {
+shared_ptr<Camera> PBRScene::camera() {
     return _camera;
 }
 
 //////////////////// For Debug ////////////////////////////
 
-void Scene::renderForwardPBR() {
+void PBRScene::renderForwardPBR() {
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
@@ -472,7 +473,7 @@ void Scene::renderForwardPBR() {
 }
 
 
-void Scene::renderSkyBox() {
+void PBRScene::renderSkyBox() {
     const mat4& proj = _camera->projMat();
     const mat4& viewRot = _camera->viewRotMat();
 
@@ -487,7 +488,7 @@ void Scene::renderSkyBox() {
 
 
 
-void Scene::debugIBL() {
+void PBRScene::debugIBL() {
 //    renderQuad(_iblPreprocessor->hdrTexture(), _camera->screenSize());
 //    renderQuad(_iblPreprocessor->irradianceCubeMap(), _camera->screenSize()); // ?
 //    renderQuad(_iblPreprocessor->prefilterCubeMap(), _camera->screenSize()); // ?
@@ -495,7 +496,7 @@ void Scene::debugIBL() {
     renderQuad(_iblPreprocessor->brdfLUTTexture(), _camera->screenSize()); // OK
 }
 
-void Scene::renderQuad(unsigned int texture, ivec2 screenSize) { //for debug
+void PBRScene::renderQuad(unsigned int texture, ivec2 screenSize) { //for debug
     glDisable(GL_CULL_FACE);
     //glDisable(GL_DEPTH_TEST);
 

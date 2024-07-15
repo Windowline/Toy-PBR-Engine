@@ -83,11 +83,9 @@ void split(BVHNode& parent,
         child.triangleCount++;
 
         if (isSideA) {
-            // Ensure that the triangles of each child node are grouped together.
-            // This allows the node to 'store' the triangles with an index and count.
             ULL swapIdx = child.triangleIndex + child.triangleCount - 1;
             swap(outAllTriangles[i], outAllTriangles[swapIdx]);
-            childB.triangleIndex++; //triIndex of childB increases each time we add to childA
+            childB.triangleIndex++;
         }
     }
 

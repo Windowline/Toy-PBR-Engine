@@ -118,7 +118,7 @@ int main() {
     int viewport[4];
     glGetIntegerv(GL_VIEWPORT, viewport);
 
-    engine = new RenderEngine();
+    engine = new RenderEngine(SceneType::SampleScene0);
     engine->prepare();
     engine->setScreenSize(viewport[2], viewport[3]);
 

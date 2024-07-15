@@ -3,7 +3,7 @@
 
 using namespace std;
 
-Node::Node(Scene *scene, shared_ptr<MeshBasic> mesh, mat4 localTransform)
+Node::Node(PBRScene *scene, shared_ptr<MeshBasic> mesh, mat4 localTransform)
         : _scene(scene), _mesh(std::move(mesh)), _localTransform(std::move(localTransform)),
           _parent(nullptr) {
 
