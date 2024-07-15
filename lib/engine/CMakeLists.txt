@@ -9,8 +9,8 @@ add_library(engine STATIC
         include/RayTraceScene.hpp
         src/RayTraceScene.cpp
 
-        include/Node.hpp
-        src/Node.cpp
+        include/ModelNode.hpp
+        src/ModelNode.cpp
 
         include/BVH.hpp
         include/Scene.hpp

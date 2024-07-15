@@ -1,6 +1,6 @@
 #include "PBRScene.hpp"
 #include "ShaderManager.hpp"
-#include "Node.hpp"
+#include "ModelNode.hpp"
 #include "FrameBufferObject.hpp"
 #include "GLUtilGeometry.hpp"
 #include "Engine.hpp"
@@ -61,7 +61,7 @@ PBRScene::PBRScene(RenderEngine* engine, GLuint defaultFBO) {
 
     _shadowLightPosition = _lightPositions.front();
 
-    _rootNode = make_shared<Node>(this, make_shared<MeshBasic>(), mat4());
+    _rootNode = make_shared<ModelNode>(this, make_shared<MeshBasic>(), mat4());
     _rootNode->setEnabled(false);
 
     auto sphereMesh = make_shared<Sphere>(1, vec3(0.5, 0.2, 1), "Sphere");
@@ -76,8 +76,8 @@ PBRScene::PBRScene(RenderEngine* engine, GLuint defaultFBO) {
             float ty = (2.f - z);
             mat4 sphereTrans = mat4::Translate(15.f + x * spacingX, 6.f + ty * spacingY, Z_ALIGN + z * spacingZ);
             mat4 modelTrans = mat4::Translate(-15.f - x * spacingX, 6.f + ty * spacingY, Z_ALIGN + z * spacingZ);
-            auto sphere = make_shared<Node>(this, sphereMesh, scale * sphereTrans);
-            auto model = make_shared<Node>(this, modelMesh, scale * modelTrans);
+            auto sphere = make_shared<ModelNode>(this, sphereMesh, scale * sphereTrans);
+            auto model = make_shared<ModelNode>(this, modelMesh, scale * modelTrans);
             _rootNode->addChild(sphere);
             _rootNode->addChild(model);
         }
@@ -85,7 +85,7 @@ PBRScene::PBRScene(RenderEngine* engine, GLuint defaultFBO) {
 
     // plane
     mat4 planeLocalTransform = mat4::Scale(120.f, 120.f, 1.f) * mat4::RotateX(90.f) * mat4::Translate(0, -20, Z_ALIGN);
-    auto plane = make_shared<Node>(this, make_shared<Plane>(1, vec3(0.8, 0.8, 0.8), "Plane"), planeLocalTransform);
+    auto plane = make_shared<ModelNode>(this, make_shared<Plane>(1, vec3(0.8, 0.8, 0.8), "Plane"), planeLocalTransform);
     _rootNode->addChild(plane);
 
     //그림자 광원 시각화용
@@ -94,7 +94,7 @@ PBRScene::PBRScene(RenderEngine* engine, GLuint defaultFBO) {
                                                                            _shadowLightPosition.y,
                                                                            _shadowLightPosition.z);
 
-    _lightSphere = make_shared<Node>(this, lightSphereMesh, lightSphereLocalTransform);
+    _lightSphere = make_shared<ModelNode>(this, lightSphereMesh, lightSphereLocalTransform);
     _lightSphere->transformUpdate();
     _lightSphere->setEnabled(false);
 
@@ -143,7 +143,7 @@ void PBRScene::updateViewRotation(float yaw, float pitch) {
 
 void PBRScene::update() {
     if (_rootTransformDirty) {
-        visitNodes(_rootNode, [](const shared_ptr<Node>& node) {
+        visitNodes(_rootNode, [](const shared_ptr<ModelNode>& node) {
             node->transformUpdate();
         });
         _rootTransformDirty = false;
@@ -179,7 +179,7 @@ void PBRScene::renderDeferredPBR() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         auto activeShader = shaderManager()->setActiveShader<ShadowDepthShader>(eShaderProgram_ShadowDepth);
 
-        visitNodes(_rootNode, [this, wShader = weak_ptr<ShadowDepthShader>(activeShader)](const shared_ptr<Node>& node) {
+        visitNodes(_rootNode, [this, wShader = weak_ptr<ShadowDepthShader>(activeShader)](const shared_ptr<ModelNode>& node) {
             if (auto shader = wShader.lock()) {
                 mat4 shadowMVP = node->worldTransform() * _shadowLightView * _shadowLightProj;
                 shader->shadowMVPUniformMatrix4fv(shadowMVP.pointer());
@@ -222,7 +222,7 @@ void PBRScene::renderDeferredPBR() {
         activeShader->isRenderSkyBokxUniform1f(0.f);
 
         int colorIndex = 0;
-        visitNodes(_rootNode, [&colorIndex, wShader = weak_ptr<GBufferShader>(activeShader)](const shared_ptr<Node>& node) {
+        visitNodes(_rootNode, [&colorIndex, wShader = weak_ptr<GBufferShader>(activeShader)](const shared_ptr<ModelNode>& node) {
             if (auto shader = wShader.lock()) {
                 colorIndex = (colorIndex + 1) % 3;
                 if (colorIndex == 0)
@@ -369,7 +369,7 @@ void PBRScene::buildSSAOInfo() {
 
 
 
-void PBRScene::visitNodes(shared_ptr<Node> node, function<void(shared_ptr<Node>)> func) {
+void PBRScene::visitNodes(shared_ptr<ModelNode> node, function<void(shared_ptr<ModelNode>)> func) {
     func(node);
     for (auto child : node->children()) {
         visitNodes(child, func);
@@ -459,7 +459,7 @@ void PBRScene::renderForwardPBR() {
     activeShader->projMatUniformMatrix4fv(proj.pointer());
     activeShader->viewMatUniformMatrix4fv(view.pointer());
 
-    visitNodes(_rootNode, [wShader = weak_ptr<PBRShader>(activeShader)](const shared_ptr<Node>& node) {
+    visitNodes(_rootNode, [wShader = weak_ptr<PBRShader>(activeShader)](const shared_ptr<ModelNode>& node) {
         if (auto shader = wShader.lock()) {
             shader->worldMatUniformMatrix4fv(node->worldTransform().pointer());
             shader->worldNormalMatUniformMatrix4fv(node->worldTransform().invert().transposed().pointer());

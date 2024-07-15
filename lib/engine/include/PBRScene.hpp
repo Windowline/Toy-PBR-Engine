@@ -8,7 +8,7 @@
 
 class Camera;
 class RenderEngine;
-class Node;
+class ModelNode;
 class ShaderManager;
 class FrameBufferObject;
 class FullQuad;
@@ -38,7 +38,7 @@ public:
 
 private:
     void renderDeferredPBR();
-    void visitNodes(std::shared_ptr<Node> node, std::function<void(std::shared_ptr<Node>)> func);
+    void visitNodes(std::shared_ptr<ModelNode> node, std::function<void(std::shared_ptr<ModelNode>)> func);
     void buildSSAOInfo();
 
     //for debug
@@ -53,9 +53,9 @@ private:
 
     bool _rootTransformDirty;
 
-    std::shared_ptr<Node> _rootNode;
-    std::shared_ptr<Node> _plane;
-    std::shared_ptr<Node> _lightSphere;//조명에 위치한 흰색 구
+    std::shared_ptr<ModelNode> _rootNode;
+    std::shared_ptr<ModelNode> _plane;
+    std::shared_ptr<ModelNode> _lightSphere;//조명에 위치한 흰색 구
     std::shared_ptr<FrameBufferObject> _gBuffer;
     std::shared_ptr<FrameBufferObject> _shadowDepthBuffer;
 

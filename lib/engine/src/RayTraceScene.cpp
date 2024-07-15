@@ -10,7 +10,7 @@
 
 #include "MeshBasic.h"
 #include "Model.hpp"
-#include "Node.hpp"
+#include "ModelNode.hpp"
 #include "BVH.hpp"
 
 using namespace std;
@@ -22,11 +22,11 @@ RayTraceScene::RayTraceScene(RenderEngine* engine, GLuint defaultFBO) {
     _fullQuad = make_unique<FullQuad>("FullQuad");
     _camera = make_shared<Camera>(vec3(0, 0, 20), vec3(0, 0, 0));
 
-    _rootNode = make_shared<Node>(nullptr, make_shared<MeshBasic>(), mat4());
+    _rootNode = make_shared<ModelNode>(nullptr, make_shared<MeshBasic>(), mat4());
     _rootNode->setEnabled(false);
 
     _modelMesh = make_shared<Model>(RESOURCE_DIR + "/objects/cyborg/cyborg.obj", vec3(0.75, 0.75, 0.75), "Model");
-    _modelNode = make_shared<Node>(nullptr, _modelMesh, mat4());
+    _modelNode = make_shared<ModelNode>(nullptr, _modelMesh, mat4());
     _rootNode->addChild(_modelNode);
 
     buildMeshTBO();

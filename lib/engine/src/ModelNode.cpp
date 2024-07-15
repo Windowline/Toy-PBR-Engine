@@ -1,29 +1,29 @@
-#include "Node.hpp"
+#include "ModelNode.hpp"
 #include "MeshBasic.h"
 
 using namespace std;
 
-Node::Node(Scene *scene, shared_ptr<MeshBasic> mesh, mat4 localTransform)
+ModelNode::ModelNode(Scene *scene, shared_ptr<MeshBasic> mesh, mat4 localTransform)
         : _scene(scene), _mesh(std::move(mesh)), _localTransform(std::move(localTransform)),
           _parent(nullptr) {
 
 }
 
-void Node::addChild(std::shared_ptr<Node> node) {
+void ModelNode::addChild(std::shared_ptr<ModelNode> node) {
     _children.emplace_back(node);
     node->_parent = this;
 }
 
-void Node::transformUpdate() {
+void ModelNode::transformUpdate() {
     _worldTransform = _parent ? _parent->worldTransform() * _localTransform : _localTransform;
 }
 
-void Node::setLocalTransform(mat4 localTransform) {
+void ModelNode::setLocalTransform(mat4 localTransform) {
     _localTransform = std::move(localTransform);
     transformUpdate();
 }
 
-void Node::render() {
+void ModelNode::render() {
     if (_enabled)
         _mesh->render();
 }

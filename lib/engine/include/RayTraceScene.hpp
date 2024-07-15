@@ -12,7 +12,7 @@ class Camera;
 class ShaderManager;
 class FrameBufferObject;
 class FullQuad;
-class Node;
+class ModelNode;
 class Model;
 class BVHRayTraceShader;
 
@@ -41,8 +41,8 @@ private:
     unsigned int _defaultFBO;
     std::shared_ptr<Camera> _camera;
     std::unique_ptr<FullQuad> _fullQuad;
-    std::shared_ptr<Node> _rootNode;
-    std::shared_ptr<Node> _modelNode;
+    std::shared_ptr<ModelNode> _rootNode;
+    std::shared_ptr<ModelNode> _modelNode;
     std::shared_ptr<Model> _modelMesh;
 
     std::shared_ptr<BVHRayTraceShader> _bvhRayTraceShader;

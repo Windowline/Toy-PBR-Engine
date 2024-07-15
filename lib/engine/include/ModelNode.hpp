@@ -1,5 +1,5 @@
-#ifndef TOYRENDERER_NODE_HPP
-#define TOYRENDERER_NODE_HPP
+#ifndef TOYRENDERER_MODELNODE_HPP
+#define TOYRENDERER_MODELNODE_HPP
 #include "Matrix.hpp"
 #include <memory>
 
@@ -7,14 +7,14 @@
 
 class Scene;
 
-class Node {
+class ModelNode {
 
 public:
-    Node(Scene *scene, std::shared_ptr<MeshBasic> mesh, mat4 localTransform);
+    ModelNode(Scene *scene, std::shared_ptr<MeshBasic> mesh, mat4 localTransform);
 
-    virtual ~Node() {}
+    virtual ~ModelNode() {}
 
-    void addChild(std::shared_ptr<Node> node);
+    void addChild(std::shared_ptr<ModelNode> node);
 
     void transformUpdate();
 
@@ -26,7 +26,7 @@ public:
         return _worldTransform;
     }
 
-    const std::vector<std::shared_ptr<Node>>& children() const {
+    const std::vector<std::shared_ptr<ModelNode>>& children() const {
         return _children;
     }
 
@@ -46,12 +46,12 @@ private:
     mat4 _localTransform;
     mat4 _worldTransform;
     Scene* _scene;
-    Node* _parent;
+    ModelNode* _parent;
 
     std::shared_ptr<MeshBasic> _mesh;
-    std::vector<std::shared_ptr<Node>> _children;
+    std::vector<std::shared_ptr<ModelNode>> _children;
 
     bool _enabled = true;
 };
 
-#endif //TOYRENDERER_NODE_HPP
+#endif //TOYRENDERER_MODELNODE_HPP
