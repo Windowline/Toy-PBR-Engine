@@ -43,9 +43,9 @@ const char* fragmentBVHRayTrace = R(
         };
 
         struct BVHNode {
-            int triangleIndex;
-            int triangleCount;
-            int childIndex;
+            int triangleIdx;
+            int triangleCnt;
+            int nodeIdx;
             vec3 minBounds;
             vec3 maxBounds;
         };
@@ -59,6 +59,7 @@ const char* fragmentBVHRayTrace = R(
         uniform samplerBuffer u_bvhMinBoundsTBO;
         uniform samplerBuffer u_bvhMaxBoundsTBO;
 //        uniform samplerBuffer u_bvhTriangleTBO;
+        uniform int u_bvhLeafStartIdx;
         uniform samplerBuffer u_posTBO;
         uniform samplerBuffer u_normalTBO;
 
@@ -139,9 +140,9 @@ const char* fragmentBVHRayTrace = R(
             BVHNode node;
             node.minBounds = minBounds;
             node.maxBounds = maxBounds;
-            node.triangleIndex = indexInfo.x;
-            node.triangleCount = indexInfo.y;
-            node.childIndex = indexInfo.z;
+            node.triangleIdx = indexInfo.x;
+            node.triangleCnt = indexInfo.y;
+            node.nodeIdx = indexInfo.z;
 
             return node;
         }
@@ -163,23 +164,23 @@ const char* fragmentBVHRayTrace = R(
 
         // RayTriangleTestBVH의 스택+반복버전이 필요함(쉐이더에서 리커전 지원X)
         Hit rayTriangleTestBVH(Ray ray, Hit lastHit) {
+            Hit result = lastHit;
             int idx = 0;
             BVHNode nodeStack[20];
-            nodeStack[idx++] = getBVHNode(0);
+            nodeStack[idx++] = getBVHNode(1);
 
-            Hit result = lastHit;
             while (idx > 0) {
-                BVHNode node = nodeStack[--idx];
-                if (rayBoundingBox(ray, node.minBounds, node.maxBounds)) {
-                    if (node.childIndex == 0) { //leaf
-                        for (int triIdx = node.triangleIndex; triIdx < node.triangleIndex + node.triangleCount; ++triIdx) {
+                BVHNode current = nodeStack[--idx];
+                if (rayBoundingBox(ray, current.minBounds, current.maxBounds)) {
+                    if (current.nodeIdx >= u_bvhLeafStartIdx) {
+                        for (int triIdx = current.triangleIdx; triIdx < current.triangleIdx + current.triangleCnt; ++triIdx) {
                             Hit triHit = rayTriangle(ray, getTriangle(triIdx));
                             if (triHit.didHit && triHit.dst < result.dst)
                                 result = triHit;
                         }
                     } else {
-                        nodeStack[idx++] = getBVHNode(node.childIndex + 0);
-                        nodeStack[idx++] = getBVHNode(node.childIndex + 1);
+                        nodeStack[idx++] = getBVHNode(current.nodeIdx * 2);
+                        nodeStack[idx++] = getBVHNode(current.nodeIdx * 2 + 1);
                     }
                 }
             }
@@ -201,10 +202,40 @@ const char* fragmentBVHRayTrace = R(
             closestHit.dst = INF;
             closestHit.mat.color = vec3(0.0);
 
-            for (int triIdx = 0; triIdx < u_triangleSize; ++triIdx) {
+            BVHNode root = getBVHNode(4);
+            for (int triIdx = root.triangleIdx; triIdx < root.triangleIdx + root.triangleCnt; ++triIdx) {
                 Triangle tri = getTriangle(triIdx);
                 Hit hit = rayTriangle(ray, tri);
+                if (hit.didHit && hit.dst < closestHit.dst) {
+                    closestHit = hit;
+                    closestHit.mat.color = vec3(1.0, 1.0, 1.0);
+                }
+            }
 
+            root = getBVHNode(5);
+            for (int triIdx = root.triangleIdx; triIdx < root.triangleIdx + root.triangleCnt; ++triIdx) {
+                Triangle tri = getTriangle(triIdx);
+                Hit hit = rayTriangle(ray, tri);
+                if (hit.didHit && hit.dst < closestHit.dst) {
+                    closestHit = hit;
+                    closestHit.mat.color = vec3(1.0, 1.0, 1.0);
+                }
+            }
+
+            root = getBVHNode(6);
+            for (int triIdx = root.triangleIdx; triIdx < root.triangleIdx + root.triangleCnt; ++triIdx) {
+                Triangle tri = getTriangle(triIdx);
+                Hit hit = rayTriangle(ray, tri);
+                if (hit.didHit && hit.dst < closestHit.dst) {
+                    closestHit = hit;
+                    closestHit.mat.color = vec3(1.0, 1.0, 1.0);
+                }
+            }
+
+            root = getBVHNode(7);
+            for (int triIdx = root.triangleIdx; triIdx < root.triangleIdx + root.triangleCnt; ++triIdx) {
+                Triangle tri = getTriangle(triIdx);
+                Hit hit = rayTriangle(ray, tri);
                 if (hit.didHit && hit.dst < closestHit.dst) {
                     closestHit = hit;
                     closestHit.mat.color = vec3(1.0, 1.0, 1.0);
@@ -219,6 +250,7 @@ const char* fragmentBVHRayTrace = R(
             vec3 tmp2 = texelFetch(u_bvhMinBoundsTBO, 0).xyz;
             vec3 tmp3 = texelFetch(u_bvhMaxBoundsTBO, 0).xyz;
             int tmp5 = u_triangleSize;
+            int tmp6 = u_bvhLeafStartIdx;
 
             vec2 uv = v_uv * 2.0 - 1.0;
             uv.x *= (u_resolution.x / u_resolution.y);
@@ -227,6 +259,7 @@ const char* fragmentBVHRayTrace = R(
             vec4 rayEye = inverse(u_projMat) * rayClip;
             rayEye = vec4(rayEye.xy, -1.0, 0.0);
             vec3 worldRay = normalize((inverse(u_viewMat) * rayEye).xyz);
+
             Ray ray;
             ray.org = u_worldCameraPos;
             ray.dir = worldRay;
@@ -252,6 +285,7 @@ BVHRayTraceShader::BVHRayTraceShader() {
     _bvhNodeTBOLoc = glGetUniformLocation(_programID, "u_bvhNodeTBO");
     _bvhMinBoundsTBOLoc = glGetUniformLocation(_programID, "u_bvhMinBoundsTBO");
     _bvhMaxBoundsTBOLoc = glGetUniformLocation(_programID, "u_bvhMaxBoundsTBO");
+    _bvhLeafStartIdxLoc = glGetUniformLocation(_programID, "u_bvhLeafStartIdx");
 //    _bvhTriangleTBOLoc = glGetUniformLocation(_programID, "u_bvhTriangleTBO");
     _posTBOLoc = glGetUniformLocation(_programID, "u_posTBO");
     _normalTBOLoc = glGetUniformLocation(_programID, "u_normalTBO");

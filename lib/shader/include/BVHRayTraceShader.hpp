@@ -24,6 +24,11 @@ public:
         glUniform1i(_triangleSizeLoc, value);
     }
 
+    void bvhLeafStartIdxUniform1i(int value) {
+        assert(_bvhLeafStartIdxLoc != -1);
+        glUniform1i(_bvhLeafStartIdxLoc, value);
+    }
+
 
 private:
     GLint _cameraPosUniformLoc = -1;
@@ -33,6 +38,7 @@ private:
     GLint _bvhNodeTBOLoc = -1;
     GLint _bvhMinBoundsTBOLoc = -1;
     GLint _bvhMaxBoundsTBOLoc = -1;
+    GLint _bvhLeafStartIdxLoc = -1;
 //    GLint _bvhTriangleTBOLoc = -1;
 
     GLint _posTBOLoc = -1;

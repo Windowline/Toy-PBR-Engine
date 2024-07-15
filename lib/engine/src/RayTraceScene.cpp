@@ -72,7 +72,7 @@ void RayTraceScene::buildMeshTBO(bool bvh=false) {
             _boundsMax.z = max(vertex.Position.z, _boundsMax.z);
         }
 
-        buildBVH(mesh.vertices, mesh.indices, bvhNodes, bvhTriangles);
+        buildBVH(mesh.vertices, mesh.indices, BVH_MAX_DEPTH, bvhNodes, bvhTriangles);
         break; //handle only one mesh
     }
 
@@ -87,8 +87,8 @@ void RayTraceScene::buildMeshTBO(bool bvh=false) {
 
         for (const auto& node : bvhNodes) {
             bvhNodeIndices.push_back(node.triangleStartIdx);
-            bvhNodeIndices.push_back(node.triangleStartIdx);
-            bvhNodeIndices.push_back(node.triangleStartIdx);
+            bvhNodeIndices.push_back(node.triangleCnt);
+            bvhNodeIndices.push_back(node.nodeIdx);
 
             bvhMinBounds.push_back(node.aabb.boundsMin.x);
             bvhMinBounds.push_back(node.aabb.boundsMin.y);
@@ -98,6 +98,38 @@ void RayTraceScene::buildMeshTBO(bool bvh=false) {
             bvhMaxBounds.push_back(node.aabb.boundsMax.y);
             bvhMaxBounds.push_back(node.aabb.boundsMax.z);
         }
+
+        //==== tri test
+        posBufferData.clear();
+        normalBufferData.clear();
+        for (const auto& tri : bvhTriangles) {
+            posBufferData.push_back(tri.posA.x);
+            posBufferData.push_back(tri.posA.y);
+            posBufferData.push_back(tri.posA.z);
+
+            posBufferData.push_back(tri.posB.x);
+            posBufferData.push_back(tri.posB.y);
+            posBufferData.push_back(tri.posB.z);
+
+            posBufferData.push_back(tri.posC.x);
+            posBufferData.push_back(tri.posC.y);
+            posBufferData.push_back(tri.posC.z);
+
+
+            normalBufferData.push_back(tri.NA.x);
+            normalBufferData.push_back(tri.NA.y);
+            normalBufferData.push_back(tri.NA.z);
+
+            normalBufferData.push_back(tri.NB.x);
+            normalBufferData.push_back(tri.NB.y);
+            normalBufferData.push_back(tri.NB.z);
+
+            normalBufferData.push_back(tri.NC.x);
+            normalBufferData.push_back(tri.NC.y);
+            normalBufferData.push_back(tri.NC.z);
+        }
+
+        //====
 
         cout << "bvhNodes.size(): " << bvhNodes.size() << endl;
         cout << "bvhNodeIndices.size(): " << bvhNodeIndices.size()  << endl;
@@ -192,9 +224,6 @@ void RayTraceScene::updateViewRotation(float yaw, float pitch) {
 void RayTraceScene::update() {}
 
 void RayTraceScene::render() {
-
-    cout << "Tri: " << _modelTriangleSize << endl;
-
     glBindFramebuffer(GL_FRAMEBUFFER, _defaultFBO);
     glClearColor(0.f, 0.f, 0.f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -210,7 +239,10 @@ void RayTraceScene::render() {
         _bvhRayTraceShader->viewMatUniformMatrix4fv(view.pointer());
         _bvhRayTraceShader->projMatUniformMatrix4fv(proj.pointer());
         _bvhRayTraceShader->triangleSizeUniform1i(_modelTriangleSize);
+        _bvhRayTraceShader->bvhLeafStartIdxUniform1i( (1 << (BVH_MAX_DEPTH - 1)) );
         _fullQuad->render();
+
+        cout << "BD: " << (1 << (BVH_MAX_DEPTH - 1)) << endl;
 
     } else {
 

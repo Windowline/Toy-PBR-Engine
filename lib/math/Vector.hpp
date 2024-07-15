@@ -391,14 +391,31 @@ typedef Vector4<float> vec4;
 
 
 
-//#ifndef Ray_hpp
-//#define Ray_hpp
-//
-//#include "Vector.hpp"
+struct AABB {
+    vec3 boundsMin = vec3(1e9, 1e9, 1e9);
+    vec3 boundsMax = vec3(-1e9, -1e9, -1e9);
 
-/**
- * 시작점, 방향을 가진 광선 정보입니다.
- */
+    void extend(const vec3& p) {
+        boundsMin.x = min(p.x, boundsMin.x);
+        boundsMin.y = min(p.y, boundsMin.y);
+        boundsMin.z = min(p.z, boundsMin.z);
+
+        boundsMax.x = max(p.x, boundsMax.x);
+        boundsMax.y = max(p.y, boundsMax.y);
+        boundsMax.z = max(p.z, boundsMax.z);
+    }
+
+    vec3 size() const {
+        return vec3(boundsMax.x - boundsMin.x,
+                    boundsMax.y - boundsMin.y,
+                    boundsMax.z - boundsMin.z);
+    }
+
+    vec3 center() const {
+        return (boundsMax + boundsMin) / 2.0;
+    }
+};
+
 class Ray {
 public:
     Ray(vec3 origin, vec3 direction) : _origin(std::move(origin)), _direction(std::move(direction)) {}
@@ -434,13 +451,48 @@ public:
         return true;
     }
 
-    //TODO
-    bool intersectWithBox(vec3 boxMinPos, vec3 boxMaxPos, vec3& outPos) {
-        return false;
+    bool intersectWithAABB(const AABB& aabb) {
+        float tmin = (aabb.boundsMin.x - _origin.x) / _direction.x;
+        float tmax = (aabb.boundsMin.x - _origin.x) / _direction.x;
+
+        if (tmin > tmax)
+            swap(tmin, tmax);
+
+        float tymin = (aabb.boundsMin.y - _origin.y) / _direction.y;
+        float tymax = (aabb.boundsMax.y - _origin.y) / _direction.y;
+
+        if (tymin > tymax)
+            swap(tymin, tymax);
+
+        if ((tmin > tymax) || (tymin > tmax))
+            return false;
+
+        if (tymin > tmin)
+            tmin = tymin;
+
+        if (tymax < tmax)
+            tmax = tymax;
+
+        float tzmin = (aabb.boundsMin.z - _origin.z) / _direction.z;
+        float tzmax = (aabb.boundsMax.z - _origin.z) / _direction.z;
+
+        if (tzmin > tzmax)
+            swap(tzmin, tzmax);
+
+        if ((tmin > tzmax) || (tzmin > tmax))
+            return false;
+
+        if (tzmin > tmin)
+            tmin = tzmin;
+
+        if (tzmax < tmax)
+            tmax = tzmax;
+
+        return true;
     }
 
     //TODO
-    bool intersectWithPlane(vec3 planeP1, vec3 planeP2, vec3 planeP3, vec3 planeP4, vec3& outPos) {
+    bool intersectWithPlane(vec3 planeP1, vec3 planeP2, vec3 planeP3, vec3 planeP4, vec3& outPos) const {
         return false;
     }
 
@@ -457,34 +509,6 @@ private:
 
     vec3 _origin;
     vec3 _direction;
-};
-
-struct AABB {
-    vec3 boundsMin = vec3(1e9, 1e9, 1e9);
-    vec3 boundsMax = vec3(-1e9, -1e9, -1e9);
-
-    void extend(const vec3& p) {
-        boundsMin.x = min(p.x, boundsMin.x);
-        boundsMin.y = min(p.y, boundsMin.y);
-        boundsMin.z = min(p.z, boundsMin.z);
-
-        boundsMax.x = max(p.x, boundsMax.x);
-        boundsMax.y = max(p.y, boundsMax.y);
-        boundsMax.z = max(p.z, boundsMax.z);
-    }
-
-    vec3 size() const {
-        return vec3(boundsMax.x - boundsMin.x,
-                    boundsMax.y - boundsMin.y,
-                    boundsMax.z - boundsMin.z);
-    }
-
-    vec3 center() const {
-        return (boundsMax + boundsMin) / 2.0;
-    }
-
-
-
 };
 
 //#endif /* Ray_hpp */

@@ -76,6 +76,8 @@ private:
 
     vec3 _boundsMin = vec3(-1e9, -1e9, -1e9);
     vec3 _boundsMax = vec3(1e9, 1e9, 1e9);
+
+    const int BVH_MAX_DEPTH = 4;
 };
 
 

@@ -10,8 +10,6 @@
 
 using namespace std;
 
-constexpr int BVH_MAX_DEPTH = 10;
-
 struct Triangle {
     Triangle(vec3 pa, vec3 pb, vec3 pc, vec3 na, vec3 nb, vec3 nc) {
         posA = pa;
@@ -56,19 +54,24 @@ void extendAABBFromTriangle(AABB& input, const Triangle& triangle) {
     input.extend(triangle.posC);
 }
 
-//GPU friendly
+void printBVH(const vector<BVHNode>& bvhNodes) {
+    cout << "============================" << endl;
+    for (int i = 1; i < bvhNodes.size(); ++i) {
+        auto n = bvhNodes[i];
+        cout << "num: " << n.nodeIdx << " range: " << n.triangleStartIdx << " ~ " << n.triangleEndIdx << endl;
+    }
+    cout << "============================" << endl;
+}
+
+
 void split(BVHNode& current,
            int depth,
+           const int maxDepth,
            vector<BVHNode>& outAllNodes,
            vector<Triangle>& outAllTriangles) {
 
-    if (depth == BVH_MAX_DEPTH)
+    if (depth == maxDepth)
         return;
-
-    cout << "depth: " << depth << endl;
-    cout << "node : " << current.nodeIdx << " triRange : " << current.triangleStartIdx  << " ~ " << current.triangleEndIdx << endl;
-    cout << "boundsX : " << current.aabb.boundsMin.x << " ~ " << current.aabb.boundsMax.x  << endl;
-    cout << "========================================" << endl;
 
     auto [splitAxis, splitPos] = chooseSplit(current);
     int start = current.triangleStartIdx;
@@ -91,7 +94,7 @@ void split(BVHNode& current,
     childA.triangleStartIdx = start;
     childA.triangleEndIdx = mid;
     childA.triangleCnt = mid - start + 1;
-    for (int k = start; k < mid; ++k)
+    for (int k = start; k <= mid; ++k)
         extendAABBFromTriangle(childA.aabb, outAllTriangles[k]);
 
     auto childB = BVHNode();
@@ -102,16 +105,19 @@ void split(BVHNode& current,
     for (int k = mid; k <= end; ++k)
         extendAABBFromTriangle(childB.aabb, outAllTriangles[k]);
 
-    outAllNodes.push_back(childA);
-    outAllNodes.push_back(childB);
+    outAllNodes[childA.nodeIdx] = childA;
+    outAllNodes[childB.nodeIdx] = childB;
 
-    split(childA, depth + 1, outAllNodes, outAllTriangles);
-    split(childB, depth + 1, outAllNodes, outAllTriangles);
+    split(childA, depth + 1, maxDepth, outAllNodes, outAllTriangles);
+    split(childB, depth + 1, maxDepth, outAllNodes, outAllTriangles);
 }
 
 
-void buildBVH(const vector<Vertex>& vertices, const vector<unsigned int>& indices,
-              vector<BVHNode>& outAllNodes, vector<Triangle>& outAllTriangles) {
+void buildBVH(const vector<Vertex>& vertices,
+              const vector<unsigned int>& indices,
+              const int maxDepth,
+              vector<BVHNode>& outAllNodes,
+              vector<Triangle>& outAllTriangles) {
 
     AABB aabb;
     outAllTriangles.reserve(indices.size() / 3);
@@ -137,16 +143,23 @@ void buildBVH(const vector<Vertex>& vertices, const vector<unsigned int>& indice
     root.nodeIdx = 1;
     root.aabb = aabb;
 
-    outAllNodes.push_back(root);
+    outAllNodes = vector<BVHNode>(1 << maxDepth);
+    outAllNodes[1] = (root); //[1]: root
 
-    split(root, 0, outAllNodes, outAllTriangles);
+    split(root, 1, maxDepth, outAllNodes, outAllTriangles);
+
+    printBVH(outAllNodes);
 }
 
-Triangle searchTriangle(Ray ray, BVHNode& root, vector<Triangle>& outAllTriangles) {
-
-
-
-    return tri;
-}
+//Triangle searchTriangle(const Ray& ray, const BVHNode& current, const vector<Triangle>& outAllTriangles) {
+//    if (current.nodeIdx == 0) { //leaf
+//        for (int triIdx = current.triangleStartIdx; triIdx <= current.triangleEndIdx; ++triIdx) {
+//            ray.in
+//        }
+//    }
+//
+//
+//    return tri;
+//}
 
 #endif //TOYRENDERER_BVH_HPP
