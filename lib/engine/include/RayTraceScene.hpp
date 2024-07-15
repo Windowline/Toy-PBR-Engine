@@ -15,7 +15,6 @@ class FullQuad;
 class Node;
 class Model;
 class BVHRayTraceShader;
-struct BVHNode;
 
 class RayTraceScene : public Scene {
 public:
@@ -36,10 +35,7 @@ public:
     std::shared_ptr<ShaderManager> shaderManager();
 
 private:
-    void buildMeshTBO(bool bvh);
-    void buildTestTri();
-
-    bool _applyBVH = true;
+    void buildMeshTBO();
 
     RenderEngine* _engine;
     unsigned int _defaultFBO;
@@ -51,33 +47,25 @@ private:
 
     std::shared_ptr<BVHRayTraceShader> _bvhRayTraceShader;
 
-    //no BVH
+    unsigned int _modelTriangleSize = 0;
+
+    //BVH Triangle Pos/N
     unsigned int _posTBO = 0;
     unsigned int _posTBOTexture = 0;
     unsigned int _normalTBO = 0;
     unsigned int _normalTBOTexture = 0;
-    unsigned int _modelTriangleSize = 0;
 
     // BVH index
     unsigned int _bvhNodeTBO = 0; // [triIndex, triCount, childIndex]
     unsigned int _bvhNodeTBOTexture = 0;
 
-    // BVH aabb-min
+    // BVH aabb
     unsigned int _bvhMinBoundsTBO = 0;
     unsigned int _bvhMinBoundsTBOTexture = 0;
-
-    // BVH aabb-max
     unsigned int _bvhMaxBoundsTBO = 0;
     unsigned int _bvhMaxBoundsTBOTexture = 0;
 
-    // BVH triangle
-    unsigned int _bvhTriangleTBO = 0;
-    unsigned int _bvhTriangleTBOTexture = 0;
-
-    vec3 _boundsMin = vec3(-1e9, -1e9, -1e9);
-    vec3 _boundsMax = vec3(1e9, 1e9, 1e9);
-
-    const int BVH_MAX_DEPTH = 4;
+    const int BVH_MAX_DEPTH = 10;
 };
 
 

@@ -5,8 +5,8 @@
 
 RenderEngine* engine = nullptr;
 constexpr float ASPECT_RATIO = 0.5625;
-constexpr unsigned int SCR_WIDTH = 1280 / 2;
-constexpr unsigned int SCR_HEIGHT = 720 / 2;
+constexpr unsigned int SCR_WIDTH = 1280;
+constexpr unsigned int SCR_HEIGHT = 720;
 
 float lastX = SCR_WIDTH / 2.0;
 float lastY = SCR_HEIGHT / 2.0;
