@@ -13,7 +13,6 @@ add_library(engine STATIC
         src/Node.cpp
 
         include/BVH.hpp
-#        src/BVH.cpp
         include/Scene.hpp
 )
 

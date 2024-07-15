@@ -460,8 +460,8 @@ private:
 };
 
 struct AABB {
-    vec3 boundsMin = vec3(-1e9, -1e9, -1e9);
-    vec3 boundsMax = vec3(1e9, 1e9, 1e9);
+    vec3 boundsMin = vec3(1e9, 1e9, 1e9);
+    vec3 boundsMax = vec3(-1e9, -1e9, -1e9);
 
     void extend(const vec3& p) {
         boundsMin.x = min(p.x, boundsMin.x);

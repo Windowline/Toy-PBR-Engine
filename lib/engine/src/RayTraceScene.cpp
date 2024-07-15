@@ -86,9 +86,9 @@ void RayTraceScene::buildMeshTBO(bool bvh=false) {
         bvhMaxBounds.reserve(bvhNodes.size() * 3);
 
         for (const auto& node : bvhNodes) {
-            bvhNodeIndices.push_back(node.triangleIndex);
-            bvhNodeIndices.push_back(node.triangleCount);
-            bvhNodeIndices.push_back(node.childIndex);
+            bvhNodeIndices.push_back(node.triangleStartIdx);
+            bvhNodeIndices.push_back(node.triangleStartIdx);
+            bvhNodeIndices.push_back(node.triangleStartIdx);
 
             bvhMinBounds.push_back(node.aabb.boundsMin.x);
             bvhMinBounds.push_back(node.aabb.boundsMin.y);
