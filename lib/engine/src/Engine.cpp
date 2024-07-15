@@ -2,7 +2,6 @@
 #include "ShaderManager.hpp"
 #include "PBRScene.hpp"
 #include "RayTraceScene.hpp"
-
 #include <glad/glad.h>
 
 RenderEngine::RenderEngine(SceneType sceneType) {
