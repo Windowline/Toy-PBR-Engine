@@ -148,10 +148,6 @@ void RayTraceScene::buildMeshTBO() {
     _modelTriangleSize = trianglePos.size() / (3 * 3);
 }
 
-RayTraceScene::~RayTraceScene() {
-}
-
-
 void RayTraceScene::setScreenSize(int w, int h) {
     if (!_camera) {
         return;
@@ -196,4 +192,36 @@ void RayTraceScene::render() {
 
 shared_ptr<ShaderManager> RayTraceScene::shaderManager() {
     return _engine->_shaderManager;
+}
+
+RayTraceScene::~RayTraceScene() {
+    if (_bvhNodeTBO != 0)
+        glDeleteBuffers(1, &_bvhNodeTBO);
+
+    if (_bvhNodeTBOTexture != 0)
+        glDeleteTextures(1, &_bvhNodeTBOTexture);
+
+    if (_bvhMinBoundsTBO != 0)
+        glDeleteBuffers(1, &_bvhMinBoundsTBO);
+
+    if (_bvhMaxBoundsTBO != 0)
+        glDeleteBuffers(1, &_bvhMaxBoundsTBO);
+
+    if (_bvhMinBoundsTBOTexture != 0)
+        glDeleteBuffers(1, &_bvhMinBoundsTBOTexture);
+
+    if (_bvhMaxBoundsTBOTexture != 0)
+        glDeleteTextures(1, &_bvhMaxBoundsTBOTexture);
+
+    if (_posTBO != 0)
+        glDeleteBuffers(1, &_posTBO);
+
+    if (_posTBOTexture != 0)
+        glDeleteTextures(1, &_bvhMaxBoundsTBOTexture);
+
+    if (_normalTBO != 0)
+        glDeleteBuffers(1, &_normalTBO);
+
+    if (_normalTBOTexture != 0)
+        glDeleteTextures(1, &_normalTBOTexture);
 }
