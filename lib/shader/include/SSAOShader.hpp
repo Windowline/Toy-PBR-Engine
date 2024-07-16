@@ -3,6 +3,9 @@
 
 #include "BasicShader.hpp"
 #include "Vector.hpp"
+#include <vector>
+
+using namespace std;
 
 class SSAOShader : public BasicShader {
 public:
@@ -15,14 +18,14 @@ public:
     }
 
     void samplesUniformVector(std::vector<vec3>& v) {
-        GLfloat* input = new GLfloat[v.size() * 3];
-        int idx = 0;
+        vector<GLfloat> input;
         for (int i = 0; i < v.size(); ++i) {
-            input[idx++] = v[i].x;
-            input[idx++] = v[i].y;
-            input[idx++] = v[i].z;
+            input.push_back(v[i].x);
+            input.push_back(v[i].y);
+            input.push_back(v[i].z);
         }
-        samplesUniform3fv(input, GLsizei(v.size()));
+
+        samplesUniform3fv(input.data(), GLsizei(v.size()));
     }
 
     void screenSizeUniform2f(GLfloat value1, GLfloat value2) {

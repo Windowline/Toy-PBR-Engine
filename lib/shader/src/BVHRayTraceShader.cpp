@@ -42,6 +42,12 @@ const char* fragmentBVHRayTrace = R(
             vec3 NA, NB, NC;
         };
 
+        struct Sphere {
+            vec3 pos;
+            float r;
+            Material mat;
+        };
+
         struct BVHNode {
             int triangleIdx;
             int triangleCnt;
@@ -58,14 +64,23 @@ const char* fragmentBVHRayTrace = R(
         uniform samplerBuffer u_bvhNodeTBO;
         uniform samplerBuffer u_bvhMinBoundsTBO;
         uniform samplerBuffer u_bvhMaxBoundsTBO;
-        uniform int u_bvhLeafStartIdx;
         uniform samplerBuffer u_posTBO;
         uniform samplerBuffer u_normalTBO;
+        uniform int u_bvhLeafStartIdx;
+
+        uniform samplerBuffer u_roomPosTBO;
+        uniform samplerBuffer u_roomNormalTBO;
+        uniform vec3 u_roomFaceColors[5];
 
         float INF = 9999999.0;
 
         layout (location = 0) out vec4 fragColor;
         in vec2 v_uv;
+
+        vec3 getBGColor(Ray ray) {
+            float a = 0.5 * (ray.dir.y + 1.0);
+            return (1.0 - a) * vec3(1.0, 1.0, 1.0) + a * vec3(0.5, 0.7, 1.0);
+        }
 
         float rand(vec2 co) {
             return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
@@ -152,13 +167,28 @@ const char* fragmentBVHRayTrace = R(
             tri.NA   = texelFetch(u_normalTBO, i * STRIDE + 0).xyz;
             tri.NB   = texelFetch(u_normalTBO, i * STRIDE + 1).xyz;
             tri.NC   = texelFetch(u_normalTBO, i * STRIDE + 2).xyz;
-
             return tri;
         }
 
+        Triangle getRoomTriangle(int i) {
+            const int STRIDE = 3;
+            Triangle tri;
+            tri.posA = texelFetch(u_roomPosTBO, i * STRIDE + 0).xyz;
+            tri.posB = texelFetch(u_roomPosTBO, i * STRIDE + 1).xyz;
+            tri.posC = texelFetch(u_roomPosTBO, i * STRIDE + 2).xyz;
+            tri.NA   = texelFetch(u_roomNormalTBO, i * STRIDE + 0).xyz;
+            tri.NB   = texelFetch(u_roomNormalTBO, i * STRIDE + 1).xyz;
+            tri.NC   = texelFetch(u_roomNormalTBO, i * STRIDE + 2).xyz;
+            return tri;
+        }
+
+
         // RayTriangleTestBVH의 스택+반복버전이 필요함(쉐이더에서 리커전 지원X)
-        Hit rayTriangleTestBVH(Ray ray, Hit lastHit) {
-            Hit result = lastHit;
+        Hit rayTriangleTestBVH(Ray ray) {
+            Hit result;
+            result.didHit = false;
+            result.dst = INF;
+
             int idx = 0;
             BVHNode nodeStack[20];
             nodeStack[idx++] = getBVHNode(1);
@@ -169,8 +199,10 @@ const char* fragmentBVHRayTrace = R(
                     if (current.nodeIdx >= u_bvhLeafStartIdx) {
                         for (int triIdx = current.triangleIdx; triIdx < current.triangleIdx + current.triangleCnt; ++triIdx) {
                             Hit triHit = rayTriangle(ray, getTriangle(triIdx));
-                            if (triHit.didHit && triHit.dst < result.dst)
+                            if (triHit.didHit && triHit.dst < result.dst) {
                                 result = triHit;
+                                result.mat.color = vec3(1.0, 0.0, 0.0);
+                            }
                         }
                     } else {
                         nodeStack[idx++] = getBVHNode(current.nodeIdx * 2);
@@ -182,17 +214,105 @@ const char* fragmentBVHRayTrace = R(
             return result;
         }
 
-        Hit rayCollision(Ray worldRay) {
-            Hit result;
-            result.didHit = false;
-            result.dst = INF;
+        Hit raySphere(Ray ray, vec3 sphereCenter, float sphereRadius) {
+            Hit hitInfo;
+            hitInfo.didHit = false;
+            hitInfo.mat.color = getBGColor(ray);
 
-            return rayTriangleTestBVH(worldRay, result);
+            vec3 oc = ray.org - sphereCenter;
+
+            float a = dot(ray.dir, ray.dir);
+            float b = 2.0 * dot(oc, ray.dir);
+            float c = dot(oc, oc) - sphereRadius * sphereRadius;
+            float discriminant = b * b - 4.0 * a * c;
+
+            if (discriminant >= 0.0) {
+                float dst = (-b - sqrt(discriminant)) / (2.0 * a);
+
+                if (dst >= 0.0) {
+                    hitInfo.didHit = true;
+                    hitInfo.dst = dst;
+                    hitInfo.pos = ray.org + ray.dir * dst;
+                    hitInfo.N = normalize(hitInfo.pos - sphereCenter);
+                }
+            }
+
+            return hitInfo;
+        }
+
+        Hit rayCollisionSphere(Ray ray) {
+            int numSphere = 2;
+            Sphere spheres[2];
+
+            spheres[0].pos = vec3(20.0, 0.0, -40.0);
+            spheres[0].r = 25.0;
+            spheres[0].mat.color = vec3(1.0, 1.0, 1.0);
+
+            spheres[1].pos = vec3(0.0, 0.0, 0.0);
+            spheres[1].r = 5.0;
+            spheres[1].mat.color = vec3(1.0, 0.0, 0.0);
+
+            Hit closestHit;
+            closestHit.didHit = false;
+            closestHit.dst = INF;
+            closestHit.mat.color = getBGColor(ray);
+
+            for (int i = 0; i < numSphere; ++i) {
+                Sphere sphere = spheres[i];
+                Hit hit = raySphere(ray, sphere.pos, sphere.r);
+
+                if (hit.didHit && hit.dst < closestHit.dst) {
+                    closestHit = hit;
+                    closestHit.mat = sphere.mat;
+                }
+            }
+
+            return closestHit;
+        }
+
+
+        Hit rayCollision(Ray ray) {
+            Hit resultModel = rayTriangleTestBVH(ray);
+
+            if (resultModel.didHit) {
+                return resultModel;
+            } else {
+                return rayCollisionSphere(ray);
+            }
+        }
+
+        vec3 trace(Ray ray) {
+            int MAX_BOUNCE = 5;
+
+            vec3 incomingL = vec3(0.0);
+            vec3 rayColor = vec3(1.0);
+
+            for (int i = 0; i < MAX_BOUNCE; ++i) {
+                Hit hit = rayCollision(ray);
+
+                if (hit.didHit) {
+                    float s = dot(hit.N, -ray.dir);
+                    ray.org = hit.pos;
+                    ray.dir = randomHemisphereDir(hit.N);
+                    vec3 emittedL = vec3(1.0); // vec3 emittedL = mat.emissionColor * mat.emissionStrength;
+
+                    rayColor *= hit.mat.color * s;
+                    incomingL += emittedL * rayColor;
+                } else {
+                    incomingL += getBGColor(ray) * rayColor; // TODO
+                    break;
+                }
+            }
+
+            return incomingL;
         }
 
         void main() {
+            vec4 tmp = texelFetch(u_roomPosTBO, 0);
+            vec4 tmp2 = texelFetch(u_roomNormalTBO, 1);
+            float tmp3 = (u_resolution.x / u_resolution.y);
+
             vec2 uv = v_uv * 2.0 - 1.0;
-            uv.x *= (u_resolution.x / u_resolution.y);
 
             vec4 rayClip = vec4(uv, -1.0, 1.0);
             vec4 rayEye = inverse(u_projMat) * rayClip;
@@ -204,12 +324,31 @@ const char* fragmentBVHRayTrace = R(
             ray.dir = worldRay;
             ray.invDir = 1.0 / worldRay;
 
-            Hit hit = rayCollision(ray);
-            if (hit.dst < INF) {
-                fragColor = vec4(0.0, 0.0, 1.0, 1.0);
-            } else {
-                fragColor = vec4(1.0, 0.0, 0.0, 1.0);
+            float RAY_SAMPLE_CNT = 1.0;
+            vec3 total = vec3(0.0);
+            for (float i = 0; i < RAY_SAMPLE_CNT; i += 1.0) {
+                total += trace(ray);
             }
+            fragColor = vec4(total / RAY_SAMPLE_CNT, 1.0);
+
+
+//            Hit hit = rayCollision(ray);
+//            if (hit.dst < INF) {
+//                fragColor = vec4(0.0, 0.0, 1.0, 1.0);
+//            } else {
+//                fragColor = vec4(0.0, 0.0, 0.0, 1.0);
+//            }
+
+//            Hit result;
+//            result.didHit = false;
+//            result.dst = INF;
+//
+//            Hit closestHit = rayCollisionSphere(ray);
+//            if (closestHit.didHit) {
+//                fragColor = vec4(closestHit.mat.color * dot(closestHit.N, -ray.dir), 1.0);
+//            } else {
+//                fragColor = vec4(getBGColor(ray), 1.0);
+//            }
         }
 );
 
@@ -225,8 +364,13 @@ BVHRayTraceShader::BVHRayTraceShader() {
     _posTBOLoc = glGetUniformLocation(_programID, "u_posTBO");
     _normalTBOLoc = glGetUniformLocation(_programID, "u_normalTBO");
 
+    _roomPosTBOLoc = glGetUniformLocation(_programID, "u_roomPosTBO");
+    _roomNormalTBOLoc = glGetUniformLocation(_programID, "u_roomNormalTBO");
+
     _cameraPosUniformLoc = glGetUniformLocation(_programID, "u_worldCameraPos");
     _resolutionUnifromLoc = glGetUniformLocation(_programID, "u_resolution");
+
+    _roomFaceColorsLoc = glGetUniformLocation(_programID, "u_roomFaceColors");
 }
 
 bool BVHRayTraceShader::load() {
@@ -258,5 +402,11 @@ void BVHRayTraceShader::useProgram() {
 
     assert(_normalTBOLoc != -1);
     glUniform1i(_normalTBOLoc, 4);
+
+    assert(_roomPosTBOLoc != -1);
+    glUniform1i(_roomPosTBOLoc, 5);
+
+    assert(_roomNormalTBOLoc != -1);
+    glUniform1i(_roomNormalTBOLoc, 6);
 
 }

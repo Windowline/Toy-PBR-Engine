@@ -10,6 +10,8 @@
 
 #include "MeshBasic.h"
 #include "Model.hpp"
+#include "Room.hpp"
+#include "Plane.hpp"
 #include "ModelNode.hpp"
 #include "BVH.hpp"
 
@@ -29,7 +31,18 @@ RayTraceScene::RayTraceScene(RenderEngine* engine, GLuint defaultFBO) {
     _modelNode = make_shared<ModelNode>(nullptr, _modelMesh, mat4());
     _rootNode->addChild(_modelNode);
 
+    _roomMesh = make_shared<Room>(0.5f,
+                                  vec3(1.0, 0.0, 0.0),
+                                  vec3(0.0, 1.0, 0.0),
+                                  vec3(0.0, 0.0, 1.0),
+                                  vec3(1.0, 1.0, 0.0),
+                                  vec3(0.0, 1.0, 1.0),
+                                  "Room");
+    _roomNode = make_shared<ModelNode>(nullptr, _roomMesh, mat4());
+    _rootNode->addChild(_rootNode);
+
     buildMeshTBO();
+    buildRoomTBO();
 
     //setup shader
     _bvhRayTraceShader = shaderManager()->setActiveShader<BVHRayTraceShader>(eShaderProgram_RayTrace);
@@ -43,6 +56,10 @@ RayTraceScene::RayTraceScene(RenderEngine* engine, GLuint defaultFBO) {
     glBindTexture(GL_TEXTURE_BUFFER, _posTBOTexture);
     glActiveTexture(GL_TEXTURE4);
     glBindTexture(GL_TEXTURE_BUFFER, _normalTBOTexture);
+    glActiveTexture(GL_TEXTURE5);
+    glBindTexture(GL_TEXTURE_BUFFER, _roomPosTBOTexture);
+    glActiveTexture(GL_TEXTURE6);
+    glBindTexture(GL_TEXTURE_BUFFER, _roomNormalTBOTexture);
 }
 
 void RayTraceScene::buildMeshTBO() {
@@ -132,7 +149,6 @@ void RayTraceScene::buildMeshTBO() {
     glGenBuffers(1, &_posTBO);
     glBindBuffer(GL_TEXTURE_BUFFER, _posTBO);
     glBufferData(GL_TEXTURE_BUFFER, trianglePos.size() * sizeof(float), trianglePos.data(), GL_STATIC_DRAW);
-
     glGenTextures(1, &_posTBOTexture);
     glBindTexture(GL_TEXTURE_BUFFER, _posTBOTexture);
     glTexBuffer(GL_TEXTURE_BUFFER, GL_RGB32F, _posTBO);
@@ -140,12 +156,33 @@ void RayTraceScene::buildMeshTBO() {
     glGenBuffers(1, &_normalTBO);
     glBindBuffer(GL_TEXTURE_BUFFER, _normalTBO);
     glBufferData(GL_TEXTURE_BUFFER, triangleNormal.size() * sizeof(float), triangleNormal.data(), GL_STATIC_DRAW);
-
     glGenTextures(1, &_normalTBOTexture);
     glBindTexture(GL_TEXTURE_BUFFER, _normalTBOTexture);
     glTexBuffer(GL_TEXTURE_BUFFER, GL_RGB32F, _normalTBO);
 
     _modelTriangleSize = trianglePos.size() / (3 * 3);
+}
+
+void RayTraceScene::buildRoomTBO() {
+//    auto plane =
+
+    const auto& trianglePos = _roomMesh->trianglePostions();
+    const auto& triangleNormal =  _roomMesh->triangleNormals();
+
+    glGenBuffers(1, &_roomPosTBO);
+    glBindBuffer(GL_TEXTURE_BUFFER, _roomPosTBO);
+    glBufferData(GL_TEXTURE_BUFFER, trianglePos.size() * sizeof(float), trianglePos.data(), GL_STATIC_DRAW);
+    glGenTextures(1, &_roomPosTBOTexture);
+    glBindTexture(GL_TEXTURE_BUFFER, _roomPosTBOTexture);
+    glTexBuffer(GL_TEXTURE_BUFFER, GL_RGB32F, _roomPosTBO);
+
+    glGenBuffers(1, &_roomNormalTBO);
+    glBindBuffer(GL_TEXTURE_BUFFER, _roomNormalTBO);
+    glBufferData(GL_TEXTURE_BUFFER, triangleNormal.size() * sizeof(float), triangleNormal.data(), GL_STATIC_DRAW);
+    glGenTextures(1, &_roomNormalTBOTexture);
+    glBindTexture(GL_TEXTURE_BUFFER, _roomNormalTBOTexture);
+    glTexBuffer(GL_TEXTURE_BUFFER, GL_RGB32F, _roomNormalTBO);
+
 }
 
 void RayTraceScene::setScreenSize(int w, int h) {
@@ -184,6 +221,7 @@ void RayTraceScene::render() {
     _bvhRayTraceShader->viewMatUniformMatrix4fv(view.pointer());
     _bvhRayTraceShader->projMatUniformMatrix4fv(proj.pointer());
     _bvhRayTraceShader->bvhLeafStartIdxUniform1i(1 << (BVH_MAX_DEPTH - 1));
+    _bvhRayTraceShader->setRoomColors(_roomMesh->faceColors());
 
     _fullQuad->render();
 }

@@ -14,6 +14,7 @@ class FrameBufferObject;
 class FullQuad;
 class ModelNode;
 class Model;
+class Room;
 class BVHRayTraceShader;
 
 class RayTraceScene : public Scene {
@@ -36,14 +37,20 @@ public:
 
 private:
     void buildMeshTBO();
+    void buildRoomTBO();
 
     RenderEngine* _engine;
     unsigned int _defaultFBO;
+
     std::shared_ptr<Camera> _camera;
     std::unique_ptr<FullQuad> _fullQuad;
+
     std::shared_ptr<ModelNode> _rootNode;
     std::shared_ptr<ModelNode> _modelNode;
+    std::shared_ptr<ModelNode> _roomNode;
+
     std::shared_ptr<Model> _modelMesh;
+    std::shared_ptr<Room> _roomMesh;
 
     std::shared_ptr<BVHRayTraceShader> _bvhRayTraceShader;
 
@@ -65,7 +72,13 @@ private:
     unsigned int _bvhMaxBoundsTBO = 0;
     unsigned int _bvhMaxBoundsTBOTexture = 0;
 
-    const int BVH_MAX_DEPTH = 10;
+    // Room Triangle Pos/N
+    unsigned int _roomPosTBO = 0;
+    unsigned int _roomPosTBOTexture = 0;
+    unsigned int _roomNormalTBO = 0;
+    unsigned int _roomNormalTBOTexture = 0;
+
+    const int BVH_MAX_DEPTH = 10 + 2;
 };
 
 

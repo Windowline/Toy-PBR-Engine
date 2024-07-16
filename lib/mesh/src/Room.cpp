@@ -18,10 +18,10 @@ Room::Room(float size, vec3 backColor, vec3 topColor, vec3 leftColor,
 
     std::vector<vec3> positions = {
             // Front face
-            vec3(-hSize, -hSize, hSize),
-            vec3(hSize, -hSize,  hSize),
-            vec3(hSize,  hSize,  hSize),
-            vec3(-hSize,  hSize, hSize),
+//            vec3(-hSize, -hSize, hSize),
+//            vec3(hSize, -hSize,  hSize),
+//            vec3(hSize,  hSize,  hSize),
+//            vec3(-hSize,  hSize, hSize),
 
             // Back face
             vec3(-hSize, -hSize, -hSize),
@@ -54,7 +54,6 @@ Room::Room(float size, vec3 backColor, vec3 topColor, vec3 leftColor,
             vec3(-hSize,  hSize, -hSize),
     };
 
-
     //내부가 보여야 하므로 CW 방향으로 구성합니다.
     std::vector <unsigned int> indices = {
             //   0,  1,  2,      0,  2,  3,    // front
@@ -65,6 +64,34 @@ Room::Room(float size, vec3 backColor, vec3 topColor, vec3 leftColor,
             22, 21, 20,     23, 22, 20,   // left
     };
 
+    //-4 offset
+    for (int i = 0; i < indices.size(); ++i) {
+        indices[i] -= 4;
+    }
+
+    for (int i = 0; i < indices.size(); ++i) {
+        _trianglePositions.push_back(positions[indices[i]]);
+    }
+
+    for (int normalIdx = 0; normalIdx < 5; ++normalIdx) {
+        vec3 normal = vec3(0, 0, 0);
+
+        if (normalIdx == 0)
+            normal = vec3(0, 0, 1);
+        else if (normalIdx == 1)
+            normal = vec3(0, -1, 0);
+        else if (normalIdx == 2)
+            normal = vec3(0, 1, 0);
+        else if (normalIdx == 3)
+            normal = vec3(-1, 0, 0);
+        else
+            normal = vec3(1, 0, 0);
+
+        for (int k = 0; k < 6; ++k) {
+            _triangleNormals.push_back(normal);
+        }
+    }
+
     std::vector<vec3> colors;
     colors.reserve(positions.size());
 
@@ -72,10 +99,10 @@ Room::Room(float size, vec3 backColor, vec3 topColor, vec3 leftColor,
     normals.reserve(positions.size());
 
     //front
-    for (int i = 0; i < 4; ++i) {
-        colors.emplace_back(vec3(0, 0, 0));
-        normals.emplace_back(vec3(0, 0, 1));
-    }
+//    for (int i = 0; i < 4; ++i) {
+//        colors.emplace_back(vec3(0, 0, 0));
+//        normals.emplace_back(vec3(0, 0, 1));
+//    }
 
     //back
     for (int i = 0; i < 4; ++i) {
