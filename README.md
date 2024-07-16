@@ -20,7 +20,7 @@
     - D: Move to X of view-space
 
 
-- ING
+- Doing
   - Real Time Ray Tracing
 
 
