@@ -20,6 +20,7 @@ const char* fragmentBVHRayTrace = R(
 
         struct Material {
             vec3 color;
+            int type; // 0:Diffuse 1:Metal
         };
 
         struct Mesh {
@@ -48,6 +49,12 @@ const char* fragmentBVHRayTrace = R(
             Material mat;
         };
 
+        struct AABB {
+            vec3 minBounds;
+            vec3 maxBounds;
+            Material mat;
+        };
+
         struct BVHNode {
             int triangleIdx;
             int triangleCnt;
@@ -72,7 +79,10 @@ const char* fragmentBVHRayTrace = R(
         uniform samplerBuffer u_roomNormalTBO;
         uniform vec3 u_roomFaceColors[5];
 
-        float INF = 9999999.0;
+        const float INF = 9999999.0;
+        const int MATERIAL_TYPE_DIFFUSE = 0;
+        const int MATERIAL_TYPE_METAL = 1;
+
 
         layout (location = 0) out vec4 fragColor;
         in vec2 v_uv;
@@ -130,16 +140,38 @@ const char* fragmentBVHRayTrace = R(
             return hit;
         }
 
-        bool rayBoundingBox(Ray ray, vec3 boundsMin, vec3 boundsMax) {
-            vec3 invDir = 1.0 / ray.dir;
-            vec3 t0s = (boundsMin - ray.org) * invDir;
-            vec3 t1s = (boundsMax - ray.org) * invDir;
-            vec3 tSmaller = min(t0s, t1s);
-            vec3 tBigger = max(t0s, t1s);
 
-            float tMin = max(max(tSmaller.x, tSmaller.y), tSmaller.z);
-            float tMax = min(min(tBigger.x, tBigger.y), tBigger.z);
-            return tMax >= max(tMin, 0.0);
+        Hit rayBoundingBox(Ray ray, vec3 Bmin, vec3 Bmax)
+        {
+            Hit hit;
+
+            vec3 invD = 1.0 / ray.dir;
+            vec3 t0s = (Bmin - ray.org) * invD;
+            vec3 t1s = (Bmax - ray.org) * invD;
+            vec3 tsmaller = min(t0s, t1s);
+            vec3 tbigger = max(t0s, t1s);
+
+            float tmin = max(max(tsmaller.x, tsmaller.y), tsmaller.z);
+            float tmax = min(min(tbigger.x, tbigger.y), tbigger.z);
+
+            if (tmax < 0.0 || tmin > tmax) {
+                hit.didHit = false;
+                return hit;
+            }
+
+            float t = (tmin < 0.0) ? tmax : tmin;
+            hit.pos = ray.org + t * ray.dir;
+            hit.didHit = true;
+            hit.dst = t;
+
+            if (hit.pos.x <= Bmin.x + 1e-4) hit.N = vec3(-1.0, 0.0, 0.0);
+            else if (hit.pos.x >= Bmax.x - 1e-4) hit.N = vec3(1.0, 0.0, 0.0);
+            else if (hit.pos.y <= Bmin.y + 1e-4) hit.N = vec3(0.0, -1.0, 0.0);
+            else if (hit.pos.y >= Bmax.y - 1e-4) hit.N = vec3(0.0, 1.0, 0.0);
+            else if (hit.pos.z <= Bmin.z + 1e-4) hit.N = vec3(0.0, 0.0, -1.0);
+            else if (hit.pos.z >= Bmax.z - 1e-4) hit.N = vec3(0.0, 0.0, 1.0);
+
+            return hit;
         }
 
         BVHNode getBVHNode(int i) {
@@ -192,15 +224,19 @@ const char* fragmentBVHRayTrace = R(
             BVHNode nodeStack[20];
             nodeStack[idx++] = getBVHNode(1);
 
+            vec3 modelColor = vec3(0.8);
+
             while (idx > 0) {
                 BVHNode current = nodeStack[--idx];
-                if (rayBoundingBox(ray, current.minBounds, current.maxBounds)) {
+                Hit boxHit = rayBoundingBox(ray, current.minBounds, current.maxBounds);
+                if (boxHit.didHit) {
                     if (current.nodeIdx >= u_bvhLeafStartIdx) {
                         for (int triIdx = current.triangleIdx; triIdx < current.triangleIdx + current.triangleCnt; ++triIdx) {
                             Hit triHit = rayTriangle(ray, getTriangle(triIdx));
                             if (triHit.didHit && triHit.dst < result.dst) {
                                 result = triHit;
-                                result.mat.color = vec3(1.0, 0.0, 0.0);
+                                result.mat.color = modelColor;
+                                result.mat.type = MATERIAL_TYPE_METAL;
                             }
                         }
                     } else {
@@ -240,21 +276,29 @@ const char* fragmentBVHRayTrace = R(
         }
 
         Hit rayCollisionSphere(Ray ray) {
-            int numSphere = 2;
-            Sphere spheres[2];
-
-            spheres[0].pos = vec3(7, 0, -0.5);
-            spheres[0].r = 5;
-            spheres[0].mat.color = vec3(1);
-
-            spheres[1].pos = vec3(-7, 0, -0.5);
-            spheres[1].r = 5;
-            spheres[1].mat.color = vec3(0, 0, 1);
-
             Hit closestHit;
             closestHit.didHit = false;
             closestHit.dst = INF;
             closestHit.mat.color = getBGColor(ray);
+
+            //spheres
+            const int numSphere = 3;
+            Sphere spheres[3];
+
+            spheres[0].pos = vec3(7, 1, -0.5);
+            spheres[0].r = 4;
+            spheres[0].mat.color = vec3(0.9);
+            spheres[0].mat.type = MATERIAL_TYPE_METAL;
+
+            spheres[1].pos = vec3(-7, 1, -0.5);
+            spheres[1].r = 4;
+            spheres[1].mat.color = vec3(0.9);
+            spheres[1].mat.type = MATERIAL_TYPE_METAL;
+
+            spheres[2].pos = vec3(0, 12.0, -0.5);
+            spheres[2].r = 4;
+            spheres[2].mat.color = vec3(0.9);
+            spheres[2].mat.type = MATERIAL_TYPE_METAL;
 
             for (int i = 0; i < numSphere; ++i) {
                 Sphere sphere = spheres[i];
@@ -263,6 +307,34 @@ const char* fragmentBVHRayTrace = R(
                 if (hit.didHit && hit.dst < closestHit.dst) {
                     closestHit = hit;
                     closestHit.mat = sphere.mat;
+                }
+            }
+
+            //bboxes
+            const int numAABB = 3;
+            AABB aabbs[3];
+
+            aabbs[0].maxBounds = vec3(16, 10, 8);
+            aabbs[0].minBounds = vec3(15, -10, -8);
+            aabbs[0].mat.color = vec3(0.8, 0.0, 0.0);
+            aabbs[0].mat.type = MATERIAL_TYPE_DIFFUSE;
+
+            aabbs[1].maxBounds = vec3(-16, 10, 8);
+            aabbs[1].minBounds = vec3(-15, -10, -8);
+            aabbs[1].mat.color = vec3(0.0, 0.0, 0.8);
+            aabbs[1].mat.type = MATERIAL_TYPE_DIFFUSE;
+
+            aabbs[2].maxBounds = vec3(16, -10,   8);
+            aabbs[2].minBounds = vec3(-16, -11, -8);
+            aabbs[2].mat.color = vec3(0.0, 0.8, 0.0);
+            aabbs[2].mat.type = MATERIAL_TYPE_DIFFUSE;
+
+            for (int i = 0; i < numAABB; ++i) {
+                AABB aabb = aabbs[i];
+                Hit hit = rayBoundingBox(ray, aabb.minBounds, aabb.maxBounds);
+                if (hit.didHit && hit.dst < closestHit.dst) {
+                    closestHit = hit;
+                    closestHit.mat = aabb.mat;
                 }
             }
 
@@ -292,23 +364,25 @@ const char* fragmentBVHRayTrace = R(
             for (int i = 0; i < MAX_BOUNCE; ++i) {
                 Hit hit = rayCollision(ray);
 
-                if (hit.didHit) {
-                    float s = dot(hit.N, -ray.dir);
-                    ray.org = hit.pos;
-                    ray.dir = randomHemisphereDir(hit.N);
+                if (hit.didHit && hit.mat.type == MATERIAL_TYPE_METAL) {
                     vec3 emittedL = vec3(1.0); // vec3 emittedL = mat.emissionColor * mat.emissionStrength;
+                    float s = dot(hit.N, -ray.dir);
 
-                    rayColor *= hit.mat.color * s;
+                    vec3 specDir = reflect(ray.dir, hit.N);
+                    ray.org = hit.pos;
+                    ray.dir = specDir;
+
+                    rayColor *= hit.mat.color;
                     incomingL += emittedL * rayColor;
 
                     hitted = true;
+
+                } else if (hit.didHit && hit.mat.type == MATERIAL_TYPE_DIFFUSE) {
+                    incomingL = hit.mat.color * rayColor;
                 } else {
+                    incomingL = getBGColor(ray) * rayColor;
                     break;
                 }
-            }
-
-            if (!hitted) {
-                incomingL = getBGColor(ray);
             }
 
             return incomingL;
