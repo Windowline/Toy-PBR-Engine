@@ -117,7 +117,6 @@ const char* fragmentBVHRayTrace = R(
             float determinant = -dot(ray.dir, N);
             float invDet = 1.0 / determinant;
 
-            //Calculate dst to triangle & barycentric coord of intersection point
             float dst = dot(ao, N) * invDet;
             float u = dot(edgeAC, dao) * invDet;
             float v = -dot(edgeAB, dao) * invDet;
@@ -183,8 +182,8 @@ const char* fragmentBVHRayTrace = R(
         }
 
 
-        // RayTriangleTestBVH의 스택+반복버전이 필요함(쉐이더에서 리커전 지원X)
-        Hit rayTriangleTestBVH(Ray ray) {
+        // rayCollisionTriangleBVH의 스택+반복버전이 필요함(쉐이더에서 리커전 지원X)
+        Hit rayCollisionTriangleBVH(Ray ray) {
             Hit result;
             result.didHit = false;
             result.dst = INF;
@@ -244,13 +243,13 @@ const char* fragmentBVHRayTrace = R(
             int numSphere = 2;
             Sphere spheres[2];
 
-            spheres[0].pos = vec3(20.0, 0.0, -40.0);
-            spheres[0].r = 25.0;
-            spheres[0].mat.color = vec3(1.0, 1.0, 1.0);
+            spheres[0].pos = vec3(7, 0, -0.5);
+            spheres[0].r = 5;
+            spheres[0].mat.color = vec3(1);
 
-            spheres[1].pos = vec3(0.0, 0.0, 0.0);
-            spheres[1].r = 5.0;
-            spheres[1].mat.color = vec3(1.0, 0.0, 0.0);
+            spheres[1].pos = vec3(-7, 0, -0.5);
+            spheres[1].r = 5;
+            spheres[1].mat.color = vec3(0, 0, 1);
 
             Hit closestHit;
             closestHit.didHit = false;
@@ -272,20 +271,23 @@ const char* fragmentBVHRayTrace = R(
 
 
         Hit rayCollision(Ray ray) {
-            Hit resultModel = rayTriangleTestBVH(ray);
-
-            if (resultModel.didHit) {
+            Hit resultModel = rayCollisionTriangleBVH(ray);
+            Hit resultSphere = rayCollisionSphere(ray);
+            if (resultModel.dst < resultSphere.dst)
                 return resultModel;
-            } else {
-                return rayCollisionSphere(ray);
-            }
+            else if (resultModel.dst > resultSphere.dst)
+                return resultSphere;
+            else
+                return resultModel;
         }
 
-        vec3 trace(Ray ray) {
+        vec3 rayTrace(Ray ray) {
             int MAX_BOUNCE = 5;
 
-            vec3 incomingL = vec3(0.0);
-            vec3 rayColor = vec3(1.0);
+            vec3 incomingL = vec3(0);
+            vec3 rayColor = vec3(1);
+
+            bool hitted = false;
 
             for (int i = 0; i < MAX_BOUNCE; ++i) {
                 Hit hit = rayCollision(ray);
@@ -298,10 +300,15 @@ const char* fragmentBVHRayTrace = R(
 
                     rayColor *= hit.mat.color * s;
                     incomingL += emittedL * rayColor;
+
+                    hitted = true;
                 } else {
-                    incomingL += getBGColor(ray) * rayColor; // TODO
                     break;
                 }
+            }
+
+            if (!hitted) {
+                incomingL = getBGColor(ray);
             }
 
             return incomingL;
@@ -324,31 +331,13 @@ const char* fragmentBVHRayTrace = R(
             ray.dir = worldRay;
             ray.invDir = 1.0 / worldRay;
 
-            float RAY_SAMPLE_CNT = 1.0;
+            float RAY_SAMPLE_CNT = 2.0;
             vec3 total = vec3(0.0);
             for (float i = 0; i < RAY_SAMPLE_CNT; i += 1.0) {
-                total += trace(ray);
+                total += rayTrace(ray);
             }
+
             fragColor = vec4(total / RAY_SAMPLE_CNT, 1.0);
-
-
-//            Hit hit = rayCollision(ray);
-//            if (hit.dst < INF) {
-//                fragColor = vec4(0.0, 0.0, 1.0, 1.0);
-//            } else {
-//                fragColor = vec4(0.0, 0.0, 0.0, 1.0);
-//            }
-
-//            Hit result;
-//            result.didHit = false;
-//            result.dst = INF;
-//
-//            Hit closestHit = rayCollisionSphere(ray);
-//            if (closestHit.didHit) {
-//                fragColor = vec4(closestHit.mat.color * dot(closestHit.N, -ray.dir), 1.0);
-//            } else {
-//                fragColor = vec4(getBGColor(ray), 1.0);
-//            }
         }
 );
 
