@@ -5,8 +5,8 @@
 
 RenderEngine* engine = nullptr;
 constexpr float ASPECT_RATIO = 0.5625;
-constexpr unsigned int SCR_WIDTH = 1280 / 2;
-constexpr unsigned int SCR_HEIGHT = 720 / 2;
+constexpr unsigned int SCR_WIDTH = 1280 * 1.6;
+constexpr unsigned int SCR_HEIGHT = 720 * 1.6;
 
 float lastX = SCR_WIDTH / 2.0;
 float lastY = SCR_HEIGHT / 2.0;
@@ -118,7 +118,7 @@ int main() {
     int viewport[4];
     glGetIntegerv(GL_VIEWPORT, viewport);
 
-    engine = new RenderEngine(SceneType::SampleScene1);
+    engine = new RenderEngine(SceneType::SampleScene0);
     engine->prepare();
     engine->setScreenSize(viewport[2], viewport[3]);
 

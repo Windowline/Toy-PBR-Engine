@@ -15,9 +15,18 @@ find_package(glfw3 CONFIG REQUIRED)
 
 add_subdirectory(lib)
 
-add_executable(app main.cpp)
+add_executable(app_pbr main_pbr.cpp)
 
-target_link_libraries(app
+target_link_libraries(app_pbr
+        PRIVATE
+        engine
+        glad::glad
+        glfw
+)
+
+add_executable(app_ray_trace main_ray_trace.cpp)
+
+target_link_libraries(app_ray_trace
         PRIVATE
         engine
         glad::glad
