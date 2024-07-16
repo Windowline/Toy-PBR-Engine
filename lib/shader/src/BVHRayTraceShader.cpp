@@ -120,12 +120,12 @@ const char* fragmentBVHRayTrace = R(
             vec3 invDir = 1.0 / ray.dir;
             vec3 t0s = (boundsMin - ray.org) * invDir;
             vec3 t1s = (boundsMax - ray.org) * invDir;
-            vec3 tsmaller = min(t0s, t1s);
-            vec3 tbigger = max(t0s, t1s);
+            vec3 tSmaller = min(t0s, t1s);
+            vec3 tBigger = max(t0s, t1s);
 
-            float tmin = max(max(tsmaller.x, tsmaller.y), tsmaller.z);
-            float tmax = min(min(tbigger.x, tbigger.y), tbigger.z);
-            return tmax >= max(tmin, 0.0);
+            float tMin = max(max(tSmaller.x, tSmaller.y), tSmaller.z);
+            float tMax = min(min(tBigger.x, tBigger.y), tBigger.z);
+            return tMax >= max(tMin, 0.0);
         }
 
         BVHNode getBVHNode(int i) {
@@ -146,11 +146,9 @@ const char* fragmentBVHRayTrace = R(
         Triangle getTriangle(int i) {
             const int STRIDE = 3;
             Triangle tri;
-
             tri.posA = texelFetch(u_posTBO, i * STRIDE + 0).xyz;
             tri.posB = texelFetch(u_posTBO, i * STRIDE + 1).xyz;
             tri.posC = texelFetch(u_posTBO, i * STRIDE + 2).xyz;
-
             tri.NA   = texelFetch(u_normalTBO, i * STRIDE + 0).xyz;
             tri.NB   = texelFetch(u_normalTBO, i * STRIDE + 1).xyz;
             tri.NC   = texelFetch(u_normalTBO, i * STRIDE + 2).xyz;
@@ -224,10 +222,8 @@ BVHRayTraceShader::BVHRayTraceShader() {
     _bvhMinBoundsTBOLoc = glGetUniformLocation(_programID, "u_bvhMinBoundsTBO");
     _bvhMaxBoundsTBOLoc = glGetUniformLocation(_programID, "u_bvhMaxBoundsTBO");
     _bvhLeafStartIdxLoc = glGetUniformLocation(_programID, "u_bvhLeafStartIdx");
-//    _bvhTriangleTBOLoc = glGetUniformLocation(_programID, "u_bvhTriangleTBO");
     _posTBOLoc = glGetUniformLocation(_programID, "u_posTBO");
     _normalTBOLoc = glGetUniformLocation(_programID, "u_normalTBO");
-
 
     _cameraPosUniformLoc = glGetUniformLocation(_programID, "u_worldCameraPos");
     _resolutionUnifromLoc = glGetUniformLocation(_programID, "u_resolution");
@@ -262,5 +258,5 @@ void BVHRayTraceShader::useProgram() {
 
     assert(_normalTBOLoc != -1);
     glUniform1i(_normalTBOLoc, 4);
-    
+
 }
