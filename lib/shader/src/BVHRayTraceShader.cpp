@@ -72,7 +72,7 @@ const char* fragmentBVHRayTrace = R(
         }
 
         vec3 randomHemisphereDir(vec3 N) {
-            vec2 randomSeed = gl_FragCoord.xy; // Use fragment coordinates for randomness
+            vec2 randomSeed = gl_FragCoord.xy;
             float u = rand(randomSeed);
             float v = rand(randomSeed + vec2(1.0, 1.0));
 
@@ -85,7 +85,6 @@ const char* fragmentBVHRayTrace = R(
 
             vec3 randomVec = vec3(x, y, z);
 
-            // Ensure the random vector is in the same hemisphere as the N
             if (dot(randomVec, N) < 0.0) {
                 randomVec = -randomVec;
             }
@@ -194,12 +193,6 @@ const char* fragmentBVHRayTrace = R(
         }
 
         void main() {
-//            ivec3 tmp1 = ivec3(texelFetch(u_bvhNodeTBO, 0).xyz);
-//            vec3 tmp2 = texelFetch(u_bvhMinBoundsTBO, 0).xyz;
-//            vec3 tmp3 = texelFetch(u_bvhMaxBoundsTBO, 0).xyz;
-//            int tmp5 = u_triangleSize;
-//            int tmp6 = u_bvhLeafStartIdx;
-
             vec2 uv = v_uv * 2.0 - 1.0;
             uv.x *= (u_resolution.x / u_resolution.y);
 
@@ -269,8 +262,5 @@ void BVHRayTraceShader::useProgram() {
 
     assert(_normalTBOLoc != -1);
     glUniform1i(_normalTBOLoc, 4);
-
-
-//    assert(_bvhTriangleTBOLoc != -1);
-//    glUniform1i(_bvhTriangleTBOLoc, 3);
+    
 }
