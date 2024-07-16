@@ -12,9 +12,7 @@ class Camera;
 class ShaderManager;
 class FrameBufferObject;
 class FullQuad;
-class ModelNode;
 class Model;
-class Room;
 class BVHRayTraceShader;
 
 class RayTraceScene : public Scene {
@@ -45,16 +43,9 @@ private:
     std::shared_ptr<Camera> _camera;
     std::unique_ptr<FullQuad> _fullQuad;
 
-    std::shared_ptr<ModelNode> _rootNode;
-    std::shared_ptr<ModelNode> _modelNode;
-    std::shared_ptr<ModelNode> _roomNode;
-
     std::shared_ptr<Model> _modelMesh;
-    std::shared_ptr<Room> _roomMesh;
 
     std::shared_ptr<BVHRayTraceShader> _bvhRayTraceShader;
-
-    unsigned int _modelTriangleSize = 0;
 
     //BVH Triangle Pos/N
     unsigned int _posTBO = 0;

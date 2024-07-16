@@ -23,13 +23,6 @@ const char* fragmentBVHRayTrace = R(
             int type; // 0:Diffuse 1:Metal
         };
 
-        struct Mesh {
-            int nodeOffset;
-            int triangleOffset;
-            mat4 worldToLocalMatrix;
-            Material mat;
-        };
-
         struct Hit {
             bool didHit;
             float dst;
@@ -63,7 +56,6 @@ const char* fragmentBVHRayTrace = R(
             vec3 maxBounds;
         };
 
-        uniform vec2 u_resolution;
         uniform vec3 u_worldCameraPos;
         uniform mat4 u_projMat;
         uniform mat4 u_viewMat;
@@ -75,14 +67,9 @@ const char* fragmentBVHRayTrace = R(
         uniform samplerBuffer u_normalTBO;
         uniform int u_bvhLeafStartIdx;
 
-        uniform samplerBuffer u_roomPosTBO;
-        uniform samplerBuffer u_roomNormalTBO;
-        uniform vec3 u_roomFaceColors[5];
-
         const float INF = 9999999.0;
         const int MATERIAL_TYPE_DIFFUSE = 0;
         const int MATERIAL_TYPE_METAL = 1;
-
 
         layout (location = 0) out vec4 fragColor;
         in vec2 v_uv;
@@ -141,35 +128,35 @@ const char* fragmentBVHRayTrace = R(
         }
 
 
-        Hit rayBoundingBox(Ray ray, vec3 Bmin, vec3 Bmax)
+        Hit rayBoundingBox(Ray ray, vec3 minBounds, vec3 maxBounds)
         {
             Hit hit;
 
             vec3 invD = 1.0 / ray.dir;
-            vec3 t0s = (Bmin - ray.org) * invD;
-            vec3 t1s = (Bmax - ray.org) * invD;
-            vec3 tsmaller = min(t0s, t1s);
-            vec3 tbigger = max(t0s, t1s);
+            vec3 t0s = (minBounds - ray.org) * invD;
+            vec3 t1s = (maxBounds - ray.org) * invD;
+            vec3 tSmaller = min(t0s, t1s);
+            vec3 tBigger = max(t0s, t1s);
 
-            float tmin = max(max(tsmaller.x, tsmaller.y), tsmaller.z);
-            float tmax = min(min(tbigger.x, tbigger.y), tbigger.z);
+            float tMin = max(max(tSmaller.x, tSmaller.y), tSmaller.z);
+            float tMax = min(min(tBigger.x, tBigger.y), tBigger.z);
 
-            if (tmax < 0.0 || tmin > tmax) {
+            if (tMax < 0.0 || tMin > tMax) {
                 hit.didHit = false;
                 return hit;
             }
 
-            float t = (tmin < 0.0) ? tmax : tmin;
+            float t = (tMin < 0.0) ? tMax : tMin;
             hit.pos = ray.org + t * ray.dir;
             hit.didHit = true;
             hit.dst = t;
 
-            if (hit.pos.x <= Bmin.x + 1e-4) hit.N = vec3(-1.0, 0.0, 0.0);
-            else if (hit.pos.x >= Bmax.x - 1e-4) hit.N = vec3(1.0, 0.0, 0.0);
-            else if (hit.pos.y <= Bmin.y + 1e-4) hit.N = vec3(0.0, -1.0, 0.0);
-            else if (hit.pos.y >= Bmax.y - 1e-4) hit.N = vec3(0.0, 1.0, 0.0);
-            else if (hit.pos.z <= Bmin.z + 1e-4) hit.N = vec3(0.0, 0.0, -1.0);
-            else if (hit.pos.z >= Bmax.z - 1e-4) hit.N = vec3(0.0, 0.0, 1.0);
+            if (hit.pos.x <= minBounds.x + 1e-4) hit.N = vec3(-1.0, 0.0, 0.0);
+            else if (hit.pos.x >= maxBounds.x - 1e-4) hit.N = vec3(1.0, 0.0, 0.0);
+            else if (hit.pos.y <= minBounds.y + 1e-4) hit.N = vec3(0.0, -1.0, 0.0);
+            else if (hit.pos.y >= maxBounds.y - 1e-4) hit.N = vec3(0.0, 1.0, 0.0);
+            else if (hit.pos.z <= minBounds.z + 1e-4) hit.N = vec3(0.0, 0.0, -1.0);
+            else if (hit.pos.z >= maxBounds.z - 1e-4) hit.N = vec3(0.0, 0.0, 1.0);
 
             return hit;
         }
@@ -200,19 +187,6 @@ const char* fragmentBVHRayTrace = R(
             tri.NC   = texelFetch(u_normalTBO, i * STRIDE + 2).xyz;
             return tri;
         }
-
-        Triangle getRoomTriangle(int i) {
-            const int STRIDE = 3;
-            Triangle tri;
-            tri.posA = texelFetch(u_roomPosTBO, i * STRIDE + 0).xyz;
-            tri.posB = texelFetch(u_roomPosTBO, i * STRIDE + 1).xyz;
-            tri.posC = texelFetch(u_roomPosTBO, i * STRIDE + 2).xyz;
-            tri.NA   = texelFetch(u_roomNormalTBO, i * STRIDE + 0).xyz;
-            tri.NB   = texelFetch(u_roomNormalTBO, i * STRIDE + 1).xyz;
-            tri.NC   = texelFetch(u_roomNormalTBO, i * STRIDE + 2).xyz;
-            return tri;
-        }
-
 
         // rayCollisionTriangleBVH의 스택+반복버전이 필요함(쉐이더에서 리커전 지원X)
         Hit rayCollisionTriangleBVH(Ray ray) {
@@ -285,18 +259,18 @@ const char* fragmentBVHRayTrace = R(
             const int numSphere = 3;
             Sphere spheres[3];
 
-            spheres[0].pos = vec3(7, 1, -0.5);
-            spheres[0].r = 4;
+            spheres[0].pos = vec3(5, 1, -0.5);
+            spheres[0].r = 2.0;
             spheres[0].mat.color = vec3(0.9);
             spheres[0].mat.type = MATERIAL_TYPE_METAL;
 
-            spheres[1].pos = vec3(-7, 1, -0.5);
-            spheres[1].r = 4;
+            spheres[1].pos = vec3(-5, 1, -0.5);
+            spheres[1].r = 2.0;
             spheres[1].mat.color = vec3(0.9);
             spheres[1].mat.type = MATERIAL_TYPE_METAL;
 
-            spheres[2].pos = vec3(0, 12.0, -0.5);
-            spheres[2].r = 4;
+            spheres[2].pos = vec3(0, 4.5, -0.5);
+            spheres[2].r = 2.0;
             spheres[2].mat.color = vec3(0.9);
             spheres[2].mat.type = MATERIAL_TYPE_METAL;
 
@@ -312,22 +286,27 @@ const char* fragmentBVHRayTrace = R(
 
             //bboxes
             const int numAABB = 3;
-            AABB aabbs[3];
+            AABB aabbs[4];
 
-            aabbs[0].maxBounds = vec3(16, 10, 8);
-            aabbs[0].minBounds = vec3(15, -10, -8);
-            aabbs[0].mat.color = vec3(0.8, 0.0, 0.0);
+            aabbs[0].maxBounds = vec3(13, 12 + 5, 8);
+            aabbs[0].minBounds = vec3(12, -12 + 5, -8);
+            aabbs[0].mat.color = vec3(0.9, 0.0, 0.2);
             aabbs[0].mat.type = MATERIAL_TYPE_DIFFUSE;
 
-            aabbs[1].maxBounds = vec3(-16, 10, 8);
-            aabbs[1].minBounds = vec3(-15, -10, -8);
-            aabbs[1].mat.color = vec3(0.0, 0.0, 0.8);
+            aabbs[1].maxBounds = vec3(-13, 12 + 5, 8);
+            aabbs[1].minBounds = vec3(-12, -12 + 5, -8);
+            aabbs[1].mat.color = vec3(0.0, 0.2, 0.9);
             aabbs[1].mat.type = MATERIAL_TYPE_DIFFUSE;
 
-            aabbs[2].maxBounds = vec3(16, -10,   8);
-            aabbs[2].minBounds = vec3(-16, -11, -8);
-            aabbs[2].mat.color = vec3(0.0, 0.8, 0.0);
+            aabbs[2].maxBounds = vec3(13, -12 + 5,   8);
+            aabbs[2].minBounds = vec3(-13, -13 + 5, -8);
+            aabbs[2].mat.color = vec3(0.4);
             aabbs[2].mat.type = MATERIAL_TYPE_DIFFUSE;
+
+//            aabbs[3].maxBounds = vec3(13, 12 + 5,  -8);
+//            aabbs[3].minBounds = vec3(-13, -13 + 5, -9);
+//            aabbs[3].mat.color = vec3(0.6, 0.4, 0.2);
+//            aabbs[3].mat.type = MATERIAL_TYPE_DIFFUSE;
 
             for (int i = 0; i < numAABB; ++i) {
                 AABB aabb = aabbs[i];
@@ -359,8 +338,6 @@ const char* fragmentBVHRayTrace = R(
             vec3 incomingL = vec3(0);
             vec3 rayColor = vec3(1);
 
-            bool hitted = false;
-
             for (int i = 0; i < MAX_BOUNCE; ++i) {
                 Hit hit = rayCollision(ray);
 
@@ -375,8 +352,6 @@ const char* fragmentBVHRayTrace = R(
                     rayColor *= hit.mat.color;
                     incomingL += emittedL * rayColor;
 
-                    hitted = true;
-
                 } else if (hit.didHit && hit.mat.type == MATERIAL_TYPE_DIFFUSE) {
                     incomingL = hit.mat.color * rayColor;
                 } else {
@@ -389,12 +364,7 @@ const char* fragmentBVHRayTrace = R(
         }
 
         void main() {
-            vec4 tmp = texelFetch(u_roomPosTBO, 0);
-            vec4 tmp2 = texelFetch(u_roomNormalTBO, 1);
-            float tmp3 = (u_resolution.x / u_resolution.y);
-
             vec2 uv = v_uv * 2.0 - 1.0;
-
             vec4 rayClip = vec4(uv, -1.0, 1.0);
             vec4 rayEye = inverse(u_projMat) * rayClip;
             rayEye = vec4(rayEye.xy, -1.0, 0.0);
@@ -426,14 +396,7 @@ BVHRayTraceShader::BVHRayTraceShader() {
     _bvhLeafStartIdxLoc = glGetUniformLocation(_programID, "u_bvhLeafStartIdx");
     _posTBOLoc = glGetUniformLocation(_programID, "u_posTBO");
     _normalTBOLoc = glGetUniformLocation(_programID, "u_normalTBO");
-
-    _roomPosTBOLoc = glGetUniformLocation(_programID, "u_roomPosTBO");
-    _roomNormalTBOLoc = glGetUniformLocation(_programID, "u_roomNormalTBO");
-
     _cameraPosUniformLoc = glGetUniformLocation(_programID, "u_worldCameraPos");
-    _resolutionUnifromLoc = glGetUniformLocation(_programID, "u_resolution");
-
-    _roomFaceColorsLoc = glGetUniformLocation(_programID, "u_roomFaceColors");
 }
 
 bool BVHRayTraceShader::load() {
@@ -448,7 +411,6 @@ bool BVHRayTraceShader::load() {
 }
 
 void BVHRayTraceShader::useProgram() {
-
     glUseProgram(_programID);
 
     assert(_bvhNodeTBOLoc != -1);
@@ -465,11 +427,4 @@ void BVHRayTraceShader::useProgram() {
 
     assert(_normalTBOLoc != -1);
     glUniform1i(_normalTBOLoc, 4);
-
-    assert(_roomPosTBOLoc != -1);
-    glUniform1i(_roomPosTBOLoc, 5);
-
-    assert(_roomNormalTBOLoc != -1);
-    glUniform1i(_roomNormalTBOLoc, 6);
-
 }

@@ -65,7 +65,7 @@ PBRScene::PBRScene(RenderEngine* engine, GLuint defaultFBO) {
     _rootNode->setEnabled(false);
 
     auto sphereMesh = make_shared<Sphere>(1, vec3(0.5, 0.2, 1), "Sphere");
-    auto modelMesh = make_shared<Model>(RESOURCE_DIR + "/objects/monkey/monkey.obj", vec3(0.75, 0.75, 0.75), "Model");
+    auto modelMesh = make_shared<Model>(RESOURCE_DIR + "/objects/monkey/monkey.obj", vec3(0.75, 0.75, 0.75));
     mat4 scale = mat4::Scale(8.f);
     constexpr float spacingZ = 23.f;
     constexpr float spacingX = 23.f;

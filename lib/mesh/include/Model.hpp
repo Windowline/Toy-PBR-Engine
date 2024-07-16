@@ -95,10 +95,9 @@ struct Model : public MeshBasic
 {
     vector<ModelMesh> meshes;
     string directory;
-    bool gammaCorrection;
     vec3 color;
 
-    Model(string const &path, vec3 color, bool gamma = false) : color(color), gammaCorrection(gamma) {
+    Model(string const &path, vec3 color) : color(color) {
         loadModel(path);
     }
 
