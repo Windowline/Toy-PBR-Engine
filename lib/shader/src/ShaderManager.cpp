@@ -11,7 +11,6 @@
 #include "BGShader.hpp"
 #include "PBRShader.hpp"
 #include "DeferredPBRShader.hpp"
-#include "RayTraceShader.hpp"
 #include "BVHRayTraceShader.hpp"
 
 using namespace std;
@@ -67,8 +66,7 @@ void ShaderManager::loadAllPrograms() {
             {eShaderProgram_BG,                       make_shared<BGShader>()},
             {eShaderProgram_PBR,                      make_shared<PBRShader>()},
             {eShaderProgram_DeferredPBR,              make_shared<DeferredPBRShader>()},
-            {eShaderProgram_RayTrace,                 make_shared<RayTraceShader>()},
-            {eShaderProgram_BVHRayTrace,              make_shared<BVHRayTraceShader>()}
+            {eShaderProgram_RayTrace,                 make_shared<BVHRayTraceShader>()},
         };
     }
     

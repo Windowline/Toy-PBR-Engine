@@ -148,18 +148,7 @@ void buildBVH(const vector<Vertex>& vertices,
 
     split(root, 1, maxDepth, outAllNodes, outAllTriangles);
 
-    printBVH(outAllNodes);
+//    printBVH(outAllNodes);
 }
-
-//Triangle searchTriangle(const Ray& ray, const BVHNode& current, const vector<Triangle>& outAllTriangles) {
-//    if (current.nodeIdx == 0) { //leaf
-//        for (int triIdx = current.triangleStartIdx; triIdx <= current.triangleEndIdx; ++triIdx) {
-//            ray.in
-//        }
-//    }
-//
-//
-//    return tri;
-//}
 
 #endif //TOYRENDERER_BVH_HPP

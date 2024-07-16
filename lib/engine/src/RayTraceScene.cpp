@@ -32,7 +32,7 @@ RayTraceScene::RayTraceScene(RenderEngine* engine, GLuint defaultFBO) {
     buildMeshTBO();
 
     //setup shader
-    _bvhRayTraceShader = shaderManager()->setActiveShader<BVHRayTraceShader>(eShaderProgram_BVHRayTrace);
+    _bvhRayTraceShader = shaderManager()->setActiveShader<BVHRayTraceShader>(eShaderProgram_RayTrace);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_BUFFER, _bvhNodeTBOTexture);
     glActiveTexture(GL_TEXTURE1);
@@ -183,7 +183,6 @@ void RayTraceScene::render() {
     _bvhRayTraceShader->resolutionUniform2f((float)_camera->screenSize().x, (float)_camera->screenSize().y);
     _bvhRayTraceShader->viewMatUniformMatrix4fv(view.pointer());
     _bvhRayTraceShader->projMatUniformMatrix4fv(proj.pointer());
-    _bvhRayTraceShader->triangleSizeUniform1i(_modelTriangleSize);
     _bvhRayTraceShader->bvhLeafStartIdxUniform1i(1 << (BVH_MAX_DEPTH - 1));
 
     _fullQuad->render();

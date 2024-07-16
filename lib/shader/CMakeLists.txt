@@ -39,9 +39,6 @@ add_library(shader STATIC
         include/DeferredPBRShader.hpp
         src/DeferredPBRShader.cpp
 
-        include/RayTraceShader.hpp
-        src/RayTraceShader.cpp
-
         include/BVHRayTraceShader.hpp
         src/BVHRayTraceShader.cpp
 )

@@ -58,12 +58,9 @@ const char* fragmentBVHRayTrace = R(
         uniform samplerBuffer u_bvhNodeTBO;
         uniform samplerBuffer u_bvhMinBoundsTBO;
         uniform samplerBuffer u_bvhMaxBoundsTBO;
-//        uniform samplerBuffer u_bvhTriangleTBO;
         uniform int u_bvhLeafStartIdx;
         uniform samplerBuffer u_posTBO;
         uniform samplerBuffer u_normalTBO;
-
-        uniform int u_triangleSize;
 
         float INF = 9999999.0;
 
@@ -196,61 +193,12 @@ const char* fragmentBVHRayTrace = R(
             return rayTriangleTestBVH(worldRay, result);
         }
 
-        Hit rayMesh(Ray ray) { // 1 mesh
-            Hit closestHit;
-            closestHit.didHit = false;
-            closestHit.dst = INF;
-            closestHit.mat.color = vec3(0.0);
-
-            BVHNode root = getBVHNode(4);
-            for (int triIdx = root.triangleIdx; triIdx < root.triangleIdx + root.triangleCnt; ++triIdx) {
-                Triangle tri = getTriangle(triIdx);
-                Hit hit = rayTriangle(ray, tri);
-                if (hit.didHit && hit.dst < closestHit.dst) {
-                    closestHit = hit;
-                    closestHit.mat.color = vec3(1.0, 1.0, 1.0);
-                }
-            }
-
-            root = getBVHNode(5);
-            for (int triIdx = root.triangleIdx; triIdx < root.triangleIdx + root.triangleCnt; ++triIdx) {
-                Triangle tri = getTriangle(triIdx);
-                Hit hit = rayTriangle(ray, tri);
-                if (hit.didHit && hit.dst < closestHit.dst) {
-                    closestHit = hit;
-                    closestHit.mat.color = vec3(1.0, 1.0, 1.0);
-                }
-            }
-
-            root = getBVHNode(6);
-            for (int triIdx = root.triangleIdx; triIdx < root.triangleIdx + root.triangleCnt; ++triIdx) {
-                Triangle tri = getTriangle(triIdx);
-                Hit hit = rayTriangle(ray, tri);
-                if (hit.didHit && hit.dst < closestHit.dst) {
-                    closestHit = hit;
-                    closestHit.mat.color = vec3(1.0, 1.0, 1.0);
-                }
-            }
-
-            root = getBVHNode(7);
-            for (int triIdx = root.triangleIdx; triIdx < root.triangleIdx + root.triangleCnt; ++triIdx) {
-                Triangle tri = getTriangle(triIdx);
-                Hit hit = rayTriangle(ray, tri);
-                if (hit.didHit && hit.dst < closestHit.dst) {
-                    closestHit = hit;
-                    closestHit.mat.color = vec3(1.0, 1.0, 1.0);
-                }
-            }
-
-            return closestHit;
-        }
-
         void main() {
-            ivec3 tmp1 = ivec3(texelFetch(u_bvhNodeTBO, 0).xyz);
-            vec3 tmp2 = texelFetch(u_bvhMinBoundsTBO, 0).xyz;
-            vec3 tmp3 = texelFetch(u_bvhMaxBoundsTBO, 0).xyz;
-            int tmp5 = u_triangleSize;
-            int tmp6 = u_bvhLeafStartIdx;
+//            ivec3 tmp1 = ivec3(texelFetch(u_bvhNodeTBO, 0).xyz);
+//            vec3 tmp2 = texelFetch(u_bvhMinBoundsTBO, 0).xyz;
+//            vec3 tmp3 = texelFetch(u_bvhMaxBoundsTBO, 0).xyz;
+//            int tmp5 = u_triangleSize;
+//            int tmp6 = u_bvhLeafStartIdx;
 
             vec2 uv = v_uv * 2.0 - 1.0;
             uv.x *= (u_resolution.x / u_resolution.y);
@@ -271,9 +219,6 @@ const char* fragmentBVHRayTrace = R(
             } else {
                 fragColor = vec4(1.0, 0.0, 0.0, 1.0);
             }
-
-//            Hit hit = rayMesh(ray);
-//            fragColor = vec4(hit.mat.color, 1.0);
         }
 );
 
@@ -293,7 +238,6 @@ BVHRayTraceShader::BVHRayTraceShader() {
 
     _cameraPosUniformLoc = glGetUniformLocation(_programID, "u_worldCameraPos");
     _resolutionUnifromLoc = glGetUniformLocation(_programID, "u_resolution");
-    _triangleSizeLoc = glGetUniformLocation(_programID, "u_triangleSize");
 }
 
 bool BVHRayTraceShader::load() {

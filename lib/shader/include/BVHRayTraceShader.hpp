@@ -19,11 +19,6 @@ public:
         glUniform2f(_resolutionUnifromLoc, value1, value2);
     }
 
-    void triangleSizeUniform1i(int value) {
-        assert(_triangleSizeLoc != -1);
-        glUniform1i(_triangleSizeLoc, value);
-    }
-
     void bvhLeafStartIdxUniform1i(int value) {
         assert(_bvhLeafStartIdxLoc != -1);
         glUniform1i(_bvhLeafStartIdxLoc, value);
@@ -33,14 +28,11 @@ public:
 private:
     GLint _cameraPosUniformLoc = -1;
     GLint _resolutionUnifromLoc = -1;
-    GLint _triangleSizeLoc = -1;
 
     GLint _bvhNodeTBOLoc = -1;
     GLint _bvhMinBoundsTBOLoc = -1;
     GLint _bvhMaxBoundsTBOLoc = -1;
     GLint _bvhLeafStartIdxLoc = -1;
-//    GLint _bvhTriangleTBOLoc = -1;
-
     GLint _posTBOLoc = -1;
     GLint _normalTBOLoc = -1;
 
