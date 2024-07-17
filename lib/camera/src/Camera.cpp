@@ -22,7 +22,7 @@ Ray Camera::ray(ivec2 screenPos) {
 
 ivec2 Camera::project(vec3 worldPos) {
     
-    vec4 ret = viewProjMat().multiplication1n4(vec4(worldPos, 1.0));
+    vec4 ret = viewProjMat().multiplicationVec4(vec4(worldPos, 1.0));
     ret.x /= ret.w;
     ret.y /= ret.w;
     ret.z /= ret.w;
@@ -44,7 +44,7 @@ vec3 Camera::unproject(vec3 point) const {
     input.x = input.x * 2.0 - 1.0;
     input.y = input.y * 2.0 - 1.0;
     input.z = input.z * 2.0 - 1.0;
-    vec4 world = _invViewProjectionMat.multiplication1n4(input);
+    vec4 world = _invViewProjectionMat.multiplicationVec4(input);
 
     world.x /= world.w;
     world.y /= world.w;

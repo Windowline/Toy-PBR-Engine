@@ -10,9 +10,6 @@
 
 #include "MeshBasic.h"
 #include "Model.hpp"
-#include "Room.hpp"
-#include "Plane.hpp"
-#include "ModelNode.hpp"
 #include "BVH.hpp"
 
 using namespace std;

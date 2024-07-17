@@ -134,13 +134,13 @@ struct Matrix4 {
         return v;
     }
 
-    Matrix4& operator *= (const Matrix4& b)
+    Matrix4& operator*= (const Matrix4& b)
     {
         Matrix4 m = *this * b;
         return (*this = m);
     }
 
-    Vector4<T> multiplication1n4(const Vector4<T>& b) const
+    Vector4<T> multiplicationVec4(const Vector4<T>& b) const
     {
         Vector4<T> v;
         v.x = x.x * b.x + y.x * b.y + z.x * b.z + w.x * b.w;

@@ -41,11 +41,10 @@ struct BVHNode {
 };
 
 
-pair<int, float> chooseSplit(BVHNode& node) {
+int chooseSplit(BVHNode& node) {
     vec3 size = node.aabb.size();
     int splitAxis = size.x > max(size.y, size.z) ? 0 : size.y > size.z ? 1 : 2;
-    float splitPos = node.aabb.center()[splitAxis];
-    return {splitAxis, splitPos};
+    return splitAxis;
 }
 
 void extendAABBFromTriangle(AABB& input, const Triangle& triangle) {
@@ -73,7 +72,7 @@ void split(BVHNode& current,
     if (depth == maxDepth)
         return;
 
-    auto [splitAxis, splitPos] = chooseSplit(current);
+    float splitAxis = chooseSplit(current);
     int start = current.triangleStartIdx;
     int end = current.triangleEndIdx;
     int mid = start + (current.triangleCnt / 2);

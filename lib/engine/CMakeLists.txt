@@ -14,6 +14,7 @@ add_library(engine STATIC
 
         include/BVH.hpp
         include/Scene.hpp
+        include/UXUtil.hpp
 )
 
 configure_file(${CMAKE_SOURCE_DIR}/config/PathInfo.h.in ${CMAKE_BINARY_DIR}/config/PathInfo.h)

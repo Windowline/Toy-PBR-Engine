@@ -2,88 +2,43 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include "Engine.hpp"
+#include "UXUtil.hpp"
+
+constexpr unsigned int SCR_WIDTH = 1280 * 1.2;
+constexpr unsigned int SCR_HEIGHT = 720 * 1.2;
 
 RenderEngine* engine = nullptr;
-constexpr float ASPECT_RATIO = 0.5625;
-constexpr unsigned int SCR_WIDTH = 1280 * 1.6;
-constexpr unsigned int SCR_HEIGHT = 720 * 1.6;
-
-float lastX = SCR_WIDTH / 2.0;
-float lastY = SCR_HEIGHT / 2.0;
-bool firstMouse = true;
-
-// timing
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
-
-float Yaw = -90.0;
-float Pitch = 0.f;
-float MovementSpeed = 32.f;
-float MouseSensitivity = 0.1f;
 
 void processInput(GLFWwindow *window) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
-    float velocity = MovementSpeed * deltaTime;
+    auto dir = UXUtil::ViewSpaceMoveDirection::NOTHING;
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        engine->updateViewPosition(0, velocity);
+        dir = UXUtil::ViewSpaceMoveDirection::FORWARD;
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        engine->updateViewPosition(1, velocity);
+        dir = UXUtil::ViewSpaceMoveDirection::BACKWARD;
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        engine->updateViewPosition(2, velocity);
+        dir = UXUtil::ViewSpaceMoveDirection::LEFT;
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        engine->updateViewPosition(3, velocity);
+        dir = UXUtil::ViewSpaceMoveDirection::RIGHT;
+
+    UXUtil::updateViewPosition(dir, deltaTime, engine);
 }
 
-// glfw: whenever the window size changed (by OS or user resize) this callback function executes
-// ---------------------------------------------------------------------------------------------
-void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
-    engine->setScreenSize(width, height);
+void mouse_callback(GLFWwindow* window, double x, double y) {
+    UXUtil::updateViewRotation(float(x), float(y), engine);
 }
 
-void mouse_callback(GLFWwindow* window, double xposIn, double yposIn) {
-    float xpos = static_cast<float>(xposIn);
-    float ypos = static_cast<float>(yposIn);
-
-    if (firstMouse) {
-        lastX = xpos;
-        lastY = ypos;
-        firstMouse = false;
-    }
-
-    float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
-
-    lastX = xpos;
-    lastY = ypos;
-
-    xoffset *= MouseSensitivity;
-    yoffset *= MouseSensitivity;
-
-    Yaw   += xoffset;
-    Pitch += yoffset;
-
-    const bool constrainPitch = true;
-
-    // make sure that when pitch is out of bounds, screen doesn't get flipped
-    if (constrainPitch) {
-        if (Pitch > 89.0f)
-            Pitch = 89.0f;
-        if (Pitch < -89.0f)
-            Pitch = -89.0f;
-    }
-
-//    std::cout << "mouse_callback " << Yaw << ", " << Pitch << std::endl;
-    engine->updateViewRotation(Yaw, Pitch);
+void framebuffer_size_callback(GLFWwindow* window, int w, int h) {
+    engine->setScreenSize(w, h);
 }
-
 
 
 int main() {
-    // glfw: initialize and configure
-    // ------------------------------
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -93,8 +48,6 @@ int main() {
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-    // glfw window creation
-    // --------------------
     GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "RenderEngine", NULL, NULL);
     if (window == NULL) {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -115,6 +68,8 @@ int main() {
     }
 
     //setup...
+    UXUtil::setInitialMousePosition(SCR_WIDTH / 2.0, SCR_HEIGHT / 2.0);
+
     int viewport[4];
     glGetIntegerv(GL_VIEWPORT, viewport);
 

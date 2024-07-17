@@ -76,7 +76,7 @@ const char* fragmentBVHRayTrace = R(
 
         vec3 getBGColor(Ray ray) {
             float a = 0.5 * (ray.dir.y + 1.0);
-            return (1.0 - a) * vec3(1.0, 1.0, 1.0) + a * vec3(0.5, 0.7, 1.0);
+            return (1.0 - a) * vec3(1.0) + a * vec3(0.5, 0.7, 1.0);
         }
 
         float rand(vec2 co) {
@@ -198,7 +198,7 @@ const char* fragmentBVHRayTrace = R(
             BVHNode nodeStack[20];
             nodeStack[idx++] = getBVHNode(1);
 
-            vec3 modelColor = vec3(0.8);
+            const vec3 MODEL_COLOR = vec3(1.0);
 
             while (idx > 0) {
                 BVHNode current = nodeStack[--idx];
@@ -209,7 +209,7 @@ const char* fragmentBVHRayTrace = R(
                             Hit triHit = rayTriangle(ray, getTriangle(triIdx));
                             if (triHit.didHit && triHit.dst < result.dst) {
                                 result = triHit;
-                                result.mat.color = modelColor;
+                                result.mat.color = MODEL_COLOR;
                                 result.mat.type = MATERIAL_TYPE_METAL;
                             }
                         }
@@ -303,11 +303,6 @@ const char* fragmentBVHRayTrace = R(
             aabbs[2].mat.color = vec3(0.4);
             aabbs[2].mat.type = MATERIAL_TYPE_DIFFUSE;
 
-//            aabbs[3].maxBounds = vec3(13, 12 + 5,  -8);
-//            aabbs[3].minBounds = vec3(-13, -13 + 5, -9);
-//            aabbs[3].mat.color = vec3(0.6, 0.4, 0.2);
-//            aabbs[3].mat.type = MATERIAL_TYPE_DIFFUSE;
-
             for (int i = 0; i < numAABB; ++i) {
                 AABB aabb = aabbs[i];
                 Hit hit = rayBoundingBox(ray, aabb.minBounds, aabb.maxBounds);
@@ -333,7 +328,7 @@ const char* fragmentBVHRayTrace = R(
         }
 
         vec3 rayTrace(Ray ray) {
-            int MAX_BOUNCE = 5;
+            const int MAX_BOUNCE = 6;
 
             vec3 incomingL = vec3(0);
             vec3 rayColor = vec3(1);
@@ -343,7 +338,7 @@ const char* fragmentBVHRayTrace = R(
 
                 if (hit.didHit && hit.mat.type == MATERIAL_TYPE_METAL) {
                     vec3 emittedL = vec3(1.0); // vec3 emittedL = mat.emissionColor * mat.emissionStrength;
-                    float s = dot(hit.N, -ray.dir);
+//                    float s = dot(hit.N, -ray.dir);
 
                     vec3 specDir = reflect(ray.dir, hit.N);
                     ray.org = hit.pos;
@@ -375,7 +370,7 @@ const char* fragmentBVHRayTrace = R(
             ray.dir = worldRay;
             ray.invDir = 1.0 / worldRay;
 
-            float RAY_SAMPLE_CNT = 2.0;
+            float RAY_SAMPLE_CNT = 1.0;
             vec3 total = vec3(0.0);
             for (float i = 0; i < RAY_SAMPLE_CNT; i += 1.0) {
                 total += rayTrace(ray);
