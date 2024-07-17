@@ -14,7 +14,7 @@
     - [Metalic: 0.6 / Roughness: 0.4]
       ![image](https://github.com/Windowline/ToyRenderer/assets/17508384/9166d4bf-ed49-4649-96b0-6dce5239d380)
       
-  - 2 Ray Tracing (BVH, ect)
+  - 2 Ray Tracing Rendering (BVH, ect)
       ![image](https://github.com/user-attachments/assets/269ab8cb-f933-4c4b-9ace-7984c17ab1b3)
 
 
@@ -47,12 +47,13 @@ cmake .. -DCMAKE_TOOLCHAIN_FILE="{your_vcpkg_path}/scripts/buildsystems/vcpkg.cm
 make
 ```
 
-## Run Sample App - Rasterization Rendering
+## Run Sample App
+Rasterization Rendering
 ```
 ./app_pbr
 ```
 
-## Run Sample App - Ray Tracing
+Ray Tracing Rendering
 ```
 ./app_ray_trace
 ```
