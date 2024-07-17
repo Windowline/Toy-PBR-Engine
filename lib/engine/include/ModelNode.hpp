@@ -12,6 +12,8 @@ class ModelNode {
 public:
     ModelNode(Scene *scene, std::shared_ptr<MeshBasic> mesh, mat4 localTransform);
 
+    void setLocalInstanceTransforms(std::vector<mat4>&& localInstanceTransform);
+
     virtual ~ModelNode() {}
 
     void addChild(std::shared_ptr<ModelNode> node);
@@ -22,8 +24,20 @@ public:
 
     void render();
 
+    bool isInstancing() const {
+        return _localInstanceTransforms.size() >= 1;
+    }
+
+    int instanceCount() const {
+        return _localInstanceTransforms.size();
+    }
+
     const mat4& worldTransform() const {
         return _worldTransform;
+    }
+
+    const vector<mat4>& worldInstanceTransforms() const {
+        return _worldInstanceTransforms;
     }
 
     const std::vector<std::shared_ptr<ModelNode>>& children() const {
@@ -43,8 +57,11 @@ public:
     }
 
 private:
-    mat4 _localTransform;
+    mat4 _localBasicTransform;
     mat4 _worldTransform;
+    std::vector<mat4> _localInstanceTransforms;
+    std::vector<mat4> _worldInstanceTransforms;
+
     Scene* _scene;
     ModelNode* _parent;
 

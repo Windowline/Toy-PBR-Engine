@@ -43,9 +43,12 @@ struct ModelMesh {
         setupMesh();
     }
 
-    void render() const {
+    void render(int instanceCount = 1) const {
         glBindVertexArray(VAO);
-        glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
+        if (instanceCount == 1)
+            glDrawElements(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0);
+        else
+            glDrawElementsInstanced(GL_TRIANGLES, static_cast<unsigned int>(indices.size()), GL_UNSIGNED_INT, 0, instanceCount);
         glBindVertexArray(0);
     }
 
@@ -101,9 +104,9 @@ struct Model : public MeshBasic
         loadModel(path);
     }
 
-    virtual void render() const override {
+    virtual void render(int instanceCount = 1) const override {
         for(unsigned int i = 0; i < meshes.size(); i++)
-            meshes[i].render();
+            meshes[i].render(instanceCount);
     }
 
 private:

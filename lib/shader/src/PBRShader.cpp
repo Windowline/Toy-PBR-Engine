@@ -139,7 +139,7 @@ const char* fragmentPBR = R(
             kD *= 1.0 - u_metallic;
 
             vec3 irradiance = texture(u_irradianceMap, N).rgb;
-            vec3 diffuse      = irradiance * u_albedo;
+            vec3 diffuse = irradiance * u_albedo;
 
             // sample both the pre-filter map and the BRDF lut and combine them together as per the Split-Sum approximation to get the IBL specular part.
             const float MAX_REFLECTION_LOD = 4.0;

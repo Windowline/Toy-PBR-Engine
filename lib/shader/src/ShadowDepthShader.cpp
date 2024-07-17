@@ -5,15 +5,15 @@ const char* vertexShadowDepthShaderTmp = R(
         layout (location = 1) in vec3 a_color;
         layout (location = 2) in vec3 a_normal;
 
-        uniform mat4 u_shadowMVP;
+        uniform mat4 u_shadowMVP[9];
 
         out vec4 v_shadowClipPos;
         out vec3 v_color;
 
         void main() {
-            v_shadowClipPos = u_shadowMVP * vec4(a_position, 1.0);
+            v_shadowClipPos = u_shadowMVP[gl_InstanceID] * vec4(a_position, 1.0);
             v_color = a_color;
-            gl_Position = u_shadowMVP * vec4(a_position, 1.0);
+            gl_Position = u_shadowMVP[gl_InstanceID] * vec4(a_position, 1.0);
         }
 );
 

@@ -64,24 +64,32 @@ PBRScene::PBRScene(RenderEngine* engine, GLuint defaultFBO) {
     _rootNode = make_shared<ModelNode>(this, make_shared<MeshBasic>(), mat4());
     _rootNode->setEnabled(false);
 
-    auto sphereMesh = make_shared<Sphere>(1, vec3(0.5, 0.2, 1), "Sphere");
-    auto modelMesh = make_shared<Model>(RESOURCE_DIR + "/objects/monkey/monkey.obj", vec3(0.75, 0.75, 0.75));
+    constexpr float SPACING_Z = 23.f;
+    constexpr float SPACING_X = 23.f;
+    constexpr float SPACING_Y = 6.f;
+    constexpr float ALIGN_Z = 0.f;
     mat4 scale = mat4::Scale(8.f);
-    constexpr float spacingZ = 23.f;
-    constexpr float spacingX = 23.f;
-    constexpr float spacingY = 6.f;
 
+    vector<mat4> instanceSphereTransforms;
+    vector<mat4> instanceModelTransforms;
     for (float z = 0.f; z < 3.f; z += 1.f) {
         for (float x = 0.f; x < 3.f; x += 1.f) {
             float ty = (2.f - z);
-            mat4 sphereTrans = mat4::Translate(15.f + x * spacingX, 6.f + ty * spacingY, Z_ALIGN + z * spacingZ);
-            mat4 modelTrans = mat4::Translate(-15.f - x * spacingX, 6.f + ty * spacingY, Z_ALIGN + z * spacingZ);
-            auto sphere = make_shared<ModelNode>(this, sphereMesh, scale * sphereTrans);
-            auto model = make_shared<ModelNode>(this, modelMesh, scale * modelTrans);
-            _rootNode->addChild(sphere);
-            _rootNode->addChild(model);
+            instanceSphereTransforms.emplace_back(mat4::Translate(15.f + x * SPACING_X, 6.f + ty * SPACING_Y, ALIGN_Z + z * SPACING_Z));
+            instanceModelTransforms.emplace_back(mat4::Translate(-15.f - x * SPACING_X, 6.f + ty * SPACING_Y, ALIGN_Z + z * SPACING_Z));
         }
     }
+
+    auto sphereMesh = make_shared<Sphere>(1, vec3(0.5, 0.2, 1), "Sphere");
+    auto modelMesh = make_shared<Model>(RESOURCE_DIR + "/objects/monkey/monkey.obj", vec3(0.75, 0.75, 0.75));
+    auto sphere = make_shared<ModelNode>(this, sphereMesh, scale);
+    auto model = make_shared<ModelNode>(this, modelMesh, scale);
+    sphere->setLocalInstanceTransforms(std::move(instanceSphereTransforms));
+    model->setLocalInstanceTransforms(std::move(instanceModelTransforms));
+    _rootNode->addChild(sphere);
+    _rootNode->addChild(model);
+
+    setupIntanceInfo();
 
     // plane
     mat4 planeLocalTransform = mat4::Scale(120.f, 120.f, 1.f) * mat4::RotateX(90.f) * mat4::Translate(0, -20, Z_ALIGN);
@@ -181,8 +189,15 @@ void PBRScene::renderDeferredPBR() {
 
         visitNodes(_rootNode, [this, wShader = weak_ptr<ShadowDepthShader>(activeShader)](const shared_ptr<ModelNode>& node) {
             if (auto shader = wShader.lock()) {
-                mat4 shadowMVP = node->worldTransform() * _shadowLightView * _shadowLightProj;
-                shader->shadowMVPUniformMatrix4fv(shadowMVP.pointer());
+                if (node->isInstancing()) {
+                    vector<mat4> shadowMVPArray;
+                    for (int i = 0; i < node->instanceCount(); ++i)
+                        shadowMVPArray.push_back(node->worldInstanceTransforms()[i] * _shadowLightView * _shadowLightProj);
+                    shader->shadowMVPUniformMatrix4fv(shadowMVPArray.data()->pointer(), shadowMVPArray.size());
+                } else {
+                    mat4 shadowMVP = node->worldTransform() * _shadowLightView * _shadowLightProj;
+                    shader->shadowMVPUniformMatrix4fv(shadowMVP.pointer(), 1);
+                }
                 node->render();
             }
         });
@@ -202,8 +217,8 @@ void PBRScene::renderDeferredPBR() {
 
         activeShader->projMatUniformMatrix4fv(proj.pointer());
         activeShader->viewMatUniformMatrix4fv(view.pointer());
-        activeShader->worldMatUniformMatrix4fv(identity.pointer());
-        activeShader->worldNormalMatUniformMatrix4fv(identity.pointer());
+        activeShader->worldMatUniformMatrix4fv(identity.pointer(), 1);
+        activeShader->worldNormalMatUniformMatrix4fv(identity.pointer(), 1);
         activeShader->isRenderSkyBokxUniform1f(1.f);
 
         glActiveTexture(GL_TEXTURE0);
@@ -222,18 +237,28 @@ void PBRScene::renderDeferredPBR() {
         activeShader->isRenderSkyBokxUniform1f(0.f);
 
         int colorIndex = 0;
-        visitNodes(_rootNode, [&colorIndex, wShader = weak_ptr<GBufferShader>(activeShader)](const shared_ptr<ModelNode>& node) {
+        visitNodes(_rootNode, [&colorIndex, this, wShader = weak_ptr<GBufferShader>(activeShader)](const shared_ptr<ModelNode>& node) {
             if (auto shader = wShader.lock()) {
-                colorIndex = (colorIndex + 1) % 3;
-                if (colorIndex == 0)
-                    shader->colorUniform3f(0.9, 0.1, 0.2);
-                else if (colorIndex == 1)
-                    shader->colorUniform3f(0.76, 0.8, 0.95);
-                else
-                    shader->colorUniform3f(0.12, 0.4, 0.9);
+                if (node->isInstancing()) {
+                    shader->colorUniform3fv(&_instanceColors[0].x, node->instanceCount());
+                    shader->worldMatUniformMatrix4fv(node->worldInstanceTransforms().data()->pointer(), node->instanceCount());
+                    vector<mat4> worldNormalMatArray;
+                    for (int i = 0; i < node->instanceCount(); ++i)
+                        worldNormalMatArray.push_back(node->worldInstanceTransforms()[i].invert().transposed());
+                    shader->worldNormalMatUniformMatrix4fv(worldNormalMatArray.data()->pointer(), node->instanceCount());
+                } else {
+                    colorIndex = (colorIndex + 1) % 3;
+                    if (colorIndex == 0)
+                        shader->colorUniform3f(0.9, 0.1, 0.2);
+                    else if (colorIndex == 1)
+                        shader->colorUniform3f(0.76, 0.8, 0.95);
+                    else
+                        shader->colorUniform3f(0.12, 0.4, 0.9);
 
-                shader->worldMatUniformMatrix4fv(node->worldTransform().pointer());
-                shader->worldNormalMatUniformMatrix4fv(node->worldTransform().invert().transposed().pointer());
+                    shader->worldMatUniformMatrix4fv(node->worldTransform().pointer(), 1);
+                    shader->worldNormalMatUniformMatrix4fv(node->worldTransform().invert().transposed().pointer(), 1);
+                }
+
                 node->render();
             }
         });
@@ -317,8 +342,8 @@ void PBRScene::renderDeferredPBR() {
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     auto activeShader = shaderManager()->setActiveShader<BasicShader>(eShaderProgram_Basic);
-    activeShader->worldMatUniformMatrix4fv(_lightSphere->worldTransform().pointer());
-    activeShader->worldNormalMatUniformMatrix4fv(_lightSphere->worldTransform().invert().transposed().pointer());
+    activeShader->worldMatUniformMatrix4fv(_lightSphere->worldTransform().pointer(), 1);
+    activeShader->worldNormalMatUniformMatrix4fv(_lightSphere->worldTransform().invert().transposed().pointer(), 1);
     activeShader->viewMatUniformMatrix4fv(view.pointer());
     activeShader->projMatUniformMatrix4fv(proj.pointer());
     _lightSphere->render();
@@ -365,6 +390,37 @@ void PBRScene::buildSSAOInfo() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+}
+
+
+void PBRScene::setupIntanceInfo() {
+//    //transforms
+//    constexpr float SPACING_Z = 23.f;
+//    constexpr float SPACING_X = 23.f;
+//    constexpr float SPACING_Y = 6.f;
+//    constexpr float ALIGN_Z = 0.f;
+//    mat4 scale = mat4::Scale(8.f);
+//
+//    for (float z = 0.f; z < 3.f; z += 1.f) {
+//        for (float x = 0.f; x < 3.f; x += 1.f) {
+//            float ty = (2.f - z);
+//            _instanceSphereTransforms.emplace_back(mat4::Translate(15.f + x * SPACING_X, 6.f + ty * SPACING_Y, ALIGN_Z + z * SPACING_Z));
+//            _instanceModelTransforms.emplace_back(mat4::Translate(-15.f - x * SPACING_X, 6.f + ty * SPACING_Y, ALIGN_Z + z * SPACING_Z));
+//        }
+//    }
+
+    //colors
+    const vector<vec3> COLORS = {
+        vec3(0.9, 0.1, 0.2),
+        vec3(0.9, 0.1, 0.2),
+        vec3(0.12, 0.4, 0.9)
+    };
+
+    int colorIndex = 0;
+    for (int i = 0; i < 9; ++i) {
+        colorIndex = (colorIndex + 1) % 3;
+        _instanceColors.push_back(COLORS[colorIndex]);
+    }
 }
 
 
@@ -461,8 +517,8 @@ void PBRScene::renderForwardPBR() {
 
     visitNodes(_rootNode, [wShader = weak_ptr<PBRShader>(activeShader)](const shared_ptr<ModelNode>& node) {
         if (auto shader = wShader.lock()) {
-            shader->worldMatUniformMatrix4fv(node->worldTransform().pointer());
-            shader->worldNormalMatUniformMatrix4fv(node->worldTransform().invert().transposed().pointer());
+            shader->worldMatUniformMatrix4fv(node->worldTransform().pointer(), 1);
+            shader->worldNormalMatUniformMatrix4fv(node->worldTransform().invert().transposed().pointer(), 1);
             node->render();
         }
     });

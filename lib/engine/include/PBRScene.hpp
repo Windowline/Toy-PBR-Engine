@@ -40,6 +40,7 @@ private:
     void renderDeferredPBR();
     void visitNodes(std::shared_ptr<ModelNode> node, std::function<void(std::shared_ptr<ModelNode>)> func);
     void buildSSAOInfo();
+    void setupIntanceInfo();
 
     //for debug
     void renderForwardPBR();
@@ -78,6 +79,11 @@ private:
     std::unique_ptr<Cube> _fullCube;
     std::unique_ptr<TexturePassShader> _textureShader;
     std::unique_ptr<IBLPreprocessor> _iblPreprocessor;
+
+    //instances
+    std::vector<mat4> _instanceSphereTransforms;
+    std::vector<mat4> _instanceModelTransforms;
+    std::vector<vec3> _instanceColors;
 };
 
 #endif /* Scene_hpp */

@@ -19,6 +19,14 @@ public:
         glUniform3f(_colorLoc, value1, value2, value3);
     }
 
+    void colorUniform3fv(const GLfloat* value, int count) {
+        assert(_colorLoc != -1);
+//        glUniform3fv(_colorLoc, value1, value2, value3);
+        glUniform3fv(_colorLoc, count, value);
+    }
+
+
+
 private:
 
     GLint _isRenderSkyBoxLoc = -1;

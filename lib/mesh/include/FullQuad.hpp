@@ -5,7 +5,7 @@
 class FullQuad : public MeshBasic {
 public:
     FullQuad(std::string name);
-    void render() const override;
+    void render(int instanceCount = 1) const override;
 
 };
 

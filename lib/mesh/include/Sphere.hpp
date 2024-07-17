@@ -7,7 +7,7 @@
 class Sphere : public MeshBasic {
 public:
     Sphere(float radius, vec3 color, std::string name);
-    void render() const override;
+    void render(int instanceCount=1) const override;
 
 private:
     float _radius;

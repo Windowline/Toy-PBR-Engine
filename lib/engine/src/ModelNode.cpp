@@ -4,9 +4,13 @@
 using namespace std;
 
 ModelNode::ModelNode(Scene *scene, shared_ptr<MeshBasic> mesh, mat4 localTransform)
-        : _scene(scene), _mesh(std::move(mesh)), _localTransform(std::move(localTransform)),
+        : _scene(scene), _mesh(std::move(mesh)), _localBasicTransform(std::move(localTransform)),
           _parent(nullptr) {
 
+}
+
+void ModelNode::setLocalInstanceTransforms(std::vector<mat4>&& localInstanceTransform) {
+    _localInstanceTransforms = std::move(localInstanceTransform);
 }
 
 void ModelNode::addChild(std::shared_ptr<ModelNode> node) {
@@ -15,15 +19,28 @@ void ModelNode::addChild(std::shared_ptr<ModelNode> node) {
 }
 
 void ModelNode::transformUpdate() {
-    _worldTransform = _parent ? _parent->worldTransform() * _localTransform : _localTransform;
+    _worldTransform = _parent ? _parent->worldTransform() * _localBasicTransform : _localBasicTransform;
+
+    _worldInstanceTransforms.clear();
+    for (int i = 0; i < _localInstanceTransforms.size(); ++i) {
+        if (_parent)
+            _worldInstanceTransforms.push_back(_parent->worldTransform() * _localInstanceTransforms[i] * _localBasicTransform);
+        else
+            _worldInstanceTransforms.push_back(_localInstanceTransforms[i] * _localBasicTransform);
+    }
 }
 
 void ModelNode::setLocalTransform(mat4 localTransform) {
-    _localTransform = std::move(localTransform);
+    _localBasicTransform = std::move(localTransform);
     transformUpdate();
 }
 
 void ModelNode::render() {
-    if (_enabled)
+    if (!_enabled)
+        return;
+
+    if (isInstancing())
+        _mesh->render(instanceCount());
+    else
         _mesh->render();
 }
