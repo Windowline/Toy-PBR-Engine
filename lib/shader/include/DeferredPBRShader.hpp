@@ -39,24 +39,12 @@ public:
 
     //position or color
     void lightUniform3fVector(const std::vector<vec3>& lightPositions, bool isPosition=true) {
-        const int LIGHT_COMPONENT_COUNT = 3;
-        float* lightPosArray = new float[lightPositions.size() * LIGHT_COMPONENT_COUNT];
-        int idx = 0;
-        for (auto& lightPos : lightPositions) {
-            lightPosArray[idx++] = lightPos.x;
-            lightPosArray[idx++] = lightPos.y;
-            lightPosArray[idx++] = lightPos.z;
-        }
-
         if (isPosition) {
-            worldLightPosUniform3fv(lightPosArray, (int)lightPositions.size());
+            worldLightPosUniform3fv(&lightPositions[0].x, (int)lightPositions.size());
         } else {
-            lightColorsUniformVec3fv(lightPosArray, (int)lightPositions.size());
+            lightColorsUniformVec3fv(&lightPositions[0].x, (int)lightPositions.size());
         }
-
         lightCountUniform1i((int)lightPositions.size());
-
-        delete[] lightPosArray;
     }
 
     void lightCountUniform1i(GLint value) {

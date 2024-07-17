@@ -17,15 +17,8 @@ public:
         glUniform3fv(_samplesUniformLoc, count, v);
     }
 
-    void samplesUniformVector(std::vector<vec3>& v) {
-        vector<GLfloat> input;
-        for (int i = 0; i < v.size(); ++i) {
-            input.push_back(v[i].x);
-            input.push_back(v[i].y);
-            input.push_back(v[i].z);
-        }
-
-        samplesUniform3fv(input.data(), GLsizei(v.size()));
+    void samplesUniformVector(const std::vector<vec3>& v) {
+        samplesUniform3fv(&v[0].x, GLsizei(v.size()));
     }
 
     void screenSizeUniform2f(GLfloat value1, GLfloat value2) {

@@ -171,8 +171,8 @@ void RayTraceScene::render() {
     const mat4& view = _camera->viewMat();
 
     _bvhRayTraceShader->cameraPosUniform3f(_camera->eye().x, _camera->eye().y, _camera->eye().z);
-    _bvhRayTraceShader->viewMatUniformMatrix4fv(view.pointer());
-    _bvhRayTraceShader->projMatUniformMatrix4fv(proj.pointer());
+    _bvhRayTraceShader->viewMatUniformMatrix4fv(view.ptr());
+    _bvhRayTraceShader->projMatUniformMatrix4fv(proj.ptr());
     _bvhRayTraceShader->bvhLeafStartIdxUniform1i(1 << (BVH_MAX_DEPTH - 1));
 
     _fullQuad->render();

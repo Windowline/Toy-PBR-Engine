@@ -80,9 +80,6 @@ private:
     std::unique_ptr<TexturePassShader> _textureShader;
     std::unique_ptr<IBLPreprocessor> _iblPreprocessor;
 
-    //instances
-    std::vector<mat4> _instanceSphereTransforms;
-    std::vector<mat4> _instanceModelTransforms;
     std::vector<vec3> _instanceColors;
 };
 

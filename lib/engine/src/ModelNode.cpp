@@ -22,11 +22,15 @@ void ModelNode::transformUpdate() {
     _worldTransform = _parent ? _parent->worldTransform() * _localBasicTransform : _localBasicTransform;
 
     _worldInstanceTransforms.clear();
+    _worldInstanceNormalTransforms.clear();
+
     for (int i = 0; i < _localInstanceTransforms.size(); ++i) {
         if (_parent)
             _worldInstanceTransforms.push_back(_parent->worldTransform() * _localBasicTransform * _localInstanceTransforms[i]);
         else
             _worldInstanceTransforms.push_back(_localBasicTransform * _localInstanceTransforms[i]);
+
+        _worldInstanceNormalTransforms.push_back(_worldInstanceTransforms.back().invert().transposed());
     }
 }
 

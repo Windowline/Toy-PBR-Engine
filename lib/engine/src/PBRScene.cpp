@@ -89,7 +89,18 @@ PBRScene::PBRScene(RenderEngine* engine, GLuint defaultFBO) {
     _rootNode->addChild(sphere);
     _rootNode->addChild(model);
 
-    setupIntanceInfo();
+    //instance colors
+    const vec3 COLORS[3] = {
+            vec3(0.76, 0.8, 0.95),
+            vec3(0.9, 0.1, 0.2),
+            vec3(0.12, 0.4, 0.9),
+    };
+
+    int colorIndex = 0;
+    for (int i = 0; i < 9; ++i) {
+        colorIndex = (colorIndex + 1) % 3;
+        _instanceColors.push_back(COLORS[colorIndex]);
+    }
 
     // plane
     mat4 planeLocalTransform = mat4::Scale(120.f, 120.f, 1.f) * mat4::RotateX(90.f) * mat4::Translate(0, -20, Z_ALIGN);
@@ -161,7 +172,6 @@ void PBRScene::update() {
 
 void PBRScene::render() {
     renderDeferredPBR();
-    //    renderForwardPBR();
 }
 
 void PBRScene::renderDeferredPBR() {
@@ -187,16 +197,16 @@ void PBRScene::renderDeferredPBR() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         auto activeShader = shaderManager()->setActiveShader<ShadowDepthShader>(eShaderProgram_ShadowDepth);
 
-        visitNodes(_rootNode, [this, wShader = weak_ptr<ShadowDepthShader>(activeShader)](const shared_ptr<ModelNode>& node) {
+        mat4 shadowVP = _shadowLightView * _shadowLightProj;
+
+        visitNodes(_rootNode, [&shadowVP, wShader = weak_ptr<ShadowDepthShader>(activeShader)](const shared_ptr<ModelNode>& node) {
             if (auto shader = wShader.lock()) {
                 if (node->isInstancing()) {
-                    vector<mat4> shadowMVPArray;
-                    for (int i = 0; i < node->instanceCount(); ++i)
-                        shadowMVPArray.push_back(node->worldInstanceTransforms()[i] * _shadowLightView * _shadowLightProj);
-                    shader->shadowMVPUniformMatrix4fv(shadowMVPArray.data()->pointer(), shadowMVPArray.size());
+                    vector<mat4> shadowMVPInstances = std::move(node->worldInstanceTransformsCombind(shadowVP));
+                    shader->shadowMVPUniformMatrix4fv(shadowMVPInstances.data()->ptr(), shadowMVPInstances.size());
                 } else {
-                    mat4 shadowMVP = node->worldTransform() * _shadowLightView * _shadowLightProj;
-                    shader->shadowMVPUniformMatrix4fv(shadowMVP.pointer(), 1);
+                    mat4 shadowMVP = node->worldTransform() * shadowVP;
+                    shader->shadowMVPUniformMatrix4fv(shadowMVP.ptr(), 1);
                 }
                 node->render();
             }
@@ -215,10 +225,10 @@ void PBRScene::renderDeferredPBR() {
         glDepthFunc(GL_LEQUAL);
         glDisable(GL_CULL_FACE);
 
-        activeShader->projMatUniformMatrix4fv(proj.pointer());
-        activeShader->viewMatUniformMatrix4fv(view.pointer());
-        activeShader->worldMatUniformMatrix4fv(identity.pointer(), 1);
-        activeShader->worldNormalMatUniformMatrix4fv(identity.pointer(), 1);
+        activeShader->projMatUniformMatrix4fv(proj.ptr());
+        activeShader->viewMatUniformMatrix4fv(view.ptr());
+        activeShader->worldMatUniformMatrix4fv(identity.ptr(), 1);
+        activeShader->worldNormalMatUniformMatrix4fv(identity.ptr(), 1);
         activeShader->isRenderSkyBokxUniform1f(1.f);
 
         glActiveTexture(GL_TEXTURE0);
@@ -232,33 +242,20 @@ void PBRScene::renderDeferredPBR() {
         glCullFace(GL_BACK);
 
         //geometry
-        activeShader->projMatUniformMatrix4fv(proj.pointer());
-        activeShader->viewMatUniformMatrix4fv(view.pointer());
+        activeShader->projMatUniformMatrix4fv(proj.ptr());
+        activeShader->viewMatUniformMatrix4fv(view.ptr());
         activeShader->isRenderSkyBokxUniform1f(0.f);
 
-        int colorIndex = 0;
-        visitNodes(_rootNode, [&colorIndex, this, wShader = weak_ptr<GBufferShader>(activeShader)](const shared_ptr<ModelNode>& node) {
+        visitNodes(_rootNode, [this, wShader = weak_ptr<GBufferShader>(activeShader)](const shared_ptr<ModelNode>& node) {
             if (auto shader = wShader.lock()) {
                 if (node->isInstancing()) {
                     shader->colorUniform3fv(&_instanceColors[0].x, node->instanceCount());
-                    shader->worldMatUniformMatrix4fv(node->worldInstanceTransforms().data()->pointer(), node->instanceCount());
-                    vector<mat4> worldNormalMatArray;
-                    for (int i = 0; i < node->instanceCount(); ++i)
-                        worldNormalMatArray.push_back(node->worldInstanceTransforms()[i].invert().transposed());
-                    shader->worldNormalMatUniformMatrix4fv(worldNormalMatArray.data()->pointer(), node->instanceCount());
+                    shader->worldMatUniformMatrix4fv(node->worldInstanceTransforms().data()->ptr(), node->instanceCount());
+                    shader->worldNormalMatUniformMatrix4fv(node->worldInstanceNormalTransforms().data()->ptr(), node->instanceCount());
                 } else {
-                    colorIndex = (colorIndex + 1) % 3;
-                    if (colorIndex == 0)
-                        shader->colorUniform3f(0.9, 0.1, 0.2);
-                    else if (colorIndex == 1)
-                        shader->colorUniform3f(0.76, 0.8, 0.95);
-                    else
-                        shader->colorUniform3f(0.12, 0.4, 0.9);
-
-                    shader->worldMatUniformMatrix4fv(node->worldTransform().pointer(), 1);
-                    shader->worldNormalMatUniformMatrix4fv(node->worldTransform().invert().transposed().pointer(), 1);
+                    shader->worldMatUniformMatrix4fv(node->worldTransform().ptr(), 1);
+                    shader->worldNormalMatUniformMatrix4fv(node->worldTransform().invert().transposed().ptr(), 1);
                 }
-
                 node->render();
             }
         });
@@ -273,7 +270,7 @@ void PBRScene::renderDeferredPBR() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         auto activeShader = shaderManager()->setActiveShader<SSAOShader>(eShaderProgram_SSAO);
-        activeShader->projMatUniformMatrix4fv(proj.pointer());
+        activeShader->projMatUniformMatrix4fv(proj.ptr());
         activeShader->samplesUniformVector(_ssaoKernel);
         activeShader->screenSizeUniform2f(_camera->screenSize().x, _camera->screenSize().y);
 
@@ -331,7 +328,7 @@ void PBRScene::renderDeferredPBR() {
         activeShader->lightUniform3fVector(_lightPositions, true);
         activeShader->lightUniform3fVector(_lightColors, false);
         activeShader->worldEyePositionUniform3f(camera()->eye().x, camera()->eye().y, camera()->eye().z);
-        activeShader->shadowViewProjectionMatUniformMatrix4fv(_shadowLightViewProjection.pointer());
+        activeShader->shadowViewProjectionMatUniformMatrix4fv(_shadowLightViewProjection.ptr());
         activeShader->metallicUniform1f(0.92);
         activeShader->roughnessUniform1f(0.08);
 
@@ -342,10 +339,10 @@ void PBRScene::renderDeferredPBR() {
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     auto activeShader = shaderManager()->setActiveShader<BasicShader>(eShaderProgram_Basic);
-    activeShader->worldMatUniformMatrix4fv(_lightSphere->worldTransform().pointer(), 1);
-    activeShader->worldNormalMatUniformMatrix4fv(_lightSphere->worldTransform().invert().transposed().pointer(), 1);
-    activeShader->viewMatUniformMatrix4fv(view.pointer());
-    activeShader->projMatUniformMatrix4fv(proj.pointer());
+    activeShader->worldMatUniformMatrix4fv(_lightSphere->worldTransform().ptr(), 1);
+    activeShader->worldNormalMatUniformMatrix4fv(_lightSphere->worldTransform().invert().transposed().ptr(), 1);
+    activeShader->viewMatUniformMatrix4fv(view.ptr());
+    activeShader->projMatUniformMatrix4fv(proj.ptr());
     _lightSphere->render();
 }
 
@@ -391,39 +388,6 @@ void PBRScene::buildSSAOInfo() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 }
-
-
-void PBRScene::setupIntanceInfo() {
-//    //transforms
-//    constexpr float SPACING_Z = 23.f;
-//    constexpr float SPACING_X = 23.f;
-//    constexpr float SPACING_Y = 6.f;
-//    constexpr float ALIGN_Z = 0.f;
-//    mat4 scale = mat4::Scale(8.f);
-//
-//    for (float z = 0.f; z < 3.f; z += 1.f) {
-//        for (float x = 0.f; x < 3.f; x += 1.f) {
-//            float ty = (2.f - z);
-//            _instanceSphereTransforms.emplace_back(mat4::Translate(15.f + x * SPACING_X, 6.f + ty * SPACING_Y, ALIGN_Z + z * SPACING_Z));
-//            _instanceModelTransforms.emplace_back(mat4::Translate(-15.f - x * SPACING_X, 6.f + ty * SPACING_Y, ALIGN_Z + z * SPACING_Z));
-//        }
-//    }
-
-    //colors
-    const vector<vec3> COLORS = {
-        vec3(0.9, 0.1, 0.2),
-        vec3(0.9, 0.1, 0.2),
-        vec3(0.12, 0.4, 0.9)
-    };
-
-    int colorIndex = 0;
-    for (int i = 0; i < 9; ++i) {
-        colorIndex = (colorIndex + 1) % 3;
-        _instanceColors.push_back(COLORS[colorIndex]);
-    }
-}
-
-
 
 void PBRScene::visitNodes(shared_ptr<ModelNode> node, function<void(shared_ptr<ModelNode>)> func) {
     func(node);
@@ -471,24 +435,6 @@ void PBRScene::renderForwardPBR() {
             vec3(300.0f, 300.0f, 300.0f)
     };
 
-    float* lightPosArray = new float[LIGHT_COUNT * 3];
-    float* lightColorArray = new float[LIGHT_COUNT * 3];
-    int idxPos = 0;
-    int idxColor = 0;
-
-    for (int i = 0; i < 4; ++i) {
-        auto& lightPos = lightPositions[i];
-        auto& lightColor = lightColors[i];
-
-        lightPosArray[idxPos++] = lightPos.x;
-        lightPosArray[idxPos++] = lightPos.y;
-        lightPosArray[idxPos++] = lightPos.z;
-
-        lightColorArray[idxColor++] = lightColor.x;
-        lightColorArray[idxColor++] = lightColor.y;
-        lightColorArray[idxColor++] = lightColor.z;
-    }
-
     const mat4& proj = _camera->projMat();
     const mat4& view = _camera->viewMat();
 
@@ -500,25 +446,21 @@ void PBRScene::renderForwardPBR() {
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, _iblPreprocessor->brdfLUTTexture());
 
-    activeShader->lightPositionsUniformVec3fv(lightPosArray, LIGHT_COUNT);
-    activeShader->lightColorsUniformVec3fv(lightColorArray, LIGHT_COUNT);
-
-    delete[] lightPosArray;
-    delete[] lightColorArray;
-
+    activeShader->lightPositionsUniformVec3fv(&lightPositions[0].x, LIGHT_COUNT);
+    activeShader->lightColorsUniformVec3fv(&lightColors[0].x, LIGHT_COUNT);
     activeShader->camPosUniform3f(_camera->eye().x, _camera->eye().y, _camera->eye().z);
     activeShader->metallicUniform1f(0.9);
     activeShader->roughnessUniform1f(0.1);
     activeShader->albedoUniform3f(0.5, 0.0, 0.0);
     activeShader->aoUniform1f(1.f);
 
-    activeShader->projMatUniformMatrix4fv(proj.pointer());
-    activeShader->viewMatUniformMatrix4fv(view.pointer());
+    activeShader->projMatUniformMatrix4fv(proj.ptr());
+    activeShader->viewMatUniformMatrix4fv(view.ptr());
 
     visitNodes(_rootNode, [wShader = weak_ptr<PBRShader>(activeShader)](const shared_ptr<ModelNode>& node) {
         if (auto shader = wShader.lock()) {
-            shader->worldMatUniformMatrix4fv(node->worldTransform().pointer(), 1);
-            shader->worldNormalMatUniformMatrix4fv(node->worldTransform().invert().transposed().pointer(), 1);
+            shader->worldMatUniformMatrix4fv(node->worldTransform().ptr(), 1);
+            shader->worldNormalMatUniformMatrix4fv(node->worldTransform().invert().transposed().ptr(), 1);
             node->render();
         }
     });
@@ -534,8 +476,8 @@ void PBRScene::renderSkyBox() {
     const mat4& viewRot = _camera->viewRotMat();
 
     auto activeShader = shaderManager()->setActiveShader<BGShader>(eShaderProgram_BG);
-    activeShader->projMatUniformMatrix4fv(proj.pointer());
-    activeShader->viewMatUniformMatrix4fv(viewRot.pointer());
+    activeShader->projMatUniformMatrix4fv(proj.ptr());
+    activeShader->viewMatUniformMatrix4fv(viewRot.ptr());
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, _iblPreprocessor->envCubemap());

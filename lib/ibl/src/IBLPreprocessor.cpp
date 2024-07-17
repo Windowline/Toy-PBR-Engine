@@ -73,13 +73,13 @@ void IBLPreprocessor::renderEnvironmentCubeMapFromHDR(unsigned int captureFBO, c
 
     // pbr: convert HDR equirectangular environment map to cubemap equivalent
     auto equi2cubeShader = _shaderManager->setActiveShader<EquirectangularToCubemapShader>(eShaderProgram_EquirectangularToCubemap);
-    equi2cubeShader->projMatUniformMatrix4fv(captureProj.pointer());
+    equi2cubeShader->projMatUniformMatrix4fv(captureProj.ptr());
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, _hdrTexture);
     glViewport(0, 0, 512, 512); // don't forget to configure the viewport to the capture dimensions.
     glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
     for (unsigned int i = 0; i < 6; ++i) {
-        equi2cubeShader->viewMatUniformMatrix4fv(captureViews[i].pointer());
+        equi2cubeShader->viewMatUniformMatrix4fv(captureViews[i].ptr());
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, _envCubemap, 0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         _fullCube->render();
@@ -113,14 +113,14 @@ void IBLPreprocessor::renderIrradianceCubeMap(unsigned int captureFBO, unsigned 
     // pbr: solve diffuse integral by convolution to create an irradiance (cube)map.
     // -----------------------------------------------------------------------------
     auto irradianceShader = _shaderManager->setActiveShader<IrradianceShader>(eShaderProgram_Irradiance);
-    irradianceShader->projMatUniformMatrix4fv(captureProj.pointer());
+    irradianceShader->projMatUniformMatrix4fv(captureProj.ptr());
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, _envCubemap);
 
     glViewport(0, 0, 32, 32); // don't forget to configure the viewport to the capture dimensions.
     glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
     for (unsigned int i = 0; i < 6; ++i) {
-        irradianceShader->viewMatUniformMatrix4fv(captureViews[i].pointer());
+        irradianceShader->viewMatUniformMatrix4fv(captureViews[i].ptr());
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, _irradianceCubeMap, 0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         _fullCube->render();
@@ -148,7 +148,7 @@ void IBLPreprocessor::renderPrefilterCubemap(unsigned int captureFBO, unsigned i
     auto prefilterShader = _shaderManager->setActiveShader<PrefilterShader>(eShaderProgram_Prefilter);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, _envCubemap);
-    prefilterShader->projMatUniformMatrix4fv(captureProj.pointer());
+    prefilterShader->projMatUniformMatrix4fv(captureProj.ptr());
 
     glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
     unsigned int maxMipLevels = 5;
@@ -164,7 +164,7 @@ void IBLPreprocessor::renderPrefilterCubemap(unsigned int captureFBO, unsigned i
         prefilterShader->roughnesUniformLocation1f(roughness);
 
         for (unsigned int i = 0; i < 6; ++i) {
-            prefilterShader->viewMatUniformMatrix4fv(captureViews[i].pointer());
+            prefilterShader->viewMatUniformMatrix4fv(captureViews[i].ptr());
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, _prefilterCubeMap, mip);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             _fullCube->render();
