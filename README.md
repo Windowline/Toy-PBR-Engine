@@ -1,5 +1,7 @@
 # Toy Real Time PBR Engine
-- Cross Platform Desktop Sample (Backend: OpenGL)
+- Desktop App
+  - Language: C++17
+  - Backend Graphics API: OpenGL
 
 - Implementing Effects
   - 1 Rasterization Rendering (IBL, Deferred Lighting, Ambient Occlusion, ect)
