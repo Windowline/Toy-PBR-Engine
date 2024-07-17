@@ -24,9 +24,9 @@ void ModelNode::transformUpdate() {
     _worldInstanceTransforms.clear();
     for (int i = 0; i < _localInstanceTransforms.size(); ++i) {
         if (_parent)
-            _worldInstanceTransforms.push_back(_parent->worldTransform() * _localInstanceTransforms[i] * _localBasicTransform);
+            _worldInstanceTransforms.push_back(_parent->worldTransform() * _localBasicTransform * _localInstanceTransforms[i]);
         else
-            _worldInstanceTransforms.push_back(_localInstanceTransforms[i] * _localBasicTransform);
+            _worldInstanceTransforms.push_back(_localBasicTransform * _localInstanceTransforms[i]);
     }
 }
 
