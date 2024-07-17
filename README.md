@@ -4,7 +4,7 @@
   - Graphics API: OpenGL
 
 - Implementing Effects
-  - 1 Rasterization Rendering (IBL, Deferred Lighting, Ambient Occlusion, ect)
+  - 1 Rasterization Rendering (IBL, Deferred Lighting, Ambient Occlusion, ETC)
     - Render Dependency Graph
       ![image](https://github.com/Windowline/Toy-PBR-Engine/assets/17508384/ba922aba-9588-434f-92d3-136f4fefdfbf)
 
@@ -14,7 +14,7 @@
     - [Metalic: 0.6 / Roughness: 0.4]
       ![image](https://github.com/Windowline/ToyRenderer/assets/17508384/9166d4bf-ed49-4649-96b0-6dce5239d380)
       
-  - 2 Ray Tracing Rendering (BVH, ect)
+  - 2 Ray Tracing Rendering (BVH, ETC)
       ![image](https://github.com/user-attachments/assets/269ab8cb-f933-4c4b-9ace-7984c17ab1b3)
 
 
