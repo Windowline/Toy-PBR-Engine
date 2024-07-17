@@ -16,7 +16,7 @@ add_library(mesh STATIC
         src/Room.cpp
 
         include/Model.hpp
-        src/Model.cpp
+
         include/Plane.hpp
         src/Plane.cpp
 )

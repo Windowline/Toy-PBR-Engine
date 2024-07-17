@@ -8,9 +8,9 @@ public:
     ShadowDepthShader();
     bool load() override;
 
-    void shadowMVPUniformMatrix4fv(const GLfloat *value) const {
+    void shadowMVPUniformMatrix4fv(const GLfloat *value, int count) const {
         assert(_shadowMVPUniformLoc != -1);
-        glUniformMatrix4fv(_shadowMVPUniformLoc, 1, GL_FALSE, value);
+        glUniformMatrix4fv(_shadowMVPUniformLoc, count, GL_FALSE, value);
     }
 
 private:

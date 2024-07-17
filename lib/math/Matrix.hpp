@@ -214,7 +214,7 @@ struct Matrix4 {
     }
 
 
-    const T* pointer() const
+    const T* ptr() const
     {
         return &x.x;
     }

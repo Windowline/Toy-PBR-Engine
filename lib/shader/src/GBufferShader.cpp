@@ -5,12 +5,14 @@ const char* vertexGBufferShaderTmp = R(
         layout (location = 1) in vec3 a_color;
         layout (location = 2) in vec3 a_normal;
 
-        uniform mat4 u_worldMat;
+//        uniform mat4 u_worldMat;
+        uniform mat4 u_worldMat[9];
         uniform mat4 u_viewMat;
         uniform mat4 u_projMat;
-        uniform mat4 u_worldNormalMat;
+//        uniform mat4 u_worldNormalMat;
+        uniform mat4 u_worldNormalMat[9];
         uniform float u_isRenderSkyBox;
-        uniform vec3 u_color;
+        uniform vec3 u_color[9];
 
         out vec3 v_color;
         out vec3 v_position;
@@ -19,17 +21,17 @@ const char* vertexGBufferShaderTmp = R(
         out vec3 v_viewNormal;
 
         void main() {
-           mat3 viewNormalMat = transpose(inverse(mat3(u_viewMat * u_worldMat)));
+           mat3 viewNormalMat = transpose(inverse(mat3(u_viewMat * u_worldMat[gl_InstanceID])));
 
-           vec4 worldPos = u_worldMat * vec4(a_position, 1.0);
+           vec4 worldPos = u_worldMat[gl_InstanceID] * vec4(a_position, 1.0);
            vec4 viewPos = u_viewMat * worldPos;
 
            v_position = worldPos.xyz;
            v_viewPosition = viewPos.xyz;
-           v_normal = (u_worldNormalMat * vec4(a_normal, 0.0)).xyz;
+           v_normal = (u_worldNormalMat[gl_InstanceID] * vec4(a_normal, 0.0)).xyz;
            v_viewNormal = viewNormalMat * a_normal;
 
-           v_color = u_color; //v_color = a_color;
+           v_color = u_color[gl_InstanceID]; //v_color = a_color;
 
            if (u_isRenderSkyBox > 0.5) {
                vec4 clipPos = u_projMat * mat4(mat3(u_viewMat)) * worldPos;

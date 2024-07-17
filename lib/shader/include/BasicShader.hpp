@@ -34,9 +34,9 @@ public:
         return _programID;
     }
 
-    void worldMatUniformMatrix4fv(const GLfloat *value) {
+    void worldMatUniformMatrix4fv(const GLfloat *value, int count) {
         assert(_worldMatLoc != -1);
-        glUniformMatrix4fv(_worldMatLoc, 1, GL_FALSE, value);
+        glUniformMatrix4fv(_worldMatLoc, count, GL_FALSE, value);
     }
 
     void viewMatUniformMatrix4fv(const GLfloat *value) {
@@ -52,9 +52,9 @@ public:
         glUniformMatrix4fv(_projMatLoc, 1, GL_FALSE, value);
     }
 
-    void worldNormalMatUniformMatrix4fv(const GLfloat *value) {
+    void worldNormalMatUniformMatrix4fv(const GLfloat *value, int count) {
         assert(_worldNormalMatLoc != -1);
-        glUniformMatrix4fv(_worldNormalMatLoc, 1, GL_FALSE, value);
+        glUniformMatrix4fv(_worldNormalMatLoc, count, GL_FALSE, value);
     }
 
 

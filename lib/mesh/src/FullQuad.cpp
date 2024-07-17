@@ -30,9 +30,12 @@ FullQuad::FullQuad(string name) {
 
 }
 
-void FullQuad::render() const {
+void FullQuad::render(int instanceCount) const {
     glBindVertexArray(_VAO);
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, (GLsizei)4);
+    if (instanceCount == 1)
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, (GLsizei)4);
+    else
+        glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, (GLsizei)4, instanceCount);
 }
