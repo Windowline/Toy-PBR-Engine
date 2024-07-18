@@ -163,7 +163,6 @@ void RayTraceScene::updateViewRotation(float yaw, float pitch) {
 void RayTraceScene::update() {}
 
 void RayTraceScene::render() {
-    glBindFramebuffer(GL_FRAMEBUFFER, _defaultFBO);
     glClearColor(0.f, 0.f, 0.f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT);
 

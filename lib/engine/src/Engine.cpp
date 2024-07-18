@@ -55,6 +55,8 @@ void RenderEngine::initScene() {
     glClearColor(1.0f, 1.0f, 1.0f, 1.f);                // Black Background
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    glEnable(GL_MULTISAMPLE);
+
     if (_sceneType == SceneType::SampleScene0) {
         _scene = new PBRScene(this, _defaultFBO);
     } else {
