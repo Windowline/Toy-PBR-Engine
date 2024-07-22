@@ -335,22 +335,16 @@ const char* fragmentBVHRayTrace = R(
 
             for (int i = 0; i < MAX_BOUNCE; ++i) {
                 Hit hit = rayCollision(ray);
-
-                if (hit.didHit && hit.mat.type == MATERIAL_TYPE_METAL) {
-                    vec3 emittedL = vec3(1.0); // vec3 emittedL = mat.emissionColor * mat.emissionStrength;
-//                    float s = dot(hit.N, -ray.dir);
-
-                    vec3 specDir = reflect(ray.dir, hit.N);
+                if (!hit.didHit) {
+                    incomingL = getBGColor(ray) * rayColor;
+                    break;
+                } else if (hit.mat.type == MATERIAL_TYPE_METAL) {
                     ray.org = hit.pos;
-                    ray.dir = specDir;
-
+                    ray.dir = reflect(ray.dir, hit.N);;
+                    incomingL += rayColor;
                     rayColor *= hit.mat.color;
-                    incomingL += emittedL * rayColor;
-
                 } else if (hit.didHit && hit.mat.type == MATERIAL_TYPE_DIFFUSE) {
                     incomingL = hit.mat.color * rayColor;
-                } else {
-                    incomingL = getBGColor(ray) * rayColor;
                     break;
                 }
             }
