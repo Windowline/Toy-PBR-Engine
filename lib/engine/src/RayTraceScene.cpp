@@ -174,6 +174,8 @@ void RayTraceScene::render() {
     _bvhRayTraceShader->projMatUniformMatrix4fv(proj.ptr());
     _bvhRayTraceShader->bvhLeafStartIdxUniform1i(1 << (BVH_MAX_DEPTH - 1));
 
+    _bvhRayTraceShader->resolutionUniform2f((float)_camera->screenSize().x, (float)_camera->screenSize().y);
+
     _fullQuad->render();
 }
 

@@ -23,6 +23,11 @@ public:
         glUniform1i(_bvhLeafStartIdxLoc, value);
     }
 
+    void resolutionUniform2f(float x, float y) {
+        assert(_resolutionLoc != -1);
+        glUniform2f(_resolutionLoc, x, y);
+    }
+
 private:
     GLint _cameraPosUniformLoc = -1;
     GLint _bvhNodeTBOLoc = -1;
@@ -31,6 +36,8 @@ private:
     GLint _bvhLeafStartIdxLoc = -1;
     GLint _posTBOLoc = -1;
     GLint _normalTBOLoc = -1;
+
+    GLint _resolutionLoc = -1;
 };
 
 #endif //TOYRENDERER_BVHRAYTRACESHADER_HPP

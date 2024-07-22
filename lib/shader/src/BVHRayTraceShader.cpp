@@ -59,6 +59,7 @@ const char* fragmentBVHRayTrace = R(
         uniform vec3 u_worldCameraPos;
         uniform mat4 u_projMat;
         uniform mat4 u_viewMat;
+        uniform vec2 u_resolution;
 
         uniform samplerBuffer u_bvhNodeTBO;
         uniform samplerBuffer u_bvhMinBoundsTBO;
@@ -70,38 +71,72 @@ const char* fragmentBVHRayTrace = R(
         const float INF = 9999999.0;
         const int MATERIAL_TYPE_DIFFUSE = 0;
         const int MATERIAL_TYPE_METAL = 1;
+        const int MATERIAL_TYPE_DIFFUSE_NEW = 2;
+        const int MATERIAL_TYPE_EMITTER = 3;
 
         layout (location = 0) out vec4 fragColor;
         in vec2 v_uv;
 
         vec3 getBGColor(Ray ray) {
-            float a = 0.5 * (ray.dir.y + 1.0);
-            return (1.0 - a) * vec3(1.0) + a * vec3(0.5, 0.7, 1.0);
+            return vec3(0.0);
+//            float a = 0.5 * (ray.dir.y + 1.0);
+//            return (1.0 - a) * vec3(1.0) + a * vec3(0.5, 0.7, 1.0);
         }
 
-        float rand(vec2 co) {
-            return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
+//        vec2 random2(vec2 st) {
+//            st = vec2(dot(st, vec2(127.1, 311.7)),
+//                      dot(st, vec2(269.5, 183.3)));
+//            return fract(sin(st) * 43758.5453123);
+//        }
+//
+//        float rand(vec2 co) {
+//            return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
+//        }
+
+//        vec3 randomHemisphereDir(vec3 N) {
+//            vec2 randomSeed = gl_FragCoord.xy;
+//            float u = rand(randomSeed);
+//            float v = rand(randomSeed + vec2(1.0, 1.0));
+//
+//            float theta = 2.0 * 3.14159265359 * u;
+//            float phi = acos(2.0 * v - 1.0);
+//
+//            float x = sin(phi) * cos(theta);
+//            float y = sin(phi) * sin(theta);
+//            float z = cos(phi);
+//
+//            vec3 randomVec = vec3(x, y, z);
+//
+//            if (dot(randomVec, N) < 0.0) {
+//                randomVec = -randomVec;
+//            }
+//
+//            return normalize(randomVec);
+//        }
+
+        float randomValue(inout int state) {
+            state = state * 747796405 + 2891336453;
+            int result = ((state >> ((state >> 28) + 4)) ^ state) * 277803737;
+            result = (result >> 22) ^ result;
+            return float(result) / 4294967295.0;
         }
 
-        vec3 randomHemisphereDir(vec3 N) {
-            vec2 randomSeed = gl_FragCoord.xy;
-            float u = rand(randomSeed);
-            float v = rand(randomSeed + vec2(1.0, 1.0));
+        float randomValueND(inout int state) {
+            float theta = 2.0 * 3.1415926 * randomValue(state);
+            float rho = sqrt(-2.0 * log(randomValue(state)));
+            return rho * cos(theta);
+        }
 
-            float theta = 2.0 * 3.14159265359 * u;
-            float phi = acos(2.0 * v - 1.0);
+        vec3 randomDir(inout int state) {
+            float x = randomValueND(state);
+            float y = randomValueND(state);
+            float z = randomValueND(state);
+            return normalize(vec3(x, y, z));
+        }
 
-            float x = sin(phi) * cos(theta);
-            float y = sin(phi) * sin(theta);
-            float z = cos(phi);
-
-            vec3 randomVec = vec3(x, y, z);
-
-            if (dot(randomVec, N) < 0.0) {
-                randomVec = -randomVec;
-            }
-
-            return normalize(randomVec);
+        vec3 randomHemiSphereDir(vec3 N, inout int state) {
+            vec3 dir = randomDir(state);
+            return dir * sign(dot(N, dir));
         }
 
         Hit rayTriangle(Ray ray, Triangle tri) {
@@ -285,23 +320,45 @@ const char* fragmentBVHRayTrace = R(
             }
 
             //bboxes
-            const int numAABB = 3;
-            AABB aabbs[4];
+            const int numAABB = 6;
+            AABB aabbs[6];
 
-            aabbs[0].maxBounds = vec3(13, 12 + 5, 8);
-            aabbs[0].minBounds = vec3(12, -12 + 5, -8);
+            //right
+            aabbs[0].maxBounds = vec3(13, 17, 8);
+            aabbs[0].minBounds = vec3(12, -7, -8);
             aabbs[0].mat.color = vec3(0.9, 0.0, 0.2);
             aabbs[0].mat.type = MATERIAL_TYPE_DIFFUSE;
 
-            aabbs[1].maxBounds = vec3(-13, 12 + 5, 8);
-            aabbs[1].minBounds = vec3(-12, -12 + 5, -8);
+            //left
+            aabbs[1].maxBounds = vec3(-13, 17, 8);
+            aabbs[1].minBounds = vec3(-12, -7, -8);
             aabbs[1].mat.color = vec3(0.0, 0.2, 0.9);
             aabbs[1].mat.type = MATERIAL_TYPE_DIFFUSE;
 
-            aabbs[2].maxBounds = vec3(13, -12 + 5,   8);
-            aabbs[2].minBounds = vec3(-13, -13 + 5, -8);
+            //bottom
+            aabbs[2].maxBounds = vec3(13, -7,   8);
+            aabbs[2].minBounds = vec3(-13, -8, -8);
             aabbs[2].mat.color = vec3(0.4);
             aabbs[2].mat.type = MATERIAL_TYPE_DIFFUSE;
+
+            //back
+            aabbs[3].maxBounds = vec3(13, 18,   -8);
+            aabbs[3].minBounds = vec3(-13, -7, -9);
+            aabbs[3].mat.color = vec3(0.0, 0.0, 0.1);
+            aabbs[3].mat.type = MATERIAL_TYPE_DIFFUSE;
+
+            //top
+            aabbs[4].maxBounds = vec3(13, 18,   8);
+            aabbs[4].minBounds = vec3(-13, 17, -8);
+            aabbs[4].mat.color = vec3(0.0, 0.9, 0.0);
+            aabbs[4].mat.type = MATERIAL_TYPE_DIFFUSE;
+
+            //light emitter
+            aabbs[5].maxBounds = vec3(3, 17,   4);
+            aabbs[5].minBounds = vec3(-3, 16.9, -4);
+            aabbs[5].mat.color = vec3(1.0);
+            aabbs[5].mat.type = MATERIAL_TYPE_DIFFUSE;
+
 
             for (int i = 0; i < numAABB; ++i) {
                 AABB aabb = aabbs[i];
@@ -317,36 +374,72 @@ const char* fragmentBVHRayTrace = R(
 
 
         Hit rayCollision(Ray ray) {
-            Hit resultModel = rayCollisionTriangleBVH(ray);
-            Hit resultSphere = rayCollisionSphere(ray);
-            if (resultModel.dst < resultSphere.dst)
-                return resultModel;
-            else if (resultModel.dst > resultSphere.dst)
-                return resultSphere;
-            else
-                return resultModel;
+            BVHNode a = getBVHNode(0);
+            Triangle b = getTriangle(0);
+            int c = u_bvhLeafStartIdx;
+            return rayCollisionSphere(ray);
+
+//            Hit resultModel = rayCollisionTriangleBVH(ray);
+//            Hit resultSphere = rayCollisionSphere(ray);
+//            if (resultModel.dst < resultSphere.dst)
+//                return resultModel;
+//            else if (resultModel.dst > resultSphere.dst)
+//                return resultSphere;
+//            else
+//                return resultModel;
         }
 
-        vec3 rayTrace(Ray ray) {
-            const int MAX_BOUNCE = 6;
+        vec3 rayTrace(Ray ray, inout int state) {
+            const int MAX_BOUNCE = 20;
 
             vec3 incomingL = vec3(0);
             vec3 rayColor = vec3(1);
 
             for (int i = 0; i < MAX_BOUNCE; ++i) {
                 Hit hit = rayCollision(ray);
+
+                // new
                 if (!hit.didHit) {
                     incomingL = getBGColor(ray) * rayColor;
                     break;
-                } else if (hit.mat.type == MATERIAL_TYPE_METAL) {
+                } else if (hit.mat.type == MATERIAL_TYPE_METAL)  {
                     ray.org = hit.pos;
-                    ray.dir = reflect(ray.dir, hit.N);;
+                    ray.dir = reflect(ray.dir, hit.N);
+
                     incomingL += rayColor;
                     rayColor *= hit.mat.color;
-                } else if (hit.didHit && hit.mat.type == MATERIAL_TYPE_DIFFUSE) {
-                    incomingL = hit.mat.color * rayColor;
+                } else if (hit.mat.type == MATERIAL_TYPE_DIFFUSE) {
+                    ray.org = hit.pos;
+                    ray.dir = randomHemiSphereDir(hit.N, state);
+                    vec3 emittedL = hit.mat.color;
+                    float s = dot(hit.N, ray.dir);
+
+                    incomingL += emittedL * rayColor;
+                    rayColor *= hit.mat.color;
+                } else if (hit.mat.type == MATERIAL_TYPE_EMITTER) {
+                    incomingL = hit.mat.color;
                     break;
                 }
+
+                //
+
+
+//                if (!hit.didHit) {
+//                    incomingL = getBGColor(ray) * rayColor;
+//                    break;
+//                } else if (hit.mat.type == MATERIAL_TYPE_METAL) {
+//                    ray.org = hit.pos;
+//                    ray.dir = reflect(ray.dir, hit.N);
+//                    incomingL += rayColor;
+//                    rayColor *= hit.mat.color;
+//                } else if (hit.mat.type == MATERIAL_TYPE_DIFFUSE) {
+////                    ray.org = hit.pos;
+////                    ray.dir = randomHemiSphereDir(hit.N, state);
+////                    incomingL += hit.mat.color * rayColor;
+////                    rayColor *= hit.mat.color;
+//                    incomingL = hit.mat.color;
+//                    break;
+//                }
             }
 
             return incomingL;
@@ -364,13 +457,26 @@ const char* fragmentBVHRayTrace = R(
             ray.dir = worldRay;
             ray.invDir = 1.0 / worldRay;
 
-            float RAY_SAMPLE_CNT = 1.0;
+            const int RAY_SAMPLE_CNT = 50;
             vec3 total = vec3(0.0);
-            for (float i = 0; i < RAY_SAMPLE_CNT; i += 1.0) {
-                total += rayTrace(ray);
+
+            vec2 pixelCoords = gl_FragCoord.xy;
+            int pixelIndex = int(pixelCoords.y * u_resolution.x + pixelCoords.x);
+            int state = pixelIndex;
+
+            for (int i = 0; i < RAY_SAMPLE_CNT; i++) {
+                total += rayTrace(ray, state);
             }
 
             fragColor = vec4(total / RAY_SAMPLE_CNT, 1.0);
+
+            //test
+//            vec2 pixelCoords = gl_FragCoord.xy;
+//            int pixelIndex = int(pixelCoords.y * u_resolution.x + pixelCoords.x);
+//
+//            int state = pixelIndex;
+//            vec3 tt = randomHemiSphereDir(vec3(0, 1, 0), state);
+//            fragColor = vec4(tt, 1.0);
         }
 );
 
@@ -386,6 +492,8 @@ BVHRayTraceShader::BVHRayTraceShader() {
     _posTBOLoc = glGetUniformLocation(_programID, "u_posTBO");
     _normalTBOLoc = glGetUniformLocation(_programID, "u_normalTBO");
     _cameraPosUniformLoc = glGetUniformLocation(_programID, "u_worldCameraPos");
+
+    _resolutionLoc = glGetUniformLocation(_programID, "u_resolution");
 }
 
 bool BVHRayTraceShader::load() {
