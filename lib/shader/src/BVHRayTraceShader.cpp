@@ -365,8 +365,25 @@ const char* fragmentBVHRayTrace = R(
 //                return resultModel;
         }
 
+        vec3 randomPosOnLightEmitter(inout int state) {
+//            vec3 ret;
+//            ret.x = (LIGHT_EMITTER.maxBounds.x + LIGHT_EMITTER.minBounds.x) / 2.0;
+//            ret.y = LIGHT_EMITTER.minBounds.y;
+//            ret.z = (LIGHT_EMITTER.maxBounds.z + LIGHT_EMITTER.minBounds.z) / 2.0;
+//            return ret;
+
+            float ru1 = randomValue(state);
+            float ru2 = randomValue(state);
+
+            vec3 Q = LIGHT_EMITTER.minBounds;
+            vec3 u1 = vec3(LIGHT_EMITTER.maxBounds.x - LIGHT_EMITTER.minBounds.x, 0, 0);
+            vec3 u2 = vec3(0, 0, LIGHT_EMITTER.maxBounds.z - LIGHT_EMITTER.minBounds.z);
+
+            return Q + ru1 * u1 + ru2 * u2;
+        }
+
         vec3 rayTrace(Ray ray, inout int state) {
-            const int MAX_BOUNCE = 8;
+            const int MAX_BOUNCE = 5;
             vec3 incomingL = vec3(0);
             vec3 rayColor = vec3(1);
 
@@ -380,16 +397,19 @@ const char* fragmentBVHRayTrace = R(
 
                 ray.org = hit.pos;
 
-                if (hit.mat.type == MATERIAL_TYPE_METAL) {
+                if (hit.mat.type == MATERIAL_TYPE_EMITTER) {
+                    incomingL += hit.mat.emissive * rayColor;
+                    break;
+                } else if (hit.mat.type == MATERIAL_TYPE_METAL) {
                     ray.dir = reflect(ray.dir, hit.N);
                     incomingL += hit.mat.emissive * rayColor;
                     rayColor *= hit.mat.color;
 
                 } else {
-                    ray.dir = randomHemiSphereDir(hit.N, state);
+//                    ray.dir = randomHemiSphereDir(hit.N, state);
+                    ray.dir = normalize(randomPosOnLightEmitter(state) - hit.pos);
                     incomingL += hit.mat.emissive * rayColor;
                     rayColor *= hit.mat.color;
-//                    break;
                 }
 
             }
@@ -409,7 +429,7 @@ const char* fragmentBVHRayTrace = R(
             ray.dir = worldRay;
             ray.invDir = 1.0 / worldRay;
 
-            const int RAY_SAMPLE_CNT = 10;
+            const int RAY_SAMPLE_CNT = 100;
             vec3 total = vec3(0.0);
 
             vec2 pixelCoords = gl_FragCoord.xy;
@@ -420,7 +440,7 @@ const char* fragmentBVHRayTrace = R(
             LIGHT_EMITTER.minBounds = vec3(-3, 16.9, -4);
             LIGHT_EMITTER.mat.color = vec3(0.0);
             LIGHT_EMITTER.mat.emissive = vec3(1.0, 0.9, 0.7) * 40.0;
-            LIGHT_EMITTER.mat.type = MATERIAL_TYPE_DIFFUSE;
+            LIGHT_EMITTER.mat.type = MATERIAL_TYPE_EMITTER;
 
             for (int i = 0; i < RAY_SAMPLE_CNT; i++) {
                 total += rayTrace(ray, state);
