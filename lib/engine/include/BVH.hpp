@@ -41,21 +41,13 @@ struct BVHNode {
     int nodeIdx = 0;
 };
 
-void visitBVH(int idx, const vector<BVHNode>& nodes, function<void(const BVHNode&)> f, int leafStartIdx, const int leafLastIdx) {
-    assert(idx >= 0);
-    if (idx > leafLastIdx)
+void visitBVH(int idx, int depth, const int MAX_DEPTH, const vector<BVHNode>& nodes, const function<void(const BVHNode&, int)>& f, int leafStartIdx, const int leafLastIdx) {
+    if (depth > MAX_DEPTH)
         return;
 
-    BVHNode node = nodes[idx];
-    if (f)
-        f(node);
-    cout << idx << endl;
-    cout << nodes[idx].triangleStartIdx << endl;
-    cout << nodes[idx].triangleEndIdx << endl;
-    cout << "==========================" << endl;
-
-    visitBVH(idx * 2, nodes, f, leafStartIdx, leafLastIdx);
-    visitBVH(idx * 2 + 1, nodes, f, leafStartIdx, leafLastIdx);
+    f(nodes[idx], depth);
+    visitBVH(idx * 2, depth + 1, MAX_DEPTH, nodes, f, leafStartIdx, leafLastIdx);
+    visitBVH(idx * 2 + 1, depth + 1, MAX_DEPTH, nodes, f, leafStartIdx, leafLastIdx);
 }
 
 int chooseSplit(BVHNode& node) {

@@ -135,89 +135,8 @@ void RayTraceScene::buildMeshTBO() {
     glBindTexture(GL_TEXTURE_BUFFER, _normalTBOTexture);
     glTexBuffer(GL_TEXTURE_BUFFER, GL_RGB32F, _normalTBO);
 
-}
-
-void RayTraceScene::renderBVH() {
-    static GLuint T_VAO = 0;
-    static GLuint T_VBO = 0;
-    static GLuint T_EBO = 0;
-
-    if (T_VAO == 0) {
-        unsigned int indices[] = {
-                // Indices for drawing lines
-                0, 1, 1, 2, 2, 3, 3, 0, // Bottom face
-                4, 5, 5, 6, 6, 7, 7, 4, // Top face
-                0, 4, 1, 5, 2, 6, 3, 7  // Side edges
-        };
-
-        vector<float> v;
-        vec3 color = vec3(0.0, 0.0, 1.0);
-        _bvhNodes[1].aabb.getVertices(v, color);
-
-        glGenVertexArrays(1, &T_VAO);
-        glGenBuffers(1, &T_VBO);
-        glGenBuffers(1, &T_EBO);
-
-        glBindVertexArray(T_VAO);
-
-        glBindBuffer(GL_ARRAY_BUFFER, T_VBO);
-        glBufferData(GL_ARRAY_BUFFER, v.size() * sizeof(float), v.data(), GL_STATIC_DRAW);
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, T_EBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-        //pos
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(0);
-
-        //color
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-        glEnableVertexAttribArray(1);
-
-        glBindVertexArray(0);
-    }
-
-    glClearColor(0.f, 0.f, 0.f, 1.f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
-
-    glEnable(GL_CULL_FACE);
-    glFrontFace(GL_CCW);
-    glCullFace(GL_BACK);
-
-    const mat4& proj = _camera->projMat();
-    const mat4& view = _camera->viewMat();
-    mat4 world;
-
-    //render model
-    auto modelShader = shaderManager()->setActiveShader<BasicShader>(eShaderProgram_Basic);
-    modelShader->viewMatUniformMatrix4fv(view.ptr());
-    modelShader->projMatUniformMatrix4fv(proj.ptr());
-    modelShader->worldMatUniformMatrix4fv(world.ptr(), 1);
-    modelShader->worldNormalMatUniformMatrix4fv(world.ptr(), 1);
-    _modelMesh->render();
-
-
-    //render bvh boxes
-    glDisable(GL_CULL_FACE);
-    auto bvhLineshader = shaderManager()->setActiveShader<SimpleShader>(eShaderProgram_Simple);
-
-    bvhLineshader->setColorUnifrom3f(1.0, 0.0, 0.0);
-    bvhLineshader->viewMatUniformMatrix4fv(view.ptr());
-    bvhLineshader->projMatUniformMatrix4fv(proj.ptr());
-
-    glBindVertexArray(T_VAO);
-    glDrawElements(GL_LINES, 24, GL_UNSIGNED_INT, 0);
-    glBindVertexArray(0);
-
-//    auto f = [&indices](const BVHNode& node) {
-//        vector<float> vertices = node.aabb.toVertices();
-//
-//    };
-//
-//    visitBVH(1, _bvhNodes, f, _bvhLeafStartIdx, _bvhLeafLastIdx);
+    _bvhLeafStartIdx = 1 << (BVH_MAX_DEPTH - 1);
+    _bvhLeafLastIdx = 1 << BVH_MAX_DEPTH;
 }
 
 void RayTraceScene::setScreenSize(int w, int h) {
@@ -244,25 +163,118 @@ void RayTraceScene::updateViewRotation(float yaw, float pitch) {
 void RayTraceScene::update() {}
 
 void RayTraceScene::render() {
-    _bvhLeafStartIdx = 1 << (BVH_MAX_DEPTH - 1);
-    _bvhLeafLastIdx = 1 << BVH_MAX_DEPTH;
+    if (_debugBVH) {
+        renderBVHForDebug();
+    } else {
+        glClearColor(0.f, 0.f, 0.f, 1.f);
+        glClear(GL_COLOR_BUFFER_BIT);
 
-    //test
-    renderBVH();
-    return;
+        const mat4& proj = _camera->projMat();
+        const mat4& view = _camera->viewMat();
+
+        _bvhRayTraceShader->cameraPosUniform3f(_camera->eye().x, _camera->eye().y, _camera->eye().z);
+        _bvhRayTraceShader->viewMatUniformMatrix4fv(view.ptr());
+        _bvhRayTraceShader->projMatUniformMatrix4fv(proj.ptr());
+        _bvhRayTraceShader->bvhLeafStartIdxUniform1i(_bvhLeafStartIdx);
+
+        _fullQuad->render();
+    }
+}
+
+void RayTraceScene::renderBVHForDebug() {
+    static GLuint T_VAO = 0;
+    static GLuint T_VBO = 0;
+    static GLuint T_EBO = 0;
+    static GLuint indSize = 0;
+
+    if (T_VAO == 0) {
+        const unsigned int BASIC_INDICES[] = {
+                0, 1, 1, 2, 2, 3, 3, 0,
+                4, 5, 5, 6, 6, 7, 7, 4,
+                0, 4, 1, 5, 2, 6, 3, 7
+        };
+
+        vector<float> totalVertices;
+        vector<unsigned int> totalIndices;
+        int indOffset = 0;
+
+        auto collectFunc = [&totalVertices, &totalIndices, &BASIC_INDICES, &indOffset, this](const BVHNode& node, int depth) {
+            vec3 color = vec3(0.4, 0.0, 1.0);
+            vector<float> v;
+            node.aabb.getVertices(v, color);
+
+            for (auto input : v)
+                totalVertices.push_back(input);
+
+            for (auto input : BASIC_INDICES)
+                totalIndices.push_back(indOffset + input);
+
+            indOffset += 8;
+        };
+
+        visitBVH(1, 1, BVH_MAX_DEPTH - 1, _bvhNodes, collectFunc, _bvhLeafStartIdx, _bvhLeafLastIdx);
+
+        indSize = totalIndices.size();
+
+        glGenVertexArrays(1, &T_VAO);
+        glGenBuffers(1, &T_VBO);
+        glGenBuffers(1, &T_EBO);
+
+        glBindVertexArray(T_VAO);
+
+        glBindBuffer(GL_ARRAY_BUFFER, T_VBO);
+        glBufferData(GL_ARRAY_BUFFER, totalVertices.size() * sizeof(float), &totalVertices[0], GL_STATIC_DRAW);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, T_EBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, totalIndices.size() * sizeof(unsigned int), &totalIndices[0], GL_STATIC_DRAW);
+
+        //pos
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+
+        //color
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+
+        glBindVertexArray(0);
+    }
 
     glClearColor(0.f, 0.f, 0.f, 1.f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+
+    glEnable(GL_CULL_FACE);
+    glFrontFace(GL_CCW);
+    glCullFace(GL_BACK);
 
     const mat4& proj = _camera->projMat();
     const mat4& view = _camera->viewMat();
+    mat4 world;
 
-    _bvhRayTraceShader->cameraPosUniform3f(_camera->eye().x, _camera->eye().y, _camera->eye().z);
-    _bvhRayTraceShader->viewMatUniformMatrix4fv(view.ptr());
-    _bvhRayTraceShader->projMatUniformMatrix4fv(proj.ptr());
-    _bvhRayTraceShader->bvhLeafStartIdxUniform1i(_bvhLeafStartIdx);
+    //render model
+    auto modelShader = shaderManager()->setActiveShader<BasicShader>(eShaderProgram_Basic);
+    modelShader->viewMatUniformMatrix4fv(view.ptr());
+    modelShader->projMatUniformMatrix4fv(proj.ptr());
+    modelShader->worldMatUniformMatrix4fv(world.ptr(), 1);
+    modelShader->worldNormalMatUniformMatrix4fv(world.ptr(), 1);
+    _modelMesh->render();
 
-    _fullQuad->render();
+    //render bvh boxes
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
+    auto bvhLineshader = shaderManager()->setActiveShader<SimpleShader>(eShaderProgram_Simple);
+
+    bvhLineshader->setColorUnifrom3f(1.0, 0.0, 0.0);
+    bvhLineshader->viewMatUniformMatrix4fv(view.ptr());
+    bvhLineshader->projMatUniformMatrix4fv(proj.ptr());
+
+    glBindVertexArray(T_VAO);
+
+    glDrawElements(GL_LINES, indSize, GL_UNSIGNED_INT, 0);
+
+    glBindVertexArray(0);
 }
 
 

@@ -38,7 +38,7 @@ public:
 private:
     void buildMeshTBO();
 
-    void renderBVH();
+    void renderBVHForDebug();
 
     RenderEngine* _engine;
     unsigned int _defaultFBO;
@@ -77,6 +77,8 @@ private:
     std::vector<Triangle> _bvhTriangles;
     int _bvhLeafStartIdx;
     int _bvhLeafLastIdx;
+
+    bool _debugBVH = false;
 };
 
 
