@@ -45,9 +45,6 @@ public:
     }
 
     void projMatUniformMatrix4fv(const GLfloat *value) {
-        if (_projMatLoc == -1) {
-            int ad = 10;
-        }
         assert(_projMatLoc != -1);
         glUniformMatrix4fv(_projMatLoc, 1, GL_FALSE, value);
     }
@@ -64,7 +61,6 @@ protected:
         _viewMatLoc = glGetUniformLocation(_programID, "u_viewMat");
         _projMatLoc = glGetUniformLocation(_programID, "u_projMat");
         _worldNormalMatLoc = glGetUniformLocation(_programID, "u_worldNormalMat");
-        int asdasd = 10;
     }
 
     GLuint loadShader(GLenum type, const char *shaderSrc);

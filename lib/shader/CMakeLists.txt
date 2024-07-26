@@ -41,6 +41,8 @@ add_library(shader STATIC
 
         include/BVHRayTraceShader.hpp
         src/BVHRayTraceShader.cpp
+        include/SimpleShader.hpp
+        src/SimpleShader.cpp
 )
 
 target_link_libraries(shader

@@ -7,6 +7,7 @@
 #include <memory>
 #include <iostream>
 #include <algorithm>
+#include <functional>
 
 using namespace std;
 
@@ -40,6 +41,22 @@ struct BVHNode {
     int nodeIdx = 0;
 };
 
+void visitBVH(int idx, const vector<BVHNode>& nodes, function<void(const BVHNode&)> f, int leafStartIdx, const int leafLastIdx) {
+    assert(idx >= 0);
+    if (idx > leafLastIdx)
+        return;
+
+    BVHNode node = nodes[idx];
+    if (f)
+        f(node);
+    cout << idx << endl;
+    cout << nodes[idx].triangleStartIdx << endl;
+    cout << nodes[idx].triangleEndIdx << endl;
+    cout << "==========================" << endl;
+
+    visitBVH(idx * 2, nodes, f, leafStartIdx, leafLastIdx);
+    visitBVH(idx * 2 + 1, nodes, f, leafStartIdx, leafLastIdx);
+}
 
 int chooseSplit(BVHNode& node) {
     vec3 size = node.aabb.size();

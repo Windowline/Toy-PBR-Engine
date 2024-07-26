@@ -14,6 +14,8 @@ class FrameBufferObject;
 class FullQuad;
 class Model;
 class BVHRayTraceShader;
+struct BVHNode;
+struct Triangle;
 
 class RayTraceScene : public Scene {
 public:
@@ -35,7 +37,8 @@ public:
 
 private:
     void buildMeshTBO();
-    void buildRoomTBO();
+
+    void renderBVH();
 
     RenderEngine* _engine;
     unsigned int _defaultFBO;
@@ -69,7 +72,11 @@ private:
     unsigned int _roomNormalTBO = 0;
     unsigned int _roomNormalTBOTexture = 0;
 
-    const int BVH_MAX_DEPTH = 10 + 2;
+    const int BVH_MAX_DEPTH = 10 + 1;
+    std::vector<BVHNode> _bvhNodes;
+    std::vector<Triangle> _bvhTriangles;
+    int _bvhLeafStartIdx;
+    int _bvhLeafLastIdx;
 };
 
 

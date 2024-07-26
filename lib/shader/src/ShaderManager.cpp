@@ -12,6 +12,7 @@
 #include "PBRShader.hpp"
 #include "DeferredPBRShader.hpp"
 #include "BVHRayTraceShader.hpp"
+#include "SimpleShader.hpp"
 
 using namespace std;
 
@@ -67,6 +68,7 @@ void ShaderManager::loadAllPrograms() {
             {eShaderProgram_PBR,                      make_shared<PBRShader>()},
             {eShaderProgram_DeferredPBR,              make_shared<DeferredPBRShader>()},
             {eShaderProgram_RayTrace,                 make_shared<BVHRayTraceShader>()},
+            {eShaderProgram_Simple,                   make_shared<SimpleShader>()}
         };
     }
     

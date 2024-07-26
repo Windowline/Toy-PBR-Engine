@@ -4,6 +4,7 @@
 #include <cmath>
 #include <vector>
 #include <algorithm>
+#include <cassert>
 
 using namespace std;
 
@@ -413,6 +414,28 @@ struct AABB {
 
     vec3 center() const {
         return (boundsMax + boundsMin) / 2.0;
+    }
+
+    void getVertices(float* out) {
+        const vec3 MIN = boundsMin;
+        const vec3 MAX = boundsMax;
+        assert(MIN.x < MAX.x);
+        assert(MIN.y < MAX.y);
+        assert(MIN.z < MAX.z);
+
+        float v[] = {
+                // Positions of the AABB
+                 MIN.x,  MIN.y,  MIN.z,
+                 MAX.x,  MIN.y,  MIN.z,
+                 MAX.x,  MAX.y,  MIN.z,
+                 MIN.x,  MAX.y,  MIN.z,
+                MIN.x,  MIN.y,  MAX.z,
+                MAX.x,  MIN.y,  MAX.z,
+                MAX.x,  MAX.y,  MAX.z,
+                MIN.x,  MAX.y,  MAX.z
+        };
+
+        memcpy(out, v, sizeof (v));
     }
 };
 
