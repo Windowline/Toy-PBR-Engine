@@ -416,7 +416,7 @@ struct AABB {
         return (boundsMax + boundsMin) / 2.0;
     }
 
-    void getVertices(float* out) {
+    void getVertices(vector<float>& out, vec3 color) {
         const vec3 MIN = boundsMin;
         const vec3 MAX = boundsMax;
         assert(MIN.x < MAX.x);
@@ -425,17 +425,19 @@ struct AABB {
 
         float v[] = {
                 // Positions of the AABB
-                 MIN.x,  MIN.y,  MIN.z,
-                 MAX.x,  MIN.y,  MIN.z,
-                 MAX.x,  MAX.y,  MIN.z,
-                 MIN.x,  MAX.y,  MIN.z,
-                MIN.x,  MIN.y,  MAX.z,
-                MAX.x,  MIN.y,  MAX.z,
-                MAX.x,  MAX.y,  MAX.z,
-                MIN.x,  MAX.y,  MAX.z
+                 MIN.x,  MIN.y,  MIN.z, color.x, color.y, color.z,
+                 MAX.x,  MIN.y,  MIN.z, color.x, color.y, color.z,
+                 MAX.x,  MAX.y,  MIN.z, color.x, color.y, color.z,
+                 MIN.x,  MAX.y,  MIN.z, color.x, color.y, color.z,
+                MIN.x,  MIN.y,  MAX.z, color.x, color.y, color.z,
+                MAX.x,  MIN.y,  MAX.z, color.x, color.y, color.z,
+                MAX.x,  MAX.y,  MAX.z, color.x, color.y, color.z,
+                MIN.x,  MAX.y,  MAX.z, color.x, color.y, color.z,
         };
 
-        memcpy(out, v, sizeof (v));
+        for (float input : v) {
+            out.push_back(input);
+        }
     }
 };
 

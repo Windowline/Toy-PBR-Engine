@@ -150,8 +150,9 @@ void RayTraceScene::renderBVH() {
                 0, 4, 1, 5, 2, 6, 3, 7  // Side edges
         };
 
-        float v[24];
-        _bvhNodes[3].aabb.getVertices(v);
+        vector<float> v;
+        vec3 color = vec3(0.0, 0.0, 1.0);
+        _bvhNodes[1].aabb.getVertices(v, color);
 
         glGenVertexArrays(1, &T_VAO);
         glGenBuffers(1, &T_VBO);
@@ -160,13 +161,18 @@ void RayTraceScene::renderBVH() {
         glBindVertexArray(T_VAO);
 
         glBindBuffer(GL_ARRAY_BUFFER, T_VBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(v), v, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, v.size() * sizeof(float), v.data(), GL_STATIC_DRAW);
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, T_EBO);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+        //pos
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(0);
+
+        //color
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+        glEnableVertexAttribArray(1);
 
         glBindVertexArray(0);
     }
@@ -194,7 +200,7 @@ void RayTraceScene::renderBVH() {
     _modelMesh->render();
 
 
-    //render bvh
+    //render bvh boxes
     glDisable(GL_CULL_FACE);
     auto bvhLineshader = shaderManager()->setActiveShader<SimpleShader>(eShaderProgram_Simple);
 
