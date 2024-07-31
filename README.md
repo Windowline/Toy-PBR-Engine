@@ -61,5 +61,8 @@ Ray Tracing Rendering
 ./app_ray_trace
 ```
 
+## Reference
+Thank to https://learnopengl.com/
+
 
   
