@@ -42,9 +42,9 @@ public:
 
 private:
     void renderEnvironmentCubeMapFromHDR(unsigned int captureFBO, const array<mat4, 6>& captureViews, const mat4& captureProj);
-    void renderIrradianceCubeMap(unsigned int captureFBO, unsigned int captureRBO, const array<mat4, 6>& captureViews, const mat4& captureProj);
-    void renderPrefilterCubemap(unsigned int captureFBO, unsigned int captureRBO, const array<mat4, 6>& captureViews, const mat4& captureProj);
-    void renderBRDFLUT(unsigned int captureFBO, unsigned int captureRBO);
+    void renderDiffuseIrradianceCubeMap(unsigned int captureFBO, unsigned int captureRBO, const array<mat4, 6>& captureViews, const mat4& captureProj);
+    void renderSpecularPrefilterCubemap(unsigned int captureFBO, unsigned int captureRBO, const array<mat4, 6>& captureViews, const mat4& captureProj);
+    void renderSpecularBRDFLUT(unsigned int captureFBO, unsigned int captureRBO);
 
     shared_ptr<ShaderManager> _shaderManager;
     string _path;
