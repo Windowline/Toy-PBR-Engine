@@ -62,7 +62,7 @@ Ray Tracing Rendering
 ```
 
 ## Reference
-Thank to https://learnopengl.com/
+Thanks to https://learnopengl.com/
 
 
   
