@@ -1,7 +1,7 @@
 # Toy Real Time PBR Engine
 - Desktop App
 - Language: C++17
-- Graphics API: OpenGL
+- Graphics API: OpenGL 3.3
 
 - Implementing Effects
   - 1 Rasterization Rendering (IBL, Deferred Lighting, Ambient Occlusion, ETC)
