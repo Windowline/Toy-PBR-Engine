@@ -37,9 +37,12 @@ void IBLPreprocessor::build() {
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, _captureRBO);
 
     renderEnvironmentCubeMapFromHDR(_captureFBO, captureViews, captureProj);
-    renderIrradianceCubeMap(_captureFBO, _captureRBO, captureViews, captureProj);
-    renderPrefilterCubemap(_captureFBO, _captureRBO, captureViews, captureProj);
-    renderBRDFLUT(_captureFBO, _captureRBO);
+    // Diffuse Term
+    renderDiffuseIrradianceCubeMap(_captureFBO, _captureRBO, captureViews, captureProj);
+    // Specular Term 1 (Split Sum Approximation)
+    renderSpecularPrefilterCubemap(_captureFBO, _captureRBO, captureViews, captureProj);
+    // Specular Term 2 (Split Sum Approximation)
+    renderSpecularBRDFLUT(_captureFBO, _captureRBO);
 }
 
 void IBLPreprocessor::renderEnvironmentCubeMapFromHDR(unsigned int captureFBO, const array<mat4, 6>& captureViews, const mat4& captureProj) {
@@ -91,7 +94,7 @@ void IBLPreprocessor::renderEnvironmentCubeMapFromHDR(unsigned int captureFBO, c
     glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 }
 
-void IBLPreprocessor::renderIrradianceCubeMap(unsigned int captureFBO, unsigned int captureRBO, const array<mat4, 6>& captureViews, const mat4& captureProj) {
+void IBLPreprocessor::renderDiffuseIrradianceCubeMap(unsigned int captureFBO, unsigned int captureRBO, const array<mat4, 6>& captureViews, const mat4& captureProj) {
     // pbr: create an irradiance cubemap, and re-scale capture FBO to irradiance scale.
     // --------------------------------------------------------------------------------
     glGenTextures(1, &_irradianceCubeMap);
@@ -128,7 +131,7 @@ void IBLPreprocessor::renderIrradianceCubeMap(unsigned int captureFBO, unsigned 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void IBLPreprocessor::renderPrefilterCubemap(unsigned int captureFBO, unsigned int captureRBO, const array<mat4, 6>& captureViews, const mat4& captureProj) {
+void IBLPreprocessor::renderSpecularPrefilterCubemap(unsigned int captureFBO, unsigned int captureRBO, const array<mat4, 6>& captureViews, const mat4& captureProj) {
     // pbr: create a pre-filter cubemap, and re-scale capture FBO to pre-filter scale.
     // --------------------------------------------------------------------------------
     glGenTextures(1, &_prefilterCubeMap);
@@ -174,7 +177,7 @@ void IBLPreprocessor::renderPrefilterCubemap(unsigned int captureFBO, unsigned i
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void IBLPreprocessor::renderBRDFLUT(unsigned int captureFBO, unsigned int captureRBO) {
+void IBLPreprocessor::renderSpecularBRDFLUT(unsigned int captureFBO, unsigned int captureRBO) {
     // pbr: generate a 2D LUT from the BRDF equations used.
     // ----------------------------------------------------
     glGenTextures(1, &_brdfLUTTexture);

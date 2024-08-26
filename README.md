@@ -1,12 +1,13 @@
 # Toy Real Time PBR Engine
 - Desktop App
 - Language: C++17
-- Graphics API: OpenGL
+- Graphics API: OpenGL 3.3
 
 - Implementing Effects
   - 1 Rasterization Rendering (IBL, Deferred Lighting, Ambient Occlusion, ETC)
     - Render Dependency Graph
-      ![image](https://github.com/Windowline/Toy-PBR-Engine/assets/17508384/ba922aba-9588-434f-92d3-136f4fefdfbf)
+      <img width="1505" alt="Render Graph" src="https://github.com/user-attachments/assets/afa3c0ea-f917-4f72-960d-a927a8381afa">
+
 
     - [Metalic: 0.9 / Roughness: 0.1]
       ![image](https://github.com/Windowline/ToyRenderer/assets/17508384/28df3a4e-9c4d-4cca-bb7d-85bf422d8151)
@@ -14,10 +15,13 @@
     - [Metalic: 0.6 / Roughness: 0.4]
       ![image](https://github.com/Windowline/ToyRenderer/assets/17508384/9166d4bf-ed49-4649-96b0-6dce5239d380)
       
-  - 2 Ray Tracing Rendering (BVH, ETC)
+  - 2 Ray Tracing Rendering (Bounding Volume Hierarchy, ETC) (Doing)
       ![image](https://github.com/user-attachments/assets/269ab8cb-f933-4c4b-9ace-7984c17ab1b3)
 
+      BVH
+      ![image](https://github.com/user-attachments/assets/45fe607a-e085-43a8-a6ff-0ad41e248564)
 
+  
 - Camera Control UX
   - Mouse: Rotate view-space basis 
   - Keybord
@@ -57,6 +61,9 @@ Ray Tracing Rendering
 ```
 ./app_ray_trace
 ```
+
+## Reference
+Thanks to https://learnopengl.com/
 
 
   

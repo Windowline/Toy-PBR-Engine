@@ -29,7 +29,8 @@ const char* fragmentBasicShader = R(
 
         void main()
         {
-            FragColor = vec4(v_color.rgb, 1.0f);
+            float s = dot(normalize(v_normal), vec3(0, 0, 1));
+            FragColor = vec4(v_color.rgb * s, 1.0f);
         }
 );
 
