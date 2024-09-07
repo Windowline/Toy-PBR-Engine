@@ -74,6 +74,51 @@ const char* fragmentBVHRayTrace = R(
         layout (location = 0) out vec4 fragColor;
         in vec2 v_uv;
 
+        const int NUM_SPHERE = 3;
+        Sphere SPHERES[NUM_SPHERE];
+
+        const int NUM_AABB = 3;
+        AABB AABBS[NUM_AABB];
+
+
+        void setupSpheres() {
+            SPHERES[0].pos = vec3(5, 1, -0.5);
+            SPHERES[0].r = 2.0;
+            SPHERES[0].mat.color = vec3(0.9);
+            SPHERES[0].mat.type = MATERIAL_TYPE_METAL;
+
+            SPHERES[1].pos = vec3(-5, 1, -0.5);
+            SPHERES[1].r = 2.0;
+            SPHERES[1].mat.color = vec3(0.9);
+            SPHERES[1].mat.type = MATERIAL_TYPE_METAL;
+
+            SPHERES[2].pos = vec3(0, 4.5, -0.5);
+            SPHERES[2].r = 2.0;
+            SPHERES[2].mat.color = vec3(0.9);
+            SPHERES[2].mat.type = MATERIAL_TYPE_METAL;
+        }
+
+        void setupCornellBox() {
+            //right
+            AABBS[0].maxBounds = vec3(13, 17, 8);
+            AABBS[0].minBounds = vec3(12, -7, -8);
+            AABBS[0].mat.color = vec3(0.9, 0.0, 0.2);
+            AABBS[0].mat.type = MATERIAL_TYPE_DIFFUSE;
+
+            //left
+            AABBS[1].maxBounds = vec3(-13, 17, 8);
+            AABBS[1].minBounds = vec3(-12, -7, -8);
+            AABBS[1].mat.color = vec3(0.0, 0.2, 0.9);
+            AABBS[1].mat.type = MATERIAL_TYPE_DIFFUSE;
+
+            //bottom
+            AABBS[2].maxBounds = vec3(13, -7,   8);
+            AABBS[2].minBounds = vec3(-13, -8, -8);
+            AABBS[2].mat.color = vec3(0.4);
+            AABBS[2].mat.type = MATERIAL_TYPE_DIFFUSE;
+        }
+
+
         vec3 getBGColor(Ray ray) {
             float a = 0.5 * (ray.dir.y + 1.0);
             return (1.0 - a) * vec3(1.0) + a * vec3(0.5, 0.7, 1.0);
@@ -214,11 +259,26 @@ const char* fragmentBVHRayTrace = R(
                             }
                         }
                     } else {
-                        nodeStack[idx++] = getBVHNode(current.nodeIdx * 2);
-                        nodeStack[idx++] = getBVHNode(current.nodeIdx * 2 + 1);
+                        BVHNode childA = getBVHNode(current.nodeIdx * 2);
+                        BVHNode childB = getBVHNode(current.nodeIdx * 2 + 1);
+
+                        float dstA = rayBoundingBox(ray, childA.minBounds, childA.maxBounds).dst;
+                        float dstB = rayBoundingBox(ray, childB.minBounds, childB.maxBounds).dst;
+
+                        bool isNearA = dstA < dstB;
+                        float dstNear = isNearA ? dstA : dstB;
+                        float dstFar = isNearA ? dstB : dstA;
+
+                        BVHNode nearChild = isNearA ? childA : childB;
+                        BVHNode farChild = isNearA ? childB : childA;
+
+                        if (dstFar < result.dst) nodeStack[idx++] = farChild;
+                        if (dstNear < result.dst) nodeStack[idx++] = nearChild;
                     }
                 }
             }
+
+
 
             return result;
         }
@@ -255,27 +315,8 @@ const char* fragmentBVHRayTrace = R(
             closestHit.dst = INF;
             closestHit.mat.color = getBGColor(ray);
 
-            //spheres
-            const int numSphere = 3;
-            Sphere spheres[3];
-
-            spheres[0].pos = vec3(5, 1, -0.5);
-            spheres[0].r = 2.0;
-            spheres[0].mat.color = vec3(0.9);
-            spheres[0].mat.type = MATERIAL_TYPE_METAL;
-
-            spheres[1].pos = vec3(-5, 1, -0.5);
-            spheres[1].r = 2.0;
-            spheres[1].mat.color = vec3(0.9);
-            spheres[1].mat.type = MATERIAL_TYPE_METAL;
-
-            spheres[2].pos = vec3(0, 4.5, -0.5);
-            spheres[2].r = 2.0;
-            spheres[2].mat.color = vec3(0.9);
-            spheres[2].mat.type = MATERIAL_TYPE_METAL;
-
-            for (int i = 0; i < numSphere; ++i) {
-                Sphere sphere = spheres[i];
+            for (int i = 0; i < NUM_SPHERE; ++i) {
+                Sphere sphere = SPHERES[i];
                 Hit hit = raySphere(ray, sphere.pos, sphere.r);
 
                 if (hit.didHit && hit.dst < closestHit.dst) {
@@ -284,27 +325,8 @@ const char* fragmentBVHRayTrace = R(
                 }
             }
 
-            //bboxes
-            const int numAABB = 3;
-            AABB aabbs[4];
-
-            aabbs[0].maxBounds = vec3(13, 12 + 5, 8);
-            aabbs[0].minBounds = vec3(12, -12 + 5, -8);
-            aabbs[0].mat.color = vec3(0.9, 0.0, 0.2);
-            aabbs[0].mat.type = MATERIAL_TYPE_DIFFUSE;
-
-            aabbs[1].maxBounds = vec3(-13, 12 + 5, 8);
-            aabbs[1].minBounds = vec3(-12, -12 + 5, -8);
-            aabbs[1].mat.color = vec3(0.0, 0.2, 0.9);
-            aabbs[1].mat.type = MATERIAL_TYPE_DIFFUSE;
-
-            aabbs[2].maxBounds = vec3(13, -12 + 5,   8);
-            aabbs[2].minBounds = vec3(-13, -13 + 5, -8);
-            aabbs[2].mat.color = vec3(0.4);
-            aabbs[2].mat.type = MATERIAL_TYPE_DIFFUSE;
-
-            for (int i = 0; i < numAABB; ++i) {
-                AABB aabb = aabbs[i];
+            for (int i = 0; i < NUM_AABB; ++i) {
+                AABB aabb = AABBS[i];
                 Hit hit = rayBoundingBox(ray, aabb.minBounds, aabb.maxBounds);
                 if (hit.didHit && hit.dst < closestHit.dst) {
                     closestHit = hit;
@@ -337,8 +359,7 @@ const char* fragmentBVHRayTrace = R(
                 Hit hit = rayCollision(ray);
 
                 if (hit.didHit && hit.mat.type == MATERIAL_TYPE_METAL) {
-                    vec3 emittedL = vec3(1.0); // vec3 emittedL = mat.emissionColor * mat.emissionStrength;
-//                    float s = dot(hit.N, -ray.dir);
+                    vec3 emittedL = vec3(1.0);
 
                     vec3 specDir = reflect(ray.dir, hit.N);
                     ray.org = hit.pos;
@@ -370,13 +391,12 @@ const char* fragmentBVHRayTrace = R(
             ray.dir = worldRay;
             ray.invDir = 1.0 / worldRay;
 
-            float RAY_SAMPLE_CNT = 1.0;
-            vec3 total = vec3(0.0);
-            for (float i = 0; i < RAY_SAMPLE_CNT; i += 1.0) {
-                total += rayTrace(ray);
-            }
+            setupSpheres();
+            setupCornellBox();
 
-            fragColor = vec4(total / RAY_SAMPLE_CNT, 1.0);
+            vec3 total = rayTrace(ray);
+
+            fragColor = vec4(total, 1.0);
         }
 );
 
