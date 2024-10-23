@@ -1,4 +1,4 @@
-# Toy Real Time PBR Engine
+# Toy Renderer(practice rendering using OpenGL 3.3)
 - Desktop App
 - Language: C++17
 - Graphics API: OpenGL 3.3
@@ -15,10 +15,11 @@
     - [Metalic: 0.6 / Roughness: 0.4]
       ![image](https://github.com/Windowline/ToyRenderer/assets/17508384/9166d4bf-ed49-4649-96b0-6dce5239d380)
       
-  - 2 Ray Tracing Rendering (Bounding Volume Hierarchy, ETC) (Doing)
+  - 2 Ray Tracing Rendering (Not using extentions for trace)
       ![image](https://github.com/user-attachments/assets/269ab8cb-f933-4c4b-9ace-7984c17ab1b3)
 
       BVH
+      this is uploaded to GPU by TexelBufferObject (SSBO is currently unavailable.)
       ![image](https://github.com/user-attachments/assets/45fe607a-e085-43a8-a6ff-0ad41e248564)
 
   
