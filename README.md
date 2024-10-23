@@ -18,8 +18,7 @@
   - 2 Ray Tracing Rendering (Not using extentions for trace)
       ![image](https://github.com/user-attachments/assets/269ab8cb-f933-4c4b-9ace-7984c17ab1b3)
 
-      BVH
-      this is uploaded to GPU by TexelBufferObject (SSBO is currently unavailable.)
+      BVH - this is uploaded to GPU by TexelBufferObject (SSBO is currently unavailable.)
       ![image](https://github.com/user-attachments/assets/45fe607a-e085-43a8-a6ff-0ad41e248564)
 
   
