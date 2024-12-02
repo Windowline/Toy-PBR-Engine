@@ -54,26 +54,19 @@ const char* fragmentGBufferShaderTmp = R(
         in vec3 v_viewNormal;
         in vec3 v_color;
 
-        layout (location = 0) out vec4 gPosition; // TODO: remove
-        layout (location = 1) out vec4 gNormal; // w: depth
-        layout (location = 2) out vec4 gAlbedo;
-        layout (location = 3) out vec4 gViewPosition; // TODO: remove
-        layout (location = 4) out vec4 gViewNormal; // w: view depth
+        layout (location = 0) out vec4 gNormal; // w: depth
+        layout (location = 1) out vec4 gAlbedo;
+        layout (location = 2) out vec4 gViewNormal; // w: view depth
 
         uniform samplerCube u_environmentMap;
         uniform float u_isRenderSkyBox;
 
         void main() {
-            gPosition = vec4(v_worldPos, 1.0);
-            gViewPosition = vec4(v_viewPos, 1.0);
-
-//            gNormal = vec4(normalize(v_normal), 1.0);
-//            gViewNormal = vec4(normalize(v_viewNormal), 1.0);
             gNormal.xyz = normalize(v_normal);
             gNormal.w = v_ndcPos.z;
 
             gViewNormal.xyz = normalize(v_viewNormal);
-            gViewNormal.w = v_viewPos.z;
+            gViewNormal.w = v_ndcPos.z;
 
             if (u_isRenderSkyBox > 0.5) {
                 vec3 envColor = textureLod(u_environmentMap, v_worldPos, 0.0).rgb;

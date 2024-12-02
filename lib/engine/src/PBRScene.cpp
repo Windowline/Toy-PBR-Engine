@@ -274,10 +274,11 @@ void PBRScene::renderDeferredPBR() {
         activeShader->samplesUniformVector(_ssaoKernel);
         activeShader->screenSizeUniform2f(_camera->screenSize().x, _camera->screenSize().y);
 
-        const int COMPONENT_COUNT = 3;
-        array<GLuint, COMPONENT_COUNT> ssaoInputTextures {_gBuffer->gViewPositionTexture(),
-                                                          _gBuffer->gViewNormalTexture(),
-                                                          _ssaoNoiseTexture};
+        const int COMPONENT_COUNT = 2;
+        array<GLuint, COMPONENT_COUNT> ssaoInputTextures {
+            _gBuffer->gViewNormalTexture(),
+            _ssaoNoiseTexture
+        };
 
         for (int i = 0; i < COMPONENT_COUNT; ++i) {
             glActiveTexture(GL_TEXTURE0 + i);
@@ -304,12 +305,13 @@ void PBRScene::renderDeferredPBR() {
 
         auto activeShader = shaderManager()->setActiveShader<DeferredPBRShader>(eShaderProgram_DeferredPBR);
         //Samplers: GBuffer, Depth, SSAO
-        const int GBUFFER_COMPONENT_COUNT = 5;
-        array<GLuint, GBUFFER_COMPONENT_COUNT> textures { _gBuffer->gPositionTexture(),
-                                                          _gBuffer->gNormalTexture(),
-                                                          _gBuffer->gAlbedoTexture(),
-                                                          _shadowDepthBuffer->commonTexture(),
-                                                          _ssaoBlurFBO->commonTexture() };
+        const int GBUFFER_COMPONENT_COUNT = 4;
+        array<GLuint, GBUFFER_COMPONENT_COUNT> textures {
+            _gBuffer->gNormalTexture(),
+            _gBuffer->gAlbedoTexture(),
+            _shadowDepthBuffer->commonTexture(),
+            _ssaoBlurFBO->commonTexture()
+        };
 
         int textureIndex = 0;
         for (; textureIndex < GBUFFER_COMPONENT_COUNT; ++textureIndex) {

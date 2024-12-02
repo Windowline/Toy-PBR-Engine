@@ -23,10 +23,6 @@ public:
     void bindWithViewport();
     GLuint texture() const;
     
-    GLuint gPositionTexture() const {
-        return _gPosition;
-    }
-    
     GLuint gNormalTexture() const {
         return _gNormal;
     }
@@ -35,14 +31,9 @@ public:
         return _gAlbedo;
     }
 
-    GLuint gViewPositionTexture() const {
-        return _gViewPosition;
-    }
-
     GLuint gViewNormalTexture() const {
         return _gViewNormal;
     }
-
 
     GLuint commonTexture() const {
         return _commonTexture;
@@ -57,8 +48,6 @@ private:
     ivec2 _size;
     unsigned int _fboId;
 
-    unsigned int _gPosition;
-    unsigned int _gViewPosition;
     unsigned int _gNormal;
     unsigned int _gViewNormal;
     unsigned int _gAlbedo;

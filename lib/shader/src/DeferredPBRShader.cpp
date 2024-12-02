@@ -18,7 +18,6 @@ const char* fragmentDeferredPBR = R(
         in vec2 v_texCoord;
         layout (location = 0) out vec4 fragColor;
 
-        uniform sampler2D u_posTexture;
         uniform sampler2D u_normalTexture;
         uniform sampler2D u_albedoTexture;
         uniform sampler2D u_shadowDepth;
@@ -187,7 +186,7 @@ const char* fragmentDeferredPBR = R(
             return clamp(color, 0.0, 1.0);
         }
         
-        vec3 computeWorldGPos(float ndcDepth) {
+        vec3 reconstructWorldPos(float ndcDepth) {
             vec4 ndc = vec4(v_texCoord.x * 2.0 - 1.0,
                             v_texCoord.y * 2.0 - 1.0,
                             ndcDepth,
@@ -201,19 +200,11 @@ const char* fragmentDeferredPBR = R(
         }
 
         void main() {
-//            mat4 tmp3 = u_projMat;
-//            mat4 tmp2 = u_viewMat;
-//            vec3 albedo = texture(u_albedoTexture, v_texCoord).rgb;
-//            vec3 worldPos = texture(u_posTexture, v_texCoord).rgb;
-//            vec3 N = texture(u_normalTexture, v_texCoord).rgb;
-//            float ssao = texture(u_ssaoTexture,  v_texCoord).r;
-
-            vec3 tmp = texture(u_posTexture, v_texCoord).rgb;
             vec3 albedo = texture(u_albedoTexture, v_texCoord).rgb;
             vec4 normalMap = texture(u_normalTexture, v_texCoord);
             vec3 N = normalMap.xyz;
             float depth = normalMap.w;
-            vec3 worldPos = computeWorldGPos(depth);
+            vec3 worldPos = reconstructWorldPos(depth);
             float ssao = texture(u_ssaoTexture,  v_texCoord).r;
 
             if (texture(u_albedoTexture, v_texCoord).a > 0.0) {
@@ -229,7 +220,6 @@ DeferredPBRShader::DeferredPBRShader() {
     this->load();
     basicUniformLoc();
 
-    _posTextureUniformLoc = glGetUniformLocation(_programID, "u_posTexture");
     _normalTextureUniformLoc = glGetUniformLocation(_programID, "u_normalTexture");
     _albedoTextureUniformLoc = glGetUniformLocation(_programID, "u_albedoTexture");
     _shadowDepthUniformLoc = glGetUniformLocation(_programID, "u_shadowDepth");
@@ -264,12 +254,11 @@ bool DeferredPBRShader::load() {
 void DeferredPBRShader::useProgram() {
     glUseProgram(_programID);
 
-    constexpr int TEXTURE_COUNT = 5 + 3;
+    constexpr int TEXTURE_COUNT = 4 + 3;
 
     // Deferred
     std::array<GLint, TEXTURE_COUNT> uniformLocs {
             // Deferred
-            _posTextureUniformLoc,
             _normalTextureUniformLoc,
             _albedoTextureUniformLoc,
             _shadowDepthUniformLoc,

@@ -26,7 +26,6 @@ public:
     }
 
 private:
-    GLint _viewPosMapUniformLoc = -1;
     GLint _viewNormalMapUniformLoc = -1;
     GLint _noiseMapUniformLoc = -1;
     GLint _samplesUniformLoc = -1;
