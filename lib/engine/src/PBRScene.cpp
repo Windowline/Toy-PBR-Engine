@@ -331,7 +331,8 @@ void PBRScene::renderDeferredPBR() {
         activeShader->shadowViewProjectionMatUniformMatrix4fv(_shadowLightViewProjection.ptr());
         activeShader->metallicUniform1f(0.92);
         activeShader->roughnessUniform1f(0.08);
-
+        activeShader->projMatUniformMatrix4fv(proj.ptr());
+        activeShader->viewMatUniformMatrix4fv(view.ptr());
         _fullQuad->render();
     }
 

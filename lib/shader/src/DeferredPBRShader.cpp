@@ -39,6 +39,9 @@ const char* fragmentDeferredPBR = R(
         uniform samplerCube u_prefilterMap;
         uniform sampler2D u_brdfLUT;
 
+        uniform mat4 u_projMat;
+        uniform mat4 u_viewMat;
+
         const float PI = 3.14159265359;
 
         float DistributionGGX(vec3 N, vec3 H, float roughness) {
@@ -183,11 +186,34 @@ const char* fragmentDeferredPBR = R(
 
             return clamp(color, 0.0, 1.0);
         }
+        
+        vec3 computeWorldGPos(float ndcDepth) {
+            vec4 ndc = vec4(v_texCoord.x * 2.0 - 1.0,
+                                v_texCoord.y * 2.0 - 1.0,
+                                ndcDepth,
+                                1.0);
+
+            vec4 clip = inverse(u_projMat) * ndc;
+            vec4 view = vec4(clip.xyz / clip.w, 1.0);
+            vec3 world = (inverse(u_viewMat) * view).xyz;
+
+            return world;
+        }
 
         void main() {
+//            mat4 tmp = u_projMat;
+//            mat4 tmp2 = u_viewMat;
+//            vec3 albedo = texture(u_albedoTexture, v_texCoord).rgb;
+//            vec3 worldPos = texture(u_posTexture, v_texCoord).rgb;
+//            vec3 N = texture(u_normalTexture, v_texCoord).rgb;
+//            float ssao = texture(u_ssaoTexture,  v_texCoord).r;
+
+            vec3 tmp = texture(u_posTexture, v_texCoord).rgb;
             vec3 albedo = texture(u_albedoTexture, v_texCoord).rgb;
-            vec3 worldPos = texture(u_posTexture, v_texCoord).rgb;
-            vec3 N = texture(u_normalTexture, v_texCoord).rgb;
+            vec4 normalMap = texture(u_normalTexture, v_texCoord);
+            vec3 N = normalMap.xyz;
+            float clipDepth = normalMap.w;
+            vec3 worldPos = computeWorldGPos(clipDepth);
             float ssao = texture(u_ssaoTexture,  v_texCoord).r;
 
             if (texture(u_albedoTexture, v_texCoord).a > 0.0) {

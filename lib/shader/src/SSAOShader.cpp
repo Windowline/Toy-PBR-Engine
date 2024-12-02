@@ -5,31 +5,48 @@ const char* vertexSSAOTmp = R(
         layout (location = 0) in vec2 a_position;
         layout (location = 1) in vec2 a_texCoord;
         out vec2 v_texCoord;
+        out vec3 v_viewPosQuad;
+
+        uniform mat4 u_projMat;
 
         void main() {
-           v_texCoord = a_texCoord;
-           gl_Position = vec4(a_position, 0.0, 1.0);
+            v_texCoord = a_texCoord;
+            vec4 pos = vec4(a_position, 0.0, 1.0);
+
+            vec4 unprojViewCoord = inverse(u_projMat) * pos;
+            v_viewPosQuad = unprojViewCoord.xyz / unprojViewCoord.w;
+
+           gl_Position = pos;
         }
 );
 
 const char* fragmentSSAOTmp = R(
         layout (location = 0) out vec4 fragColor; //todo: float
         in vec2 v_texCoord;
+        in vec3 v_viewPosQuad;
 
-        uniform sampler2D u_viewPosMap;
-        uniform sampler2D u_viewNormalMap;
+        uniform sampler2D u_viewPosMap; // TODO: remove
+        uniform sampler2D u_viewNormalMap;//xyz: view normal, w: view depth
+
+
         uniform sampler2D u_noiseMap;  // 접선공간상의 임의 회전
         uniform vec3 u_samples[64];
         uniform vec2 u_screenSize;
         uniform mat4 u_projMat;
+
 
         void main() {
             float radius = 4.0;
             float bias = 0.03;
             vec2 noiseScale = u_screenSize / 4.0;
 
-            vec3 viewPos = texture(u_viewPosMap, v_texCoord).xyz;
-            vec3 viewNormal = normalize(texture(u_viewNormalMap, v_texCoord).xyz);
+            vec4 viewNormalMap = texture(u_viewNormalMap, v_texCoord);
+            vec3 viewNormal = normalize(viewNormalMap.xyz); // geometry view normal
+            float viewDepth = viewNormalMap.w; // geometry view depth
+
+//            vec3 viewPos = texture(u_viewPosMap, v_texCoord).xyz;
+            vec3 viewPos = normalize(v_viewPosQuad) * viewDepth;
+
             vec3 randomVec = texture(u_noiseMap, v_texCoord * noiseScale).xyz;
 
             vec3 viewTangent = normalize(randomVec - viewNormal * dot(randomVec, viewNormal));
