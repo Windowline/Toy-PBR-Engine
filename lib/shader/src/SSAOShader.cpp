@@ -6,8 +6,6 @@ const char* vertexSSAOTmp = R(
         layout (location = 1) in vec2 a_texCoord;
         out vec2 v_texCoord;
 
-        uniform mat4 u_projMat;
-
         void main() {
             v_texCoord = a_texCoord;
             vec4 pos = vec4(a_position, 0.0, 1.0);
@@ -23,13 +21,14 @@ const char* fragmentSSAOTmp = R(
         uniform vec3 u_samples[64];
         uniform vec2 u_screenSize;
         uniform mat4 u_projMat;
+        uniform mat4 u_invProjMat;
 
         vec3 reconstructViewPos(float ndcDepth) {
             vec4 ndc = vec4(v_texCoord.x * 2.0 - 1.0,
                             v_texCoord.y * 2.0 - 1.0,
                             ndcDepth,
                             1.0);
-            ndc = inverse(u_projMat) * ndc;
+            ndc = u_invProjMat * ndc;
             vec3 view = vec3(ndc.xyz / ndc.w);
 
             return view;

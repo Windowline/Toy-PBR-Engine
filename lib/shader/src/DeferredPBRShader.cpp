@@ -38,8 +38,8 @@ const char* fragmentDeferredPBR = R(
         uniform samplerCube u_prefilterMap;
         uniform sampler2D u_brdfLUT;
 
-        uniform mat4 u_projMat;
-        uniform mat4 u_viewMat;
+        uniform mat4 u_invProjMat;
+        uniform mat4 u_invViewMat;
 
         const float PI = 3.14159265359;
 
@@ -192,9 +192,9 @@ const char* fragmentDeferredPBR = R(
                             ndcDepth,
                             1.0);
 
-            ndc = inverse(u_projMat) * ndc;
+            ndc = u_invProjMat * ndc;
             vec4 view = vec4(ndc.xyz / ndc.w, 1.0);
-            vec3 world = (inverse(u_viewMat) * view).xyz;
+            vec3 world = (u_invViewMat * view).xyz;
 
             return world;
         }

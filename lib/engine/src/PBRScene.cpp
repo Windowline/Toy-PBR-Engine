@@ -187,7 +187,9 @@ void PBRScene::renderDeferredPBR() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     const mat4& proj = _camera->projMat();
+    const mat4& invProj = proj.invert();
     const mat4& view = _camera->viewMat();
+    const mat4& invView = view.invert();
     mat4 identity;
 
     // shadow depth buffer
@@ -271,6 +273,7 @@ void PBRScene::renderDeferredPBR() {
 
         auto activeShader = shaderManager()->setActiveShader<SSAOShader>(eShaderProgram_SSAO);
         activeShader->projMatUniformMatrix4fv(proj.ptr());
+        activeShader->invProjMatUniformMatrix4fv(invProj.ptr());
         activeShader->samplesUniformVector(_ssaoKernel);
         activeShader->screenSizeUniform2f(_camera->screenSize().x, _camera->screenSize().y);
 
@@ -333,8 +336,8 @@ void PBRScene::renderDeferredPBR() {
         activeShader->shadowViewProjectionMatUniformMatrix4fv(_shadowLightViewProjection.ptr());
         activeShader->metallicUniform1f(0.92);
         activeShader->roughnessUniform1f(0.08);
-        activeShader->projMatUniformMatrix4fv(proj.ptr());
-        activeShader->viewMatUniformMatrix4fv(view.ptr());
+        activeShader->invProjMatUniformMatrix4fv(invProj.ptr());
+        activeShader->invViewMatUniformMatrix4fv(invView.ptr());
         _fullQuad->render();
     }
 
