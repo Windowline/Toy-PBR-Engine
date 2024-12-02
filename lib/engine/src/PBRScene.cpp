@@ -187,7 +187,9 @@ void PBRScene::renderDeferredPBR() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     const mat4& proj = _camera->projMat();
+    const mat4& invProj = proj.invert();
     const mat4& view = _camera->viewMat();
+    const mat4& invView = view.invert();
     mat4 identity;
 
     // shadow depth buffer
@@ -271,13 +273,15 @@ void PBRScene::renderDeferredPBR() {
 
         auto activeShader = shaderManager()->setActiveShader<SSAOShader>(eShaderProgram_SSAO);
         activeShader->projMatUniformMatrix4fv(proj.ptr());
+        activeShader->invProjMatUniformMatrix4fv(invProj.ptr());
         activeShader->samplesUniformVector(_ssaoKernel);
         activeShader->screenSizeUniform2f(_camera->screenSize().x, _camera->screenSize().y);
 
-        const int COMPONENT_COUNT = 3;
-        array<GLuint, COMPONENT_COUNT> ssaoInputTextures {_gBuffer->gViewPositionTexture(),
-                                                          _gBuffer->gViewNormalTexture(),
-                                                          _ssaoNoiseTexture};
+        const int COMPONENT_COUNT = 2;
+        array<GLuint, COMPONENT_COUNT> ssaoInputTextures {
+            _gBuffer->gViewNormalTexture(),
+            _ssaoNoiseTexture
+        };
 
         for (int i = 0; i < COMPONENT_COUNT; ++i) {
             glActiveTexture(GL_TEXTURE0 + i);
@@ -304,12 +308,13 @@ void PBRScene::renderDeferredPBR() {
 
         auto activeShader = shaderManager()->setActiveShader<DeferredPBRShader>(eShaderProgram_DeferredPBR);
         //Samplers: GBuffer, Depth, SSAO
-        const int GBUFFER_COMPONENT_COUNT = 5;
-        array<GLuint, GBUFFER_COMPONENT_COUNT> textures { _gBuffer->gPositionTexture(),
-                                                          _gBuffer->gNormalTexture(),
-                                                          _gBuffer->gAlbedoTexture(),
-                                                          _shadowDepthBuffer->commonTexture(),
-                                                          _ssaoBlurFBO->commonTexture() };
+        const int GBUFFER_COMPONENT_COUNT = 4;
+        array<GLuint, GBUFFER_COMPONENT_COUNT> textures {
+            _gBuffer->gNormalTexture(),
+            _gBuffer->gAlbedoTexture(),
+            _shadowDepthBuffer->commonTexture(),
+            _ssaoBlurFBO->commonTexture()
+        };
 
         int textureIndex = 0;
         for (; textureIndex < GBUFFER_COMPONENT_COUNT; ++textureIndex) {
@@ -331,7 +336,8 @@ void PBRScene::renderDeferredPBR() {
         activeShader->shadowViewProjectionMatUniformMatrix4fv(_shadowLightViewProjection.ptr());
         activeShader->metallicUniform1f(0.92);
         activeShader->roughnessUniform1f(0.08);
-
+        activeShader->invProjMatUniformMatrix4fv(invProj.ptr());
+        activeShader->invViewMatUniformMatrix4fv(invView.ptr());
         _fullQuad->render();
     }
 

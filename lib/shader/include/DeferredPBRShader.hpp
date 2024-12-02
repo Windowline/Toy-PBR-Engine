@@ -10,11 +10,6 @@ public:
     bool load() override;
     void useProgram() override;
 
-    void posTextureUniform1i(GLuint value) {
-        assert(_posTextureUniformLoc != -1);
-        glUniform1i(_posTextureUniformLoc, value);
-    }
-
     void normalTextureUniform1i(GLuint value) {
         assert(_normalTextureUniformLoc != -1);
         glUniform1i(_normalTextureUniformLoc, value);
@@ -88,7 +83,6 @@ public:
 
 
 private:
-    GLint _posTextureUniformLoc = -1;
     GLint _normalTextureUniformLoc = -1;
     GLint _albedoTextureUniformLoc = -1;
     GLint _shadowDepthUniformLoc = -1;
