@@ -24,7 +24,7 @@ const char* vertexGBufferShaderTmp = R(
 
            vec4 worldPos = u_worldMat[gl_InstanceID] * vec4(a_position, 1.0);
            vec4 viewPos = u_viewMat * worldPos;
-           vec4 clipPos =  u_projMat * viewPos;
+           vec4 clipPos = u_projMat * viewPos;
 
            v_worldPos = worldPos.xyz;
            v_ndcPos = clipPos.xyz / clipPos.w;
