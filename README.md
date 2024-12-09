@@ -2,7 +2,10 @@
 - Desktop App
 - Language: C++17
 - Graphics API: OpenGL 3.3
-
+- Limitations
+  - There are some shortcomings in the architecture (e.g., dynamic Frame Graph, Resource Alias, etc.).
+  - The reason is that I decided there would be more to gain by implementing these features later with modern APIs such as Vulkan, Metal, and DX12.
+  - So I focused on rendering effects and did not allocate additional time to the architecture before concluding the project.
 - Implementing Effects
   - 1 Rasterization Rendering (IBL, Deferred Lighting, Ambient Occlusion, ETC)
     - Render Dependency Graph
