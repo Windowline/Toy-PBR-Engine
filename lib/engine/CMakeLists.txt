@@ -15,6 +15,15 @@ add_library(engine STATIC
         include/BVH.hpp
         include/Scene.hpp
         include/UXUtil.hpp
+
+        include/Camera.hpp
+        src/Camera.cpp
+
+        include/FrameBufferObject.hpp
+        src/FrameBufferObject.cpp
+
+        include/IBLPreprocessor.hpp
+        src/IBLPreprocessor.cpp
 )
 
 configure_file(${CMAKE_SOURCE_DIR}/config/PathInfo.h.in ${CMAKE_BINARY_DIR}/config/PathInfo.h)
@@ -24,10 +33,7 @@ PUBLIC
         ../engine/include
         ../shader/include
         ../mesh/include
-        ../camera/include
         ../frame_buffer/include
-        ../camera/include
-        ../ibl/include
         ../stb_image_loader/include
         ../math
         ../util
@@ -36,13 +42,9 @@ PUBLIC
 
 target_link_libraries(engine
  PUBLIC
-# PRIVATE
         shader
         mesh
-        camera
-        frame_buffer
         math
         util
-        ibl
         stb_image_loader
 )

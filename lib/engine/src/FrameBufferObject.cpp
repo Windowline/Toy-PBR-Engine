@@ -1,4 +1,4 @@
-#include "FrameBufferObject.hpp"
+#include "../include/FrameBufferObject.hpp"
 #include "GLUtilGeometry.hpp"
 #include <cassert>
 

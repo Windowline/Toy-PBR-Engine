@@ -1,4 +1,4 @@
-#include "Camera.hpp"
+#include "../include/Camera.hpp"
 #include <cassert>
 
 Camera::Camera(vec3 eye, vec3 target, vec3 up) :
